@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Sequence
+from typing import Sequence
 
 from ._runtime import _get_runtime, _run_js_awaitable
 
@@ -40,6 +40,18 @@ class Tensor:
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
+    def sub(self, other: "Tensor") -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.sub(self._id, other._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def div(self, other: "Tensor") -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.div(self._id, other._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
     def matmul(self, other: "Tensor") -> "Tensor":
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.matmul(self._id, other._id))
@@ -57,6 +69,26 @@ class Tensor:
         meta = _run_js_awaitable(runtime.mean(self._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
+
+    def relu(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.relu(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def reshape(self, shape: int | Sequence[int]) -> "Tensor":
+        runtime = _get_runtime()
+        normalized = _normalize_shape(shape)
+        meta = _run_js_awaitable(runtime.reshape(self._id, normalized))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    @property
+    def T(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.transpose2d(self._id))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
 
     def to_list(self) -> list[float]:
         runtime = _get_runtime()
@@ -124,4 +156,3 @@ def ones_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tenso
     meta = _run_js_awaitable(runtime.ones(normalized, dtype))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
-

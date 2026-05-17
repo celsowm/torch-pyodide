@@ -1,0 +1,165 @@
+{
+  "implemented": 24,
+  "total": 24,
+  "percentage": 100.0,
+  "by_kind": {
+    "module_func": {
+      "implemented": 10,
+      "total": 10
+    },
+    "tensor_method": {
+      "implemented": 11,
+      "total": 11
+    },
+    "tensor_property": {
+      "implemented": 3,
+      "total": 3
+    }
+  },
+  "targets": [
+    {
+      "id": "torch.init",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.zeros",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ones",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.add",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sub",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.mul",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.div",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.matmul",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.relu",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.add",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sub",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.mul",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.div",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.matmul",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sum",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.mean",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.relu",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.reshape",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.to_list",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.destroy",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.T",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.shape",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.dtype",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    }
+  ]
+}

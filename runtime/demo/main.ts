@@ -34,12 +34,22 @@ a = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
 b = torch.ones((2, 2))
 c = a.add(b)
 d = c.mul(torch.tensor([[2.0, 2.0], [2.0, 2.0]]))
+e = d.sub(torch.ones((2,2)))
+f = e.div(torch.tensor([[1.0, 5.0], [1.0, 3.0]]))
+r = f.relu()
+t = r.T
+flat = t.reshape((4,))
 m = a.matmul(torch.tensor([[1.0, 0.0], [0.0, 1.0]]))
 s = d.sum()
 mean = d.mean()
 
 assert c.to_list() == [2.0, 3.0, 4.0, 5.0]
 assert d.to_list() == [4.0, 6.0, 8.0, 10.0]
+assert e.to_list() == [3.0, 5.0, 7.0, 9.0]
+assert f.to_list() == [3.0, 1.0, 7.0, 3.0]
+assert r.to_list() == [3.0, 1.0, 7.0, 3.0]
+assert t.to_list() == [3.0, 7.0, 1.0, 3.0]
+assert flat.to_list() == [3.0, 7.0, 1.0, 3.0]
 assert m.to_list() == [1.0, 2.0, 3.0, 4.0]
 assert abs(s.to_list()[0] - 28.0) < 1e-6
 assert abs(mean.to_list()[0] - 7.0) < 1e-6

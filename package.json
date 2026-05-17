@@ -9,8 +9,10 @@
     "sync:torchjs": "node scripts/sync_torchjs_assets.mjs",
     "setup:pyodide:dist": "node scripts/setup_pyodide_dist.mjs",
     "build:runtime": "npm --workspace runtime run build",
+    "build:wheel": "cd python && python -m pip install --upgrade build && python -m build",
     "demo": "npm --workspace runtime run demo",
     "test:browser": "npm --workspace runtime run test",
-    "test:python": "cd python && python -m pytest tests"
+    "test:python": "cd python && python -m pytest tests",
+    "compat:report": "cd python && python compatibility/report.py"
   }
 }

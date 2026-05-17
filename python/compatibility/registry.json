@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "description": "Subset de APIs do PyTorch usado para medir progresso do torch-pyodide.",
+  "targets": [
+    { "id": "torch.init", "kind": "module_func" },
+    { "id": "torch.tensor", "kind": "module_func" },
+    { "id": "torch.zeros", "kind": "module_func" },
+    { "id": "torch.ones", "kind": "module_func" },
+    { "id": "torch.add", "kind": "module_func" },
+    { "id": "torch.sub", "kind": "module_func" },
+    { "id": "torch.mul", "kind": "module_func" },
+    { "id": "torch.div", "kind": "module_func" },
+    { "id": "torch.matmul", "kind": "module_func" },
+    { "id": "torch.relu", "kind": "module_func" },
+    { "id": "Tensor.add", "kind": "tensor_method" },
+    { "id": "Tensor.sub", "kind": "tensor_method" },
+    { "id": "Tensor.mul", "kind": "tensor_method" },
+    { "id": "Tensor.div", "kind": "tensor_method" },
+    { "id": "Tensor.matmul", "kind": "tensor_method" },
+    { "id": "Tensor.sum", "kind": "tensor_method" },
+    { "id": "Tensor.mean", "kind": "tensor_method" },
+    { "id": "Tensor.relu", "kind": "tensor_method" },
+    { "id": "Tensor.reshape", "kind": "tensor_method" },
+    { "id": "Tensor.to_list", "kind": "tensor_method" },
+    { "id": "Tensor.destroy", "kind": "tensor_method" },
+    { "id": "Tensor.T", "kind": "tensor_property" },
+    { "id": "Tensor.shape", "kind": "tensor_property" },
+    { "id": "Tensor.dtype", "kind": "tensor_property" }
+  ]
+}
+

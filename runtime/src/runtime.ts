@@ -17,6 +17,37 @@ type TensorHandle = {
   dtype: string;
 };
 
+const unaryReluShader = `
+@group(0) @binding(0) var<storage, read> input: array<f32>;
+@group(0) @binding(1) var<storage, read_write> output: array<f32>;
+@compute @workgroup_size(256)
+fn relu(@builtin(global_invocation_id) gid: vec3<u32>) {
+  let idx = gid.x;
+  if (idx >= arrayLength(&output)) { return; }
+  let v = input[idx];
+  output[idx] = max(v, 0.0);
+}
+`;
+
+const transpose2dShader = `
+struct Dims {
+  rows: u32,
+  cols: u32,
+}
+@group(0) @binding(0) var<storage, read> input: array<f32>;
+@group(0) @binding(1) var<storage, read_write> output: array<f32>;
+@group(0) @binding(2) var<uniform> dims: Dims;
+@compute @workgroup_size(256)
+fn transpose2d(@builtin(global_invocation_id) gid: vec3<u32>) {
+  let idx = gid.x;
+  let total = dims.rows * dims.cols;
+  if (idx >= total) { return; }
+  let r = idx / dims.cols;
+  let c = idx % dims.cols;
+  output[c * dims.rows + r] = input[idx];
+}
+`;
+
 function product(values: number[]): number {
   return values.reduce((acc, value) => acc * value, 1);
 }
@@ -88,6 +119,25 @@ export class TorchPyodideRuntime {
     return this.elementwise(aId, bId, "mul");
   }
 
+  async sub(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "sub");
+  }
+
+  async div(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "div_op");
+  }
+
+  async relu(tensorId: number): Promise<TensorHandle> {
+    this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const out = this.createStorageBuffer(Math.max(4, source.length * 4));
+    const pipeline = this.getPipeline(unaryReluShader, "relu");
+    this.dispatch(pipeline, [source.buffer, out], [Math.ceil(source.length / 256), 1, 1]);
+    await this.device!.queue.onSubmittedWorkDone();
+    const meta = this.registerTensor(out, source.shape, source.dtype, source.length);
+    return cloneHandle(meta);
+  }
+
   async matmul(aId: number, bId: number): Promise<TensorHandle> {
     this.ensureReady();
     const a = this.getTensor(aId);
@@ -129,6 +179,44 @@ export class TorchPyodideRuntime {
 
   async mean(tensorId: number): Promise<TensorHandle> {
     return this.reduce(tensorId, true);
+  }
+
+  async reshape(tensorId: number, shape: number[]): Promise<TensorHandle> {
+    this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const outLength = product(shape);
+    if (outLength !== source.length) {
+      throw new Error(`reshape mismatch: new shape has ${outLength} elements, expected ${source.length}.`);
+    }
+    const out = this.createStorageBuffer(Math.max(4, source.length * 4));
+    const encoder = this.device!.createCommandEncoder();
+    encoder.copyBufferToBuffer(source.buffer, 0, out, 0, source.length * 4);
+    this.device!.queue.submit([encoder.finish()]);
+    await this.device!.queue.onSubmittedWorkDone();
+    const meta = this.registerTensor(out, shape, source.dtype, source.length);
+    return cloneHandle(meta);
+  }
+
+  async transpose2d(tensorId: number): Promise<TensorHandle> {
+    this.ensureReady();
+    const source = this.getTensor(tensorId);
+    if (source.shape.length !== 2) {
+      throw new Error("transpose2d currently supports only rank-2 tensors.");
+    }
+    const [rows, cols] = source.shape;
+    const out = this.createStorageBuffer(Math.max(4, source.length * 4));
+    const dimsData = new Uint32Array([rows, cols]);
+    const dimsBuffer = this.device!.createBuffer({
+      size: dimsData.byteLength,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(dimsBuffer, 0, dimsData);
+    const pipeline = this.getPipeline(transpose2dShader, "transpose2d");
+    this.dispatch(pipeline, [source.buffer, out, dimsBuffer], [Math.ceil(source.length / 256), 1, 1]);
+    await this.device!.queue.onSubmittedWorkDone();
+    dimsBuffer.destroy();
+    const meta = this.registerTensor(out, [cols, rows], source.dtype, source.length);
+    return cloneHandle(meta);
   }
 
   async toList(tensorId: number): Promise<number[]> {
@@ -182,7 +270,7 @@ export class TorchPyodideRuntime {
     return cloneHandle(meta);
   }
 
-  private async elementwise(aId: number, bId: number, op: "add" | "mul"): Promise<TensorHandle> {
+  private async elementwise(aId: number, bId: number, op: "add" | "mul" | "sub" | "div_op"): Promise<TensorHandle> {
     this.ensureReady();
     const a = this.getTensor(aId);
     const b = this.getTensor(bId);

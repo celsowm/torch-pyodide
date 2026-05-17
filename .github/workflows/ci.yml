@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Setup Pyodide dist
+        run: npm run setup:pyodide:dist
+
+      - name: Build runtime
+        run: npm run build:runtime
+
+      - name: Run browser tests
+        run: npm run test:browser
+
+      - name: Run python tests
+        run: npm run test:python
+
+      - name: Build wheel
+        run: npm run build:wheel
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-wheel
+          path: python/dist/*.whl
