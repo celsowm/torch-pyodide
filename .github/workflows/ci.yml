@@ -55,6 +55,14 @@ jobs:
       - name: Build wheel
         run: npm run build:wheel
 
+      - name: Smoke test wheel install
+        run: |
+          python -m venv .venv-wheel-smoke
+          . .venv-wheel-smoke/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install python/dist/*.whl
+          python -c "import torch; print(torch.__all__)"
+
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:

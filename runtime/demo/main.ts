@@ -10,8 +10,17 @@ function setStatus(message: string) {
 
 async function main() {
   let runSyncError = "";
+  let installMode = "unknown";
+  let installDetail = "";
   try {
-    const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch();
+    const params = new URLSearchParams(globalThis.location.search);
+    const forceFallback = params.get("force_fallback") === "1";
+    const bootstrap = await bootstrapPyodideTorch({
+      forcePublishedFailure: forceFallback
+    });
+    const { pyodide, indexURL } = bootstrap;
+    installMode = bootstrap.installMode;
+    installDetail = bootstrap.installDetail;
 
     try {
       pyodide.runPython(`
@@ -72,7 +81,7 @@ assert abs(mean.to_list()[0] - 7.0) < 1e-6
     (globalThis as typeof globalThis & { __torchMvpStatus?: unknown }).__torchMvpStatus = statusPayload;
     setStatus(JSON.stringify(statusPayload, null, 2));
   } catch (error) {
-    const payload = { ok: false, error: String(error), runSyncError };
+    const payload = { ok: false, error: String(error), installMode, installDetail, runSyncError };
     (globalThis as typeof globalThis & { __torchMvpStatus?: unknown }).__torchMvpStatus = payload;
     setStatus(JSON.stringify(payload, null, 2));
   }

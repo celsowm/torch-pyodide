@@ -18,6 +18,43 @@ test("mvp demo runs tensor + matmul + reductions in pyodide", async ({ page }) =
   }
 });
 
+test("demo falls back to local-dev when published install is forced to fail", async ({ page }) => {
+  await page.goto("/demo/index.html?force_fallback=1");
+
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const status = await page.evaluate(() => (window as any).__torchMvpStatus);
+  expect(status.installMode).toBe("local-dev");
+  expect(String(status.installDetail)).toContain("Forced published install failure");
+  if (!status.ok) {
+    expect(String(status.error)).toContain("Failed to request WebGPU adapter");
+  }
+});
+
+test("playground runs default code and prints json output", async ({ page }) => {
+  await page.goto("/playground/index.html");
+  await page.waitForSelector("#run:not([disabled])", { timeout: 120000 });
+  await page.click("#run");
+  await page.waitForFunction(() => {
+    const output = document.querySelector("#output");
+    if (!output || !output.textContent) {
+      return false;
+    }
+    return output.textContent.includes('"shape"') || output.textContent.includes("Failed to request WebGPU adapter");
+  });
+
+  const outputText = await page.locator("#output").innerText();
+  if (outputText.includes("Failed to request WebGPU adapter")) {
+    expect(outputText).toContain("Failed to request WebGPU adapter");
+  } else {
+    expect(outputText).toContain('"shape"');
+    expect(outputText).toContain('"values"');
+  }
+  expect(outputText).not.toContain("dict' object has no attribute 'id'");
+});
+
 test("runtime returns explicit error when webgpu is unavailable", async ({ page }) => {
   await page.goto("/demo/index.html");
   const error = await page.evaluate(async () => {

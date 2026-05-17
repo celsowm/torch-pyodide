@@ -12,6 +12,7 @@
     "build:wheel": "cd python && python -m pip install --upgrade build && python -m build",
     "demo": "npm --workspace runtime run demo",
     "test:browser": "npm --workspace runtime run test",
+    "test:browser:gpu": "npm --workspace runtime run test:gpu",
     "test:python": "cd python && python -m pytest tests",
     "compat:report": "cd python && python compatibility/report.py"
   }

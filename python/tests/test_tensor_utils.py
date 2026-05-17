@@ -1,5 +1,6 @@
-from torch._tensor import _flatten, _infer_shape, _normalize_shape
+import pytest
 
+from torch._tensor import _flatten, _infer_shape, _js_meta_to_tuple, _normalize_shape
 
 def test_infer_shape_rectangular():
     assert _infer_shape([[1, 2], [3, 4]]) == [2, 2]
@@ -12,3 +13,29 @@ def test_flatten_nested():
 def test_normalize_shape_sequence():
     assert _normalize_shape((2, 3)) == [2, 3]
 
+
+def test_infer_shape_rejects_ragged():
+    with pytest.raises(ValueError, match="rectangular"):
+        _infer_shape([[1], [2, 3]])
+
+
+def test_normalize_shape_rejects_negative():
+    with pytest.raises(ValueError, match=">= 0"):
+        _normalize_shape((-1, 2))
+
+
+def test_js_meta_to_tuple_from_dict():
+    assert _js_meta_to_tuple({"id": 7, "shape": [2, 2], "dtype": "float32"}) == (
+        7,
+        [2, 2],
+        "float32",
+    )
+
+
+def test_js_meta_to_tuple_from_proxy_like():
+    class ProxyMeta:
+        id = 9
+        shape = [3, 1]
+        dtype = "float32"
+
+    assert _js_meta_to_tuple(ProxyMeta()) == (9, [3, 1], "float32")

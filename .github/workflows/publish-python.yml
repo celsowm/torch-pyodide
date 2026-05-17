@@ -19,16 +19,50 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
+      - name: Install Python test/build tooling
+        run: python -m pip install --upgrade pip pytest build
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Setup Pyodide dist
+        run: npm run setup:pyodide:dist
+
+      - name: Build runtime
+        run: npm run build:runtime
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: npm run test:browser
+
+      - name: Run python tests
+        run: npm run test:python
+
       - name: Build dist
         run: |
-          python -m pip install --upgrade pip build
           cd python
           python -m build
+
+      - name: Smoke test wheel install
+        run: |
+          python -m venv .venv-wheel-smoke
+          . .venv-wheel-smoke/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install python/dist/*.whl
+          python -c "import torch; print(torch.__all__)"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

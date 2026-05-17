@@ -74,7 +74,11 @@ function isLocalhostHost(hostname: string): boolean {
 
 type InstallMode = "published" | "local-dev";
 
-export async function bootstrapPyodideTorch() {
+type BootstrapOptions = {
+  forcePublishedFailure?: boolean;
+};
+
+export async function bootstrapPyodideTorch(options?: BootstrapOptions) {
   installTorchRuntime(globalThis);
   const indexURL = await resolvePyodideIndexURL();
   const loadPyodide = await loadPyodideModule(indexURL);
@@ -86,6 +90,9 @@ export async function bootstrapPyodideTorch() {
   let installDetail = "Installed torch-pyodide via micropip from published index.";
 
   try {
+    if (options?.forcePublishedFailure) {
+      throw new Error("Forced published install failure for test scenario.");
+    }
     await installPublishedTorchPackage(pyodide);
     await verifyInstalledTorch(pyodide);
   } catch (error) {

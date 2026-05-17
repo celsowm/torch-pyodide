@@ -9,14 +9,33 @@ export default defineConfig({
     cwd: "."
   },
   use: {
-    headless: true,
-    launchOptions: {
-      args: [
-        "--enable-unsafe-webgpu",
-        "--use-angle=swiftshader-webgpu",
-        "--enable-features=Vulkan"
-      ]
-    },
     baseURL: "http://127.0.0.1:4173"
-  }
+  },
+  projects: [
+    {
+      name: "chromium-headless",
+      use: {
+        headless: true,
+        launchOptions: {
+          args: [
+            "--enable-unsafe-webgpu",
+            "--use-angle=swiftshader-webgpu",
+            "--enable-features=Vulkan"
+          ]
+        }
+      }
+    },
+    {
+      name: "gpu-headed",
+      use: {
+        headless: false,
+        launchOptions: {
+          args: [
+            "--enable-unsafe-webgpu",
+            "--enable-features=Vulkan,UseSkiaRenderer"
+          ]
+        }
+      }
+    }
+  ]
 });

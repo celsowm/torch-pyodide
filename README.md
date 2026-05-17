@@ -49,6 +49,12 @@ Abra `http://127.0.0.1:4173/demo/index.html`.
 npm run test:browser
 ```
 
+## Testes browser com GPU visível (local)
+
+```powershell
+npm run test:browser:gpu
+```
+
 ## Testes Python (utilitários locais)
 
 ```powershell
