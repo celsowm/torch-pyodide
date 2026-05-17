@@ -15,6 +15,26 @@
       "id": "reshape_transpose",
       "label": "Reshape + Transpose",
       "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nt = a.T\nr = t.reshape((4,))\nout = {\n  \"transpose\": t.tolist(),\n  \"reshape\": r.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "rand_tensor",
+      "label": "Random Tensor (rand)",
+      "code": "import json\nimport torch\n\nx = torch.rand((2, 3))\nout = {\n  \"shape\": list(x.shape),\n  \"values\": x.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "clamp_values",
+      "label": "Clamp Values",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[-1.0, 0.2, 0.8], [1.5, 2.0, -0.3]])\ny = torch.clamp(x, 0.0, 1.0)\nout = {\n  \"input\": x.tolist(),\n  \"clamped\": y.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "where_select",
+      "label": "Where Selection",
+      "code": "import json\nimport torch\n\ncond = torch.tensor([[1.0, 0.0], [0.0, 1.0]])\nx = torch.tensor([[10.0, 20.0], [30.0, 40.0]])\ny = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nout_tensor = torch.where(cond, x, y)\nout = {\n  \"condition\": cond.tolist(),\n  \"x\": x.tolist(),\n  \"y\": y.tolist(),\n  \"where\": out_tensor.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "argmax_argmin",
+      "label": "Argmax + Argmin",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 3.0, 2.0], [9.0, 0.5, 7.0]])\nmax_idx = torch.argmax(x)\nmin_idx = torch.argmin(x)\nout = {\n  \"input\": x.tolist(),\n  \"argmax\": max_idx.tolist(),\n  \"argmin\": min_idx.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
     }
   ]
 }

@@ -4,8 +4,32 @@
  */
 
 import { getDevice } from './device.js';
-import { DType, getDTypeBytes, TypedArray } from '../../dtype.js';
 import { WebGPUBuffer, BufferUsage, MapMode } from './types.js';
+
+type DType = 'float32' | 'float16' | 'int32' | 'uint32' | 'int8' | 'uint8' | 'bool';
+type TypedArray =
+  | Float32Array
+  | Int32Array
+  | Uint32Array
+  | Int8Array
+  | Uint8Array;
+
+function getDTypeBytes(dtype: DType): number {
+  switch (dtype) {
+    case 'float32':
+    case 'int32':
+    case 'uint32':
+      return 4;
+    case 'float16':
+      return 2;
+    case 'int8':
+    case 'uint8':
+    case 'bool':
+      return 1;
+    default:
+      throw new Error(`Unsupported dtype: ${dtype}`);
+  }
+}
 
 export interface MemoryStats {
   activeBytes: number;

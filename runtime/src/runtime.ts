@@ -1,7 +1,26 @@
-import elementwiseShader from "./vendor/torchjs/shaders/elementwise.wgsl";
-import fillShader from "./vendor/torchjs/shaders/fill.wgsl";
-import matmulShader from "./vendor/torchjs/shaders/matmul.wgsl";
-import reduceSumShader from "./vendor/torchjs/shaders/reduce_sum.wgsl";
+import {
+  initWebGPU,
+  getDevice,
+  getAdapter,
+  isInitialized as isWebGPUInitialized,
+  getOrCreatePipeline,
+  dispatchCompute,
+  calculateWorkgroups,
+  syncDevice,
+  BufferUsage,
+  MapMode,
+  ELEMENTWISE_SHADER,
+  FILL_SHADER,
+  RANDOM_SHADER,
+  MATMUL_SHADER,
+  REDUCE_SUM_SHADER,
+  CLAMP_SHADER,
+  WHERE_SHADER,
+  ARGMAX_SHADER,
+  ARGMIN_SHADER,
+  UNARY_SHADER,
+  TRANSPOSE_SHADER
+} from "./vendor/torchjs/index.js";
 
 type TensorMeta = {
   id: number;
@@ -17,37 +36,6 @@ type TensorHandle = {
   shape: number[];
   dtype: string;
 };
-
-const unaryReluShader = `
-@group(0) @binding(0) var<storage, read> input: array<f32>;
-@group(0) @binding(1) var<storage, read_write> output: array<f32>;
-@compute @workgroup_size(256)
-fn relu(@builtin(global_invocation_id) gid: vec3<u32>) {
-  let idx = gid.x;
-  if (idx >= arrayLength(&output)) { return; }
-  let v = input[idx];
-  output[idx] = max(v, 0.0);
-}
-`;
-
-const transpose2dShader = `
-struct Dims {
-  rows: u32,
-  cols: u32,
-}
-@group(0) @binding(0) var<storage, read> input: array<f32>;
-@group(0) @binding(1) var<storage, read_write> output: array<f32>;
-@group(0) @binding(2) var<uniform> dims: Dims;
-@compute @workgroup_size(256)
-fn transpose2d(@builtin(global_invocation_id) gid: vec3<u32>) {
-  let idx = gid.x;
-  let total = dims.rows * dims.cols;
-  if (idx >= total) { return; }
-  let r = idx / dims.cols;
-  let c = idx % dims.cols;
-  output[c * dims.rows + r] = input[idx];
-}
-`;
 
 function product(values: number[]): number {
   return values.reduce((acc, value) => acc * value, 1);
@@ -69,7 +57,6 @@ export class TorchPyodideRuntime {
   private initError: string | null = null;
   private nextId = 1;
   private tensors = new Map<number, TensorMeta>();
-  private pipelineCache = new Map<string, GPUComputePipeline>();
   private currentAllocatedBytes = 0;
 
   async init(gpuProvider?: GPU | null): Promise<void> {
@@ -98,6 +85,25 @@ export class TorchPyodideRuntime {
     return this.fill(shape, dtype, 1.0);
   }
 
+  async rand(shape: number[], dtype: string): Promise<TensorHandle> {
+    await this.ensureReady();
+    this.assertDType(dtype);
+    const length = product(shape);
+    const out = this.createStorageBuffer(Math.max(4, length * 4));
+    const paramsData = new Uint32Array([Math.floor(Math.random() * 0xffffffff), length]);
+    const paramsBuffer = this.device!.createBuffer({
+      size: paramsData.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+    const pipeline = getOrCreatePipeline(RANDOM_SHADER, "rand");
+    dispatchCompute(pipeline, [out, paramsBuffer], calculateWorkgroups(length));
+    await syncDevice();
+    paramsBuffer.destroy();
+    const meta = this.registerTensor(out, shape, dtype, length);
+    return cloneHandle(meta);
+  }
+
   async add(aId: number, bId: number): Promise<TensorHandle> {
     return this.elementwise(aId, bId, "add");
   }
@@ -118,11 +124,61 @@ export class TorchPyodideRuntime {
     await this.ensureReady();
     const source = this.getTensor(tensorId);
     const out = this.createStorageBuffer(Math.max(4, source.length * 4));
-    const pipeline = this.getPipeline(unaryReluShader, "relu");
-    this.dispatch(pipeline, [source.buffer, out], [Math.ceil(source.length / 256), 1, 1]);
-    await this.device!.queue.onSubmittedWorkDone();
+    const pipeline = getOrCreatePipeline(UNARY_SHADER, "relu");
+    dispatchCompute(pipeline, [source.buffer, out], calculateWorkgroups(source.length));
+    await syncDevice();
     const meta = this.registerTensor(out, source.shape, source.dtype, source.length);
     return cloneHandle(meta);
+  }
+
+  async clamp(tensorId: number, minVal: number, maxVal: number): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const out = this.createStorageBuffer(Math.max(4, source.length * 4));
+    const params = new ArrayBuffer(16);
+    const view = new DataView(params);
+    view.setFloat32(0, minVal, true);
+    view.setFloat32(4, maxVal, true);
+    view.setUint32(8, source.length, true);
+    view.setUint32(12, 0, true);
+    const paramsBuffer = this.device!.createBuffer({
+      size: 16,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(paramsBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(CLAMP_SHADER, "main");
+    dispatchCompute(pipeline, [source.buffer, out, paramsBuffer], calculateWorkgroups(source.length));
+    await syncDevice();
+    paramsBuffer.destroy();
+    const meta = this.registerTensor(out, source.shape, source.dtype, source.length);
+    return cloneHandle(meta);
+  }
+
+  async where(conditionId: number, xId: number, yId: number): Promise<TensorHandle> {
+    await this.ensureReady();
+    const condition = this.getTensor(conditionId);
+    const x = this.getTensor(xId);
+    const y = this.getTensor(yId);
+    if (condition.length !== x.length || x.length !== y.length) {
+      throw new Error("where requires condition, x and y with same number of elements.");
+    }
+    if (condition.shape.join(",") !== x.shape.join(",") || x.shape.join(",") !== y.shape.join(",")) {
+      throw new Error("where requires condition, x and y with same shape.");
+    }
+    const out = this.createStorageBuffer(Math.max(4, x.length * 4));
+    const pipeline = getOrCreatePipeline(WHERE_SHADER, "main");
+    dispatchCompute(pipeline, [condition.buffer, x.buffer, y.buffer, out], calculateWorkgroups(x.length));
+    await syncDevice();
+    const meta = this.registerTensor(out, x.shape, x.dtype, x.length);
+    return cloneHandle(meta);
+  }
+
+  async argmax(tensorId: number): Promise<TensorHandle> {
+    return this.argReduce(tensorId, true);
+  }
+
+  async argmin(tensorId: number): Promise<TensorHandle> {
+    return this.argReduce(tensorId, false);
   }
 
   async matmul(aId: number, bId: number): Promise<TensorHandle> {
@@ -143,17 +199,17 @@ export class TorchPyodideRuntime {
     const dimsData = new Uint32Array([m, kA, n, 1]);
     const dimsBuffer = this.device!.createBuffer({
       size: dimsData.byteLength,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
     });
     this.device!.queue.writeBuffer(dimsBuffer, 0, dimsData);
 
-    const pipeline = this.getPipeline(matmulShader, "matmul_2d");
-    this.dispatch(
+    const pipeline = getOrCreatePipeline(MATMUL_SHADER, "matmul_2d");
+    dispatchCompute(
       pipeline,
       [a.buffer, b.buffer, outBuffer, dimsBuffer],
-      [Math.ceil(outLength / 256), 1, 1]
+      calculateWorkgroups(outLength)
     );
-    await this.device!.queue.onSubmittedWorkDone();
+    await syncDevice();
     dimsBuffer.destroy();
 
     const out = this.registerTensor(outBuffer, [m, n], "float32", outLength);
@@ -179,7 +235,7 @@ export class TorchPyodideRuntime {
     const encoder = this.device!.createCommandEncoder();
     encoder.copyBufferToBuffer(source.buffer, 0, out, 0, source.length * 4);
     this.device!.queue.submit([encoder.finish()]);
-    await this.device!.queue.onSubmittedWorkDone();
+    await syncDevice();
     const meta = this.registerTensor(out, shape, source.dtype, source.length);
     return cloneHandle(meta);
   }
@@ -195,12 +251,12 @@ export class TorchPyodideRuntime {
     const dimsData = new Uint32Array([rows, cols]);
     const dimsBuffer = this.device!.createBuffer({
       size: dimsData.byteLength,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
     });
     this.device!.queue.writeBuffer(dimsBuffer, 0, dimsData);
-    const pipeline = this.getPipeline(transpose2dShader, "transpose2d");
-    this.dispatch(pipeline, [source.buffer, out, dimsBuffer], [Math.ceil(source.length / 256), 1, 1]);
-    await this.device!.queue.onSubmittedWorkDone();
+    const pipeline = getOrCreatePipeline(TRANSPOSE_SHADER, "transpose_2d");
+    dispatchCompute(pipeline, [source.buffer, out, dimsBuffer], calculateWorkgroups(source.length));
+    await syncDevice();
     dimsBuffer.destroy();
     const meta = this.registerTensor(out, [cols, rows], source.dtype, source.length);
     return cloneHandle(meta);
@@ -211,14 +267,18 @@ export class TorchPyodideRuntime {
     const meta = this.getTensor(tensorId);
     const readBuffer = this.device!.createBuffer({
       size: meta.length * 4,
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+      usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ
     });
     const encoder = this.device!.createCommandEncoder();
     encoder.copyBufferToBuffer(meta.buffer, 0, readBuffer, 0, meta.length * 4);
     this.device!.queue.submit([encoder.finish()]);
-    await readBuffer.mapAsync(GPUMapMode.READ);
+    await readBuffer.mapAsync(MapMode.READ);
     const copied = readBuffer.getMappedRange();
-    const values = Array.from(new Float32Array(copied.slice(0)));
+    const copiedBuffer = copied.slice(0);
+    const values =
+      meta.dtype === "int32"
+        ? Array.from(new Int32Array(copiedBuffer))
+        : Array.from(new Float32Array(copiedBuffer));
     readBuffer.unmap();
     readBuffer.destroy();
     return values;
@@ -287,13 +347,13 @@ export class TorchPyodideRuntime {
     view.setUint32(4, length, true);
     const paramBuffer = this.device!.createBuffer({
       size: 8,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
     });
     this.device!.queue.writeBuffer(paramBuffer, 0, params);
 
-    const pipeline = this.getPipeline(fillShader, "fill");
-    this.dispatch(pipeline, [out, paramBuffer], [Math.ceil(length / 256), 1, 1]);
-    await this.device!.queue.onSubmittedWorkDone();
+    const pipeline = getOrCreatePipeline(FILL_SHADER, "fill");
+    dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
+    await syncDevice();
     paramBuffer.destroy();
 
     const meta = this.registerTensor(out, shape, dtype, length);
@@ -311,9 +371,9 @@ export class TorchPyodideRuntime {
       throw new Error(`Shape mismatch for ${op}: ${a.shape} vs ${b.shape}.`);
     }
     const out = this.createStorageBuffer(Math.max(4, a.length * 4));
-    const pipeline = this.getPipeline(elementwiseShader, op);
-    this.dispatch(pipeline, [a.buffer, b.buffer, out], [Math.ceil(a.length / 256), 1, 1]);
-    await this.device!.queue.onSubmittedWorkDone();
+    const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, op);
+    dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(a.length));
+    await syncDevice();
     const meta = this.registerTensor(out, a.shape, a.dtype, a.length);
     return cloneHandle(meta);
   }
@@ -331,13 +391,13 @@ export class TorchPyodideRuntime {
       const paramData = new Uint32Array([currentLength]);
       const paramBuffer = this.device!.createBuffer({
         size: 4,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
       });
       this.device!.queue.writeBuffer(paramBuffer, 0, paramData);
 
-      const pipeline = this.getPipeline(reduceSumShader, "main");
-      this.dispatch(pipeline, [currentBuffer, outBuffer, paramBuffer], [groups, 1, 1]);
-      await this.device!.queue.onSubmittedWorkDone();
+      const pipeline = getOrCreatePipeline(REDUCE_SUM_SHADER, "main");
+      dispatchCompute(pipeline, [currentBuffer, outBuffer, paramBuffer], [groups, 1, 1]);
+      await syncDevice();
       paramBuffer.destroy();
 
       if (currentBuffer !== source.buffer) {
@@ -365,15 +425,47 @@ export class TorchPyodideRuntime {
     return cloneHandle(meta);
   }
 
+  private async argReduce(tensorId: number, asMax: boolean): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    if (source.shape.length === 0) {
+      const outScalar = this.createStorageBuffer(4);
+      this.device!.queue.writeBuffer(outScalar, 0, new Int32Array([0]));
+      const meta = this.registerTensor(outScalar, [], "int32", 1);
+      return cloneHandle(meta);
+    }
+    const lastDim = source.shape[source.shape.length - 1]!;
+    if (lastDim <= 0) {
+      throw new Error("argmax/argmin require last dimension > 0.");
+    }
+    const batchSize = source.length / lastDim;
+    const outputShape = source.shape.length === 1 ? [] : source.shape.slice(0, -1);
+    const out = this.createStorageBuffer(Math.max(4, batchSize * 4));
+    const dims = new Uint32Array([batchSize, lastDim]);
+    const dimsBuffer = this.device!.createBuffer({
+      size: dims.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(dimsBuffer, 0, dims);
+    const shader = asMax ? ARGMAX_SHADER : ARGMIN_SHADER;
+    const entry = asMax ? "argmax" : "argmin";
+    const pipeline = getOrCreatePipeline(shader, entry);
+    dispatchCompute(pipeline, [source.buffer, out, dimsBuffer], [batchSize, 1, 1]);
+    await syncDevice();
+    dimsBuffer.destroy();
+    const meta = this.registerTensor(out, outputShape, "int32", batchSize);
+    return cloneHandle(meta);
+  }
+
   private async readScalar(buffer: GPUBuffer): Promise<number> {
     const readBuffer = this.device!.createBuffer({
       size: 4,
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+      usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ
     });
     const encoder = this.device!.createCommandEncoder();
     encoder.copyBufferToBuffer(buffer, 0, readBuffer, 0, 4);
     this.device!.queue.submit([encoder.finish()]);
-    await readBuffer.mapAsync(GPUMapMode.READ);
+    await readBuffer.mapAsync(MapMode.READ);
     const view = new Float32Array(readBuffer.getMappedRange().slice(0));
     const value = view[0];
     readBuffer.unmap();
@@ -408,7 +500,7 @@ export class TorchPyodideRuntime {
   private createStorageBuffer(size: number): GPUBuffer {
     return this.device!.createBuffer({
       size,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST
+      usage: BufferUsage.STORAGE | BufferUsage.COPY_SRC | BufferUsage.COPY_DST
     });
   }
 
@@ -430,25 +522,15 @@ export class TorchPyodideRuntime {
 
   private async initializeInternal(gpuProvider?: GPU | null): Promise<void> {
     this.initError = null;
-    const gpu = gpuProvider === undefined ? globalThis.navigator?.gpu : gpuProvider;
-    if (!gpu) {
+    if (gpuProvider === null) {
       this.initialized = false;
       this.initError = "WebGPU unavailable in this browser.";
       throw new Error(this.initError);
     }
-    let adapter = await gpu.requestAdapter({ powerPreference: "high-performance" });
-    if (!adapter) {
-      adapter = await gpu.requestAdapter();
-    }
-    if (!adapter) {
-      this.initialized = false;
-      this.initError = "Failed to request WebGPU adapter.";
-      throw new Error(this.initError);
-    }
-    const device = await adapter.requestDevice();
-    this.adapter = adapter;
-    this.device = device;
-    this.initialized = true;
+    await initWebGPU(gpuProvider ?? undefined);
+    this.device = getDevice() as GPUDevice;
+    this.adapter = getAdapter() as GPUAdapter;
+    this.initialized = isWebGPUInitialized();
   }
 
   private assertDeviceIndex(deviceIndex?: number): void {
@@ -501,44 +583,6 @@ export class TorchPyodideRuntime {
     }
   }
 
-  private getPipeline(shaderCode: string, entryPoint: string): GPUComputePipeline {
-    const key = `${entryPoint}:${shaderCode}`;
-    const cached = this.pipelineCache.get(key);
-    if (cached) {
-      return cached;
-    }
-    const module = this.device!.createShaderModule({ code: shaderCode });
-    const pipeline = this.device!.createComputePipeline({
-      layout: "auto",
-      compute: {
-        module,
-        entryPoint
-      }
-    });
-    this.pipelineCache.set(key, pipeline);
-    return pipeline;
-  }
-
-  private dispatch(
-    pipeline: GPUComputePipeline,
-    buffers: GPUBuffer[],
-    workgroups: [number, number, number]
-  ): void {
-    const bindGroup = this.device!.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: buffers.map((buffer, binding) => ({
-        binding,
-        resource: { buffer, offset: 0, size: buffer.size }
-      }))
-    });
-    const encoder = this.device!.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    pass.dispatchWorkgroups(workgroups[0], workgroups[1], workgroups[2]);
-    pass.end();
-    this.device!.queue.submit([encoder.finish()]);
-  }
 }
 
 export function installTorchRuntime(target: typeof globalThis = globalThis): TorchPyodideRuntime {

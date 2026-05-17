@@ -94,6 +94,12 @@ class FakeRuntime:
         size = _numel(shape)
         return self._new(shape, [1.0] * size, dtype)
 
+    def rand(self, shape: list[int], dtype: str) -> dict[str, object]:
+        self._ensure_ready()
+        size = _numel(shape)
+        vals = [((i * 1103515245 + 12345) % 65536) / 65535.0 for i in range(size)]
+        return self._new(shape, vals, dtype)
+
     def add(self, a_id: int, b_id: int) -> dict[str, object]:
         return self._binary(a_id, b_id, lambda a, b: a + b)
 
@@ -142,6 +148,52 @@ class FakeRuntime:
         values = [max(0.0, float(v)) for v in t["values"]]
         return self._new(list(t["shape"]), values, str(t["dtype"]))
 
+    def clamp(self, tensor_id: int, min_val: float, max_val: float) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [max(min(float(v), max_val), min_val) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def where(self, cond_id: int, x_id: int, y_id: int) -> dict[str, object]:
+        cond = self.store[cond_id]
+        x = self.store[x_id]
+        y = self.store[y_id]
+        out = []
+        for c, xv, yv in zip(cond["values"], x["values"], y["values"]):
+            out.append(float(xv) if float(c) > 0.0 else float(yv))
+        return self._new(list(x["shape"]), out, str(x["dtype"]))
+
+    def argmax(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        vals = [float(v) for v in t["values"]]
+        if len(shape) == 1:
+            idx = max(range(shape[0]), key=lambda i: vals[i]) if shape[0] > 0 else 0
+            return self._new([], [float(idx)], "int32")
+        last = int(shape[-1])
+        batch = _numel(shape[:-1])
+        out = []
+        for b in range(batch):
+            start = b * last
+            idx = max(range(last), key=lambda i: vals[start + i])
+            out.append(float(idx))
+        return self._new(shape[:-1], out, "int32")
+
+    def argmin(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        vals = [float(v) for v in t["values"]]
+        if len(shape) == 1:
+            idx = min(range(shape[0]), key=lambda i: vals[i]) if shape[0] > 0 else 0
+            return self._new([], [float(idx)], "int32")
+        last = int(shape[-1])
+        batch = _numel(shape[:-1])
+        out = []
+        for b in range(batch):
+            start = b * last
+            idx = min(range(last), key=lambda i: vals[start + i])
+            out.append(float(idx))
+        return self._new(shape[:-1], out, "int32")
+
     def reshape(self, tensor_id: int, shape: list[int]) -> dict[str, object]:
         t = self.store[tensor_id]
         return self._new(shape, list(t["values"]), str(t["dtype"]))
@@ -187,6 +239,11 @@ def test_torch_public_contract(monkeypatch):
     f = torch_mod.div(e, torch_mod.tensor([[1.0, 5.0], [1.0, 3.0]]))
     g = torch_mod.relu(f)
     h = torch_mod.matmul(a, torch_mod.tensor([[1.0, 0.0], [0.0, 1.0]]))
+    clamped = torch_mod.clamp(torch_mod.tensor([[-1.0, 0.5], [2.5, 0.2]]), 0.0, 1.0)
+    chosen = torch_mod.where(torch_mod.tensor([[1.0, 0.0], [0.0, 2.0]]), a, b)
+    ix_max = torch_mod.argmax(torch_mod.tensor([[1.0, 3.0], [5.0, 4.0]]))
+    ix_min = torch_mod.argmin(torch_mod.tensor([[1.0, 3.0], [5.0, 4.0]]))
+    rnd = torch_mod.rand((2, 2))
 
     assert c.tolist() == [[2.0, 3.0], [4.0, 5.0]]
     assert d.tolist() == [[4.0, 6.0], [8.0, 10.0]]
@@ -194,6 +251,12 @@ def test_torch_public_contract(monkeypatch):
     assert f.tolist() == [[3.0, 1.0], [7.0, 3.0]]
     assert g.tolist() == [[3.0, 1.0], [7.0, 3.0]]
     assert h.tolist() == [[1.0, 2.0], [3.0, 4.0]]
+    assert clamped.tolist() == [[0.0, 0.5], [1.0, 0.2]]
+    assert chosen.tolist() == [[1.0, 1.0], [1.0, 4.0]]
+    assert ix_max.tolist() == [1.0, 0.0]
+    assert ix_min.tolist() == [0.0, 1.0]
+    assert tuple(rnd.shape) == (2, 2)
+    assert all(0.0 <= float(v) <= 1.0 for row in rnd.tolist() for v in row)
     assert d.sum().tolist() == 28.0
     assert d.mean().tolist() == 7.0
     assert g.reshape((4,)).tolist() == [3.0, 1.0, 7.0, 3.0]

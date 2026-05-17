@@ -83,6 +83,24 @@ class Tensor:
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
+    def clamp(self, min: float, max: float) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.clamp(self._id, float(min), float(max)))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def argmax(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.argmax(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def argmin(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.argmin(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
     def reshape(self, shape: int | Sequence[int]) -> "Tensor":
         runtime = _get_runtime()
         normalized = _normalize_shape(shape)
@@ -182,5 +200,20 @@ def ones_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tenso
     runtime = _get_runtime()
     normalized = _normalize_shape(shape)
     meta = _run_js_awaitable(runtime.ones(normalized, dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def rand_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
+    runtime = _get_runtime()
+    normalized = _normalize_shape(shape)
+    meta = _run_js_awaitable(runtime.rand(normalized, dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def where_from_tensors(condition: Tensor, x: Tensor, y: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.where(condition._id, x._id, y._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)

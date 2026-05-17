@@ -3,9 +3,33 @@ from __future__ import annotations
 from typing import Sequence
 
 from . import cuda
-from ._tensor import Tensor, ones_from_shape, tensor_from_data, zeros_from_shape
+from ._tensor import (
+    Tensor,
+    ones_from_shape,
+    rand_from_shape,
+    tensor_from_data,
+    where_from_tensors,
+    zeros_from_shape,
+)
 
-__all__ = ["Tensor", "cuda", "tensor", "zeros", "ones", "add", "sub", "mul", "div", "matmul", "relu"]
+__all__ = [
+    "Tensor",
+    "cuda",
+    "tensor",
+    "zeros",
+    "ones",
+    "rand",
+    "add",
+    "sub",
+    "mul",
+    "div",
+    "matmul",
+    "relu",
+    "clamp",
+    "where",
+    "argmax",
+    "argmin",
+]
 
 
 def tensor(data: object, dtype: str = "float32") -> Tensor:
@@ -18,6 +42,10 @@ def zeros(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
 
 def ones(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
     return ones_from_shape(shape, dtype=dtype)
+
+
+def rand(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
+    return rand_from_shape(shape, dtype=dtype)
 
 
 def add(a: Tensor, b: Tensor) -> Tensor:
@@ -42,3 +70,19 @@ def matmul(a: Tensor, b: Tensor) -> Tensor:
 
 def relu(x: Tensor) -> Tensor:
     return x.relu()
+
+
+def clamp(x: Tensor, min: float, max: float) -> Tensor:
+    return x.clamp(min=min, max=max)
+
+
+def where(condition: Tensor, x: Tensor, y: Tensor) -> Tensor:
+    return where_from_tensors(condition, x, y)
+
+
+def argmax(x: Tensor) -> Tensor:
+    return x.argmax()
+
+
+def argmin(x: Tensor) -> Tensor:
+    return x.argmin()
