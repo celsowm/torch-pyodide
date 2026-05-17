@@ -261,6 +261,112 @@ class FakeRuntime:
         t = self.store[tensor_id]
         return self._new(shape, list(t["values"]), str(t["dtype"]))
 
+    def flatten(self, tensor_id: int, start_dim: int = 0, end_dim: int = -1) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        rank = len(shape)
+        if rank == 0:
+            return self._new([1], list(t["values"]), str(t["dtype"]))
+        start = start_dim if start_dim >= 0 else start_dim + rank
+        end = end_dim if end_dim >= 0 else end_dim + rank
+        if start < 0 or end < 0 or start >= rank or end >= rank or start > end:
+            raise RuntimeError("invalid flatten dims")
+        middle = _numel(shape[start : end + 1])
+        out_shape = shape[:start] + [middle] + shape[end + 1 :]
+        return self._new(out_shape, list(t["values"]), str(t["dtype"]))
+
+    def squeeze(self, tensor_id: int, dim: int | None = None) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        if dim is None:
+            out_shape = [d for d in shape if d != 1]
+        else:
+            rank = len(shape)
+            resolved = dim if dim >= 0 else dim + rank
+            if resolved < 0 or resolved >= rank:
+                raise RuntimeError("dim out of range")
+            out_shape = list(shape)
+            if out_shape[resolved] == 1:
+                out_shape.pop(resolved)
+        return self._new(out_shape, list(t["values"]), str(t["dtype"]))
+
+    def unsqueeze(self, tensor_id: int, dim: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        rank = len(shape)
+        resolved = dim if dim >= 0 else dim + rank + 1
+        if resolved < 0 or resolved > rank:
+            raise RuntimeError("dim out of range")
+        out_shape = list(shape)
+        out_shape.insert(resolved, 1)
+        return self._new(out_shape, list(t["values"]), str(t["dtype"]))
+
+    def transpose(self, tensor_id: int, dim0: int, dim1: int) -> dict[str, object]:
+        return self.permute(tensor_id, _swap_dims(list(range(len(self.store[tensor_id]["shape"]))), dim0, dim1))
+
+    def permute(self, tensor_id: int, dims: list[int]) -> dict[str, object]:
+        t = self.store[tensor_id]
+        in_shape = list(t["shape"])
+        rank = len(in_shape)
+        norm = [d if d >= 0 else d + rank for d in dims]
+        if len(norm) != rank or len(set(norm)) != rank:
+            raise RuntimeError("invalid permute dims")
+        out_shape = [in_shape[d] for d in norm]
+        in_vals = [float(v) for v in t["values"]]
+        in_strides = _strides(in_shape)
+        out_strides = _strides(out_shape)
+        out = [0.0] * len(in_vals)
+        for out_idx in range(len(out)):
+            out_coords = _coords(out_idx, out_shape, out_strides)
+            in_coords = [0] * rank
+            for i, axis in enumerate(norm):
+                in_coords[axis] = out_coords[i]
+            in_idx = sum(c * s for c, s in zip(in_coords, in_strides))
+            out[out_idx] = in_vals[in_idx]
+        return self._new(out_shape, out, str(t["dtype"]))
+
+    def select(self, tensor_id: int, dim: int, index: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        in_shape = list(t["shape"])
+        rank = len(in_shape)
+        resolved_dim = dim if dim >= 0 else dim + rank
+        axis = in_shape[resolved_dim]
+        resolved_index = index if index >= 0 else index + axis
+        out_shape = in_shape[:resolved_dim] + in_shape[resolved_dim + 1 :]
+        out = []
+        values = [float(v) for v in t["values"]]
+        in_strides = _strides(in_shape)
+        out_strides = _strides(out_shape)
+        out_len = max(1, _numel(out_shape))
+        for out_idx in range(out_len):
+            out_coords = [] if len(out_shape) == 0 else _coords(out_idx, out_shape, out_strides)
+            in_coords = out_coords[:resolved_dim] + [resolved_index] + out_coords[resolved_dim:]
+            idx = sum(c * s for c, s in zip(in_coords, in_strides))
+            out.append(values[idx])
+        return self._new(out_shape, out, str(t["dtype"]))
+
+    def slice(self, tensor_id: int, dim: int, start: int | None = None, end: int | None = None, step: int = 1) -> dict[str, object]:
+        t = self.store[tensor_id]
+        in_shape = list(t["shape"])
+        rank = len(in_shape)
+        resolved_dim = dim if dim >= 0 else dim + rank
+        axis = in_shape[resolved_dim]
+        rng = list(range(axis))[slice(start, end, step)]
+        out_shape = list(in_shape)
+        out_shape[resolved_dim] = len(rng)
+        values = [float(v) for v in t["values"]]
+        in_strides = _strides(in_shape)
+        out_strides = _strides(out_shape)
+        out_len = _numel(out_shape)
+        out = [0.0] * out_len
+        for out_idx in range(out_len):
+            out_coords = _coords(out_idx, out_shape, out_strides)
+            in_coords = list(out_coords)
+            in_coords[resolved_dim] = rng[out_coords[resolved_dim]]
+            idx = sum(c * s for c, s in zip(in_coords, in_strides))
+            out[out_idx] = values[idx]
+        return self._new(out_shape, out, str(t["dtype"]))
+
     def transpose2d(self, tensor_id: int) -> dict[str, object]:
         t = self.store[tensor_id]
         rows, cols = int(t["shape"][0]), int(t["shape"][1])
@@ -289,6 +395,35 @@ def _numel(shape: list[int]) -> int:
     for d in shape:
         size *= int(d)
     return size
+
+
+def _strides(shape: list[int]) -> list[int]:
+    if len(shape) == 0:
+        return []
+    out = [0] * len(shape)
+    running = 1
+    for i in range(len(shape) - 1, -1, -1):
+        out[i] = running
+        running *= int(shape[i])
+    return out
+
+
+def _coords(index: int, shape: list[int], strides: list[int]) -> list[int]:
+    rem = index
+    coords: list[int] = []
+    for i in range(len(shape)):
+        stride = strides[i]
+        coords.append(rem // stride)
+        rem %= stride
+    return coords
+
+
+def _swap_dims(dims: list[int], d0: int, d1: int) -> list[int]:
+    n = len(dims)
+    r0 = d0 if d0 >= 0 else d0 + n
+    r1 = d1 if d1 >= 0 else d1 + n
+    dims[r0], dims[r1] = dims[r1], dims[r0]
+    return dims
 
 
 def test_torch_public_contract(monkeypatch):
@@ -351,6 +486,16 @@ def test_torch_public_contract(monkeypatch):
     assert g.reshape((4,)).tolist() == [3.0, 1.0, 7.0, 3.0]
     assert g.T.tolist() == [[3.0, 7.0], [1.0, 3.0]]
     assert g.to_list() == g.tolist()
+    assert torch_mod.reshape(g, (4,)).tolist() == [3.0, 1.0, 7.0, 3.0]
+    assert torch_mod.flatten(torch_mod.tensor([[[1.0], [2.0]], [[3.0], [4.0]]]), 1, 2).tolist() == [[1.0, 2.0], [3.0, 4.0]]
+    assert torch_mod.squeeze(torch_mod.tensor([[[1.0, 2.0]]])).shape == (2,)
+    assert torch_mod.unsqueeze(torch_mod.tensor([1.0, 2.0]), 0).shape == (1, 2)
+    assert torch_mod.transpose(torch_mod.tensor([[1.0, 2.0], [3.0, 4.0]]), 0, 1).tolist() == [[1.0, 3.0], [2.0, 4.0]]
+    assert torch_mod.permute(torch_mod.tensor([[[1.0, 2.0]], [[3.0, 4.0]]]), (2, 0, 1)).shape == (2, 2, 1)
+    assert torch_mod.select(torch_mod.tensor([[1.0, 2.0], [3.0, 4.0]]), 0, 1).tolist() == [3.0, 4.0]
+    assert torch_mod.slice(torch_mod.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]), 0, 0, 3, 2).tolist() == [[1.0, 2.0], [5.0, 6.0]]
+    assert torch_mod.tensor([[1.0, 2.0], [3.0, 4.0]])[1].tolist() == [3.0, 4.0]
+    assert torch_mod.tensor([1.0, 2.0, 3.0, 4.0])[1:4:2].tolist() == [2.0, 4.0]
     assert tuple(a.shape) == (2, 2)
     assert a.dtype == "float32"
 

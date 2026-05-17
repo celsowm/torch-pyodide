@@ -322,6 +322,54 @@ export class TorchPyodideRuntime {
     return cloneHandle(meta);
   }
 
+  async flatten(tensorId: number, startDim = 0, endDim = -1): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const rank = source.shape.length;
+    if (rank === 0) {
+      return this.reshape(tensorId, [1]);
+    }
+    const start = this.normalizeDim(startDim, rank);
+    const end = this.normalizeDim(endDim, rank);
+    if (start > end) {
+      throw new Error(`flatten expected start_dim <= end_dim, got ${startDim} > ${endDim}.`);
+    }
+    const prefix = source.shape.slice(0, start);
+    const middle = product(source.shape.slice(start, end + 1));
+    const suffix = source.shape.slice(end + 1);
+    return this.reshape(tensorId, [...prefix, middle, ...suffix]);
+  }
+
+  async squeeze(tensorId: number, dim?: number): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    let outShape: number[];
+    if (dim === undefined || dim === null) {
+      outShape = source.shape.filter((value) => value !== 1);
+    } else {
+      const resolved = this.normalizeDim(dim, source.shape.length);
+      outShape = [...source.shape];
+      if (outShape[resolved] !== 1) {
+        return this.reshape(tensorId, outShape);
+      }
+      outShape.splice(resolved, 1);
+    }
+    return this.reshape(tensorId, outShape);
+  }
+
+  async unsqueeze(tensorId: number, dim: number): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const rank = source.shape.length;
+    const resolved = dim < 0 ? dim + rank + 1 : dim;
+    if (resolved < 0 || resolved > rank) {
+      throw new Error(`unsqueeze dim out of range for rank ${rank}: ${dim}.`);
+    }
+    const outShape = [...source.shape];
+    outShape.splice(resolved, 0, 1);
+    return this.reshape(tensorId, outShape);
+  }
+
   async transpose2d(tensorId: number): Promise<TensorHandle> {
     await this.ensureReady();
     const source = this.getTensor(tensorId);
@@ -342,6 +390,115 @@ export class TorchPyodideRuntime {
     dimsBuffer.destroy();
     const meta = this.registerTensor(out, [cols, rows], source.dtype, source.length);
     return cloneHandle(meta);
+  }
+
+  async transpose(tensorId: number, dim0: number, dim1: number): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const rank = source.shape.length;
+    const d0 = this.normalizeDim(dim0, rank);
+    const d1 = this.normalizeDim(dim1, rank);
+    if (rank === 2 && ((d0 === 0 && d1 === 1) || (d0 === 1 && d1 === 0))) {
+      return this.transpose2d(tensorId);
+    }
+    const perm = [...Array(rank).keys()];
+    [perm[d0], perm[d1]] = [perm[d1]!, perm[d0]!];
+    return this.permute(tensorId, perm);
+  }
+
+  async permute(tensorId: number, dims: number[]): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const rank = source.shape.length;
+    if (dims.length !== rank) {
+      throw new Error(`permute dims length ${dims.length} must match rank ${rank}.`);
+    }
+    const normalized = dims.map((dim) => this.normalizeDim(dim, rank));
+    if (new Set(normalized).size !== rank) {
+      throw new Error("permute dims must be a permutation without repeats.");
+    }
+    const values = await this.toList(tensorId);
+    const inStrides = this.computeStrides(source.shape);
+    const outShape = normalized.map((axis) => source.shape[axis]!);
+    const outStrides = this.computeStrides(outShape);
+    const out = new Array<number>(source.length);
+    for (let outIdx = 0; outIdx < source.length; outIdx += 1) {
+      const outCoords = this.linearToCoords(outIdx, outShape, outStrides);
+      const inCoords = new Array<number>(rank);
+      for (let i = 0; i < rank; i += 1) {
+        inCoords[normalized[i]!] = outCoords[i]!;
+      }
+      const inIdx = this.coordsToLinear(inCoords, inStrides);
+      out[outIdx] = values[inIdx]!;
+    }
+    return this.tensorFromData(out, outShape, source.dtype);
+  }
+
+  async select(tensorId: number, dim: number, index: number): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const rank = source.shape.length;
+    if (rank === 0) {
+      throw new Error("select is not supported for scalar tensors.");
+    }
+    const resolvedDim = this.normalizeDim(dim, rank);
+    const axisSize = source.shape[resolvedDim]!;
+    const resolvedIndex = index < 0 ? index + axisSize : index;
+    if (resolvedIndex < 0 || resolvedIndex >= axisSize) {
+      throw new Error(`select index out of range for dim ${dim}: ${index}.`);
+    }
+    const values = await this.toList(tensorId);
+    const inShape = source.shape;
+    const inStrides = this.computeStrides(inShape);
+    const outShape = inShape.slice(0, resolvedDim).concat(inShape.slice(resolvedDim + 1));
+    const outLength = Math.max(1, product(outShape));
+    const out = new Array<number>(outLength);
+    const outStrides = this.computeStrides(outShape);
+    for (let outIdx = 0; outIdx < outLength; outIdx += 1) {
+      const outCoords = outShape.length === 0 ? [] : this.linearToCoords(outIdx, outShape, outStrides);
+      const inCoords = [...outCoords.slice(0, resolvedDim), resolvedIndex, ...outCoords.slice(resolvedDim)];
+      out[outIdx] = values[this.coordsToLinear(inCoords, inStrides)]!;
+    }
+    return this.tensorFromData(out, outShape, source.dtype);
+  }
+
+  async slice(
+    tensorId: number,
+    dim: number,
+    start?: number,
+    end?: number,
+    step = 1
+  ): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    if (step === 0) {
+      throw new Error("slice step must be non-zero.");
+    }
+    const rank = source.shape.length;
+    const resolvedDim = this.normalizeDim(dim, rank);
+    const axisSize = source.shape[resolvedDim]!;
+    const normalizedStart = this.normalizeSliceStart(start, axisSize, step);
+    const normalizedEnd = this.normalizeSliceEnd(end, axisSize, step);
+    const axisIndices: number[] = [];
+    if (step > 0) {
+      for (let i = normalizedStart; i < normalizedEnd; i += step) axisIndices.push(i);
+    } else {
+      for (let i = normalizedStart; i > normalizedEnd; i += step) axisIndices.push(i);
+    }
+    const outShape = [...source.shape];
+    outShape[resolvedDim] = axisIndices.length;
+    const outLength = product(outShape);
+    const out = new Array<number>(outLength);
+    const values = await this.toList(tensorId);
+    const inStrides = this.computeStrides(source.shape);
+    const outStrides = this.computeStrides(outShape);
+    for (let outIdx = 0; outIdx < outLength; outIdx += 1) {
+      const outCoords = this.linearToCoords(outIdx, outShape, outStrides);
+      const inCoords = [...outCoords];
+      inCoords[resolvedDim] = axisIndices[outCoords[resolvedDim]!]!;
+      out[outIdx] = values[this.coordsToLinear(inCoords, inStrides)]!;
+    }
+    return this.tensorFromData(out, outShape, source.dtype);
   }
 
   async toList(tensorId: number): Promise<number[]> {
@@ -686,6 +843,75 @@ export class TorchPyodideRuntime {
     if (dtype !== "float32") {
       throw new Error(`${op} currently supports only float32 tensors, received: ${dtype}.`);
     }
+  }
+
+  private normalizeDim(dim: number, rank: number): number {
+    if (rank === 0) {
+      throw new Error("operation requires at least 1 dimension.");
+    }
+    const resolved = dim < 0 ? dim + rank : dim;
+    if (resolved < 0 || resolved >= rank) {
+      throw new Error(`dim out of range for rank ${rank}: ${dim}.`);
+    }
+    return resolved;
+  }
+
+  private computeStrides(shape: number[]): number[] {
+    if (shape.length === 0) {
+      return [];
+    }
+    const strides = new Array<number>(shape.length);
+    let running = 1;
+    for (let i = shape.length - 1; i >= 0; i -= 1) {
+      strides[i] = running;
+      running *= shape[i]!;
+    }
+    return strides;
+  }
+
+  private linearToCoords(index: number, shape: number[], strides: number[]): number[] {
+    const coords = new Array<number>(shape.length);
+    let remaining = index;
+    for (let i = 0; i < shape.length; i += 1) {
+      const stride = strides[i]!;
+      coords[i] = Math.floor(remaining / stride);
+      remaining %= stride;
+    }
+    return coords;
+  }
+
+  private coordsToLinear(coords: number[], strides: number[]): number {
+    let out = 0;
+    for (let i = 0; i < coords.length; i += 1) {
+      out += coords[i]! * strides[i]!;
+    }
+    return out;
+  }
+
+  private normalizeSliceStart(start: number | undefined, size: number, step: number): number {
+    if (start === undefined) {
+      return step > 0 ? 0 : size - 1;
+    }
+    let value = start < 0 ? start + size : start;
+    if (step > 0) {
+      value = Math.max(0, Math.min(size, value));
+    } else {
+      value = Math.max(-1, Math.min(size - 1, value));
+    }
+    return value;
+  }
+
+  private normalizeSliceEnd(end: number | undefined, size: number, step: number): number {
+    if (end === undefined) {
+      return step > 0 ? size : -1;
+    }
+    let value = end < 0 ? end + size : end;
+    if (step > 0) {
+      value = Math.max(0, Math.min(size, value));
+    } else {
+      value = Math.max(-1, Math.min(size - 1, value));
+    }
+    return value;
   }
 
 }

@@ -28,7 +28,7 @@ test("demo falls back to local-dev when published install is forced to fail", as
   expect(status.installMode).toBe("local-dev");
   expect(String(status.installDetail)).toContain("Forced published install failure");
   if (!status.ok) {
-    expect(String(status.error)).toContain("Failed to request WebGPU adapter");
+    expect(String(status.error)).toMatch(/Failed to (request|get) WebGPU adapter/);
   }
 });
 
@@ -43,12 +43,16 @@ test("playground loads examples dropdown and runs selected code", async ({ page 
     if (!output || !output.textContent) {
       return false;
     }
-    return output.textContent.includes('"shape"') || output.textContent.includes("Failed to request WebGPU adapter");
+    return (
+      output.textContent.includes('"shape"') ||
+      output.textContent.includes("Failed to request WebGPU adapter") ||
+      output.textContent.includes("Failed to get WebGPU adapter")
+    );
   });
 
   const outputText = await page.locator("#output").innerText();
-  if (outputText.includes("Failed to request WebGPU adapter")) {
-    expect(outputText).toContain("Failed to request WebGPU adapter");
+  if (outputText.includes("Failed to request WebGPU adapter") || outputText.includes("Failed to get WebGPU adapter")) {
+    expect(outputText).toMatch(/Failed to (request|get) WebGPU adapter/);
   } else {
     expect(outputText).toContain('"shape"');
     expect(outputText).toContain('"values"');

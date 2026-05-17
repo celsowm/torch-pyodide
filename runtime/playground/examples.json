@@ -60,6 +60,21 @@
       "id": "unary_sqrt_exp_log",
       "label": "Unary Sqrt + Exp + Log",
       "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 4.0], [9.0, 16.0]])\ny = torch.tensor([[0.0, 1.0], [2.0, 0.0]])\nz = torch.tensor([[1.0, 2.718281828], [7.389056099, 1.0]])\nout = {\n  \"sqrt\": torch.sqrt(x).tolist(),\n  \"exp\": torch.exp(y).tolist(),\n  \"log\": torch.log(z).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "shape_flatten_squeeze",
+      "label": "Shape Flatten + Squeeze",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[[1.0], [2.0]], [[3.0], [4.0]]])\nout = {\n  \"input_shape\": list(x.shape),\n  \"flatten_1_2\": torch.flatten(x, 1, 2).tolist(),\n  \"squeeze_all_shape\": list(torch.squeeze(x).shape),\n  \"unsqueeze_dim0_shape\": list(torch.unsqueeze(torch.tensor([1.0, 2.0]), 0).shape),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "shape_transpose_permute",
+      "label": "Shape Transpose + Permute",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[[1.0, 2.0]], [[3.0, 4.0]]])\nt = torch.transpose(torch.tensor([[1.0, 2.0], [3.0, 4.0]]), 0, 1)\np = torch.permute(x, (2, 0, 1))\nout = {\n  \"transpose\": t.tolist(),\n  \"permute_shape\": list(p.shape),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "index_select_slice",
+      "label": "Index Select + Slice",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nout = {\n  \"select_row_1\": torch.select(x, 0, 1).tolist(),\n  \"slice_rows_0_3_step2\": torch.slice(x, 0, 0, 3, 2).tolist(),\n  \"getitem_row_1\": x[1].tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
     }
   ]
 }

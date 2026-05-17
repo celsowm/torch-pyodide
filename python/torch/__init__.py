@@ -42,6 +42,14 @@ __all__ = [
     "where",
     "argmax",
     "argmin",
+    "reshape",
+    "flatten",
+    "squeeze",
+    "unsqueeze",
+    "transpose",
+    "permute",
+    "select",
+    "slice",
 ]
 
 
@@ -140,3 +148,35 @@ def argmax(x: Tensor) -> Tensor:
 
 def argmin(x: Tensor) -> Tensor:
     return x.argmin()
+
+
+def reshape(input: Tensor, shape: int | Sequence[int]) -> Tensor:
+    return input.reshape(shape)
+
+
+def flatten(input: Tensor, start_dim: int = 0, end_dim: int = -1) -> Tensor:
+    return input.flatten(start_dim=start_dim, end_dim=end_dim)
+
+
+def squeeze(input: Tensor, dim: int | None = None) -> Tensor:
+    return input.squeeze(dim=dim)
+
+
+def unsqueeze(input: Tensor, dim: int) -> Tensor:
+    return input.unsqueeze(dim=dim)
+
+
+def transpose(input: Tensor, dim0: int, dim1: int) -> Tensor:
+    return input.transpose(dim0=dim0, dim1=dim1)
+
+
+def permute(input: Tensor, dims: Sequence[int]) -> Tensor:
+    return input.permute(dims=dims)
+
+
+def select(input: Tensor, dim: int, index: int) -> Tensor:
+    return input.select(dim=dim, index=index)
+
+
+def slice(input: Tensor, dim: int, start: int | None = None, end: int | None = None, step: int = 1) -> Tensor:
+    return input.slice(dim=dim, start=start, end=end, step=step)

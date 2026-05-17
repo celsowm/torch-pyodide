@@ -138,6 +138,61 @@ class Tensor:
         tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, out_shape, out_dtype)
 
+    def view(self, *shape: int) -> "Tensor":
+        normalized = _normalize_shape_from_args(shape)
+        return self.reshape(normalized)
+
+    def flatten(self, start_dim: int = 0, end_dim: int = -1) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.flatten(self._id, int(start_dim), int(end_dim)))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    def squeeze(self, dim: int | None = None) -> "Tensor":
+        runtime = _get_runtime()
+        if dim is None:
+            meta = _run_js_awaitable(runtime.squeeze(self._id))
+        else:
+            meta = _run_js_awaitable(runtime.squeeze(self._id, int(dim)))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    def unsqueeze(self, dim: int) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.unsqueeze(self._id, int(dim)))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    def transpose(self, dim0: int, dim1: int) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.transpose(self._id, int(dim0), int(dim1)))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    def permute(self, dims: Sequence[int]) -> "Tensor":
+        runtime = _get_runtime()
+        normalized = [int(v) for v in dims]
+        meta = _run_js_awaitable(runtime.permute(self._id, normalized))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    def select(self, dim: int, index: int) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.select(self._id, int(dim), int(index)))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    def slice(self, dim: int, start: int | None = None, end: int | None = None, step: int = 1) -> "Tensor":
+        runtime = _get_runtime()
+        if start is None and end is None:
+            meta = _run_js_awaitable(runtime.slice(self._id, int(dim), None, None, int(step)))
+        elif end is None:
+            meta = _run_js_awaitable(runtime.slice(self._id, int(dim), int(start), None, int(step)))
+        else:
+            meta = _run_js_awaitable(runtime.slice(self._id, int(dim), int(start) if start is not None else None, int(end), int(step)))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
     @property
     def T(self) -> "Tensor":
         runtime = _get_runtime()
@@ -157,6 +212,13 @@ class Tensor:
     def destroy(self) -> None:
         runtime = _get_runtime()
         _run_js_awaitable(runtime.destroy(self._id))
+
+    def __getitem__(self, key: object) -> object:
+        if isinstance(key, int):
+            return self.select(0, key)
+        if isinstance(key, slice):
+            return self.slice(0, key.start, key.stop, 1 if key.step is None else int(key.step))
+        raise TypeError("Tensor indexing supports only int or slice in MVP.")
 
 
 def _infer_shape(data: object) -> list[int]:
@@ -192,6 +254,12 @@ def _normalize_shape(shape: int | Sequence[int]) -> list[int]:
     return normalized
 
 
+def _normalize_shape_from_args(shape: Sequence[int]) -> list[int]:
+    if len(shape) == 1 and isinstance(shape[0], (list, tuple)):
+        return _normalize_shape(shape[0])
+    return _normalize_shape([int(v) for v in shape])
+
+
 def _coerce_out_value(value: float, dtype: str) -> object:
     if dtype == "bool":
         return bool(value)
@@ -200,7 +268,7 @@ def _coerce_out_value(value: float, dtype: str) -> object:
     return float(value)
 
 
-def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str) -> object:
+def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str = "float32") -> object:
     if len(shape) == 0:
         return _coerce_out_value(float(flat[0]), dtype) if flat else _coerce_out_value(0.0, dtype)
     if len(shape) == 1:
