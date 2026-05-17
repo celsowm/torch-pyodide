@@ -16,7 +16,12 @@ type PyodideApi = {
 type LoadPyodideFn = (config: { indexURL: string }) => Promise<PyodideApi>;
 
 async function resolvePyodideIndexURL(): Promise<string> {
+  const hostname = globalThis.location?.hostname ?? "";
+  const localHost = isLocalhostHost(hostname);
   const local = "/pyodide/";
+  if (!localHost) {
+    return "https://cdn.jsdelivr.net/pyodide/v0.29.4/full/";
+  }
   try {
     const response = await fetch(`${local}pyodide.mjs`, { method: "HEAD" });
     if (response.ok) {
