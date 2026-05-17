@@ -71,7 +71,7 @@ export class UnaryOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const length = product(meta.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const params = new Float32Array([alpha]);
+    const params = new Float32Array([alpha, 0, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,

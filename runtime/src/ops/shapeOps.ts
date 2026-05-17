@@ -273,7 +273,7 @@ export class ShapeOps {
   private async transpose2dImpl(meta: TensorMeta): Promise<TensorHandle> {
     const [rows, cols] = meta.shape;
     const out = createStorageBuffer(this.deviceMgr.device!, meta.bytes);
-    const params = new Uint32Array([rows, cols]);
+    const params = new Uint32Array([rows, cols, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,

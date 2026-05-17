@@ -25,7 +25,7 @@ export class MaskingOps {
     const trueCount = maskData.filter(v => v !== 0).length;
 
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, trueCount * 4));
-    const params = new Uint32Array([length, trueCount]);
+    const params = new Uint32Array([length, trueCount, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
@@ -50,7 +50,7 @@ export class MaskingOps {
     this.deviceMgr.device!.queue.submit([encoder.finish()]);
 
     const fillValue = coerceScalarByDType(value, meta.dtype as SupportedDType);
-    const params = new Float32Array([fillValue, length]);
+    const params = new Float32Array([fillValue, length, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,

@@ -70,7 +70,7 @@ export class ReductionOps {
       const groups = Math.ceil(currentLength / WORKGROUP_SIZE);
       const outSize = Math.max(4, groups * 4);
       const out = createStorageBuffer(this.deviceMgr.device!, outSize);
-      const params = new Uint32Array([currentLength]);
+      const params = new Uint32Array([currentLength, 0, 0, 0]);
       const paramBuffer = device.createBuffer({
         size: params.byteLength,
         usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
@@ -145,7 +145,7 @@ export class ReductionOps {
     const batchElements = product(meta.shape.slice(0, -1));
     const reduceDim = meta.shape[meta.shape.length - 1]!;
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, batchElements * 4));
-    const params = new Uint32Array([reduceDim, batchElements]);
+    const params = new Uint32Array([reduceDim, batchElements, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,

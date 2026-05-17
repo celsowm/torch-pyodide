@@ -61,7 +61,7 @@ export class ArithmeticOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const length = product(meta.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const params = new Float32Array([minVal, maxVal, length]);
+    const params = new Float32Array([minVal, maxVal, length, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
@@ -85,7 +85,7 @@ export class ArithmeticOps {
     const [k2, n] = b.shape;
     if (k !== k2) throw new Error(`matmul dimension mismatch: [${m},${k}] x [${k2},${n}].`);
     const out = createStorageBuffer(this.deviceMgr.device!, m * n * 4);
-    const params = new Uint32Array([m, k, n]);
+    const params = new Uint32Array([m, k, n, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
