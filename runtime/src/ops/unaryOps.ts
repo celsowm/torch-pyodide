@@ -15,6 +15,19 @@ import { DeviceManager } from "./device.js";
 
 const FLOAT32_ONLY_OPS = new Set(["relu", "sqrt", "exp", "log", "sigmoid", "tanh", "sin", "cos", "gelu", "silu"]);
 
+const ENTRYPOINT_MAP: Record<string, string> = {
+  abs: "abs_op",
+  sqrt: "sqrt_op",
+  exp: "exp_op",
+  log: "log_op",
+  tanh: "tanh_op",
+  sin: "sin_op",
+  cos: "cos_op",
+  silu: "silu_op",
+  gelu: "gelu",
+  neg: "neg",
+};
+
 export class UnaryOps {
   constructor(private deviceMgr: DeviceManager) {}
 
@@ -126,7 +139,7 @@ export class UnaryOps {
     }
     const length = product(meta.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const pipeline = getOrCreatePipeline(UNARY_SHADER, entrypoint);
+    const pipeline = getOrCreatePipeline(UNARY_SHADER, ENTRYPOINT_MAP[entrypoint] || entrypoint);
     dispatchCompute(pipeline, [meta.buffer, out], calculateWorkgroups(length));
     await syncDevice();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
