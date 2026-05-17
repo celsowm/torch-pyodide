@@ -37,6 +37,8 @@ type TensorHandle = {
   dtype: string;
 };
 
+type SupportedDType = "float32" | "int32" | "bool";
+
 function product(values: number[]): number {
   return values.reduce((acc, value) => acc * value, 1);
 }
@@ -70,7 +72,7 @@ export class TorchPyodideRuntime {
     if (length !== data.length) {
       throw new Error(`tensorFromData expected ${length} values, got ${data.length}.`);
     }
-    const typed = new Float32Array(data);
+    const typed = new Float32Array(data.map((value) => this.coerceScalarByDType(value, dtype as SupportedDType)));
     const buffer = this.createStorageBuffer(typed.byteLength);
     this.device!.queue.writeBuffer(buffer, 0, typed);
     const meta = this.registerTensor(buffer, shape, dtype, length);
@@ -104,6 +106,55 @@ export class TorchPyodideRuntime {
     return cloneHandle(meta);
   }
 
+  async randn(shape: number[], dtype: string): Promise<TensorHandle> {
+    await this.ensureReady();
+    this.assertDType(dtype);
+    const length = product(shape);
+    const out = this.createStorageBuffer(Math.max(4, length * 4));
+    const paramsData = new Uint32Array([Math.floor(Math.random() * 0xffffffff), length]);
+    const paramsBuffer = this.device!.createBuffer({
+      size: paramsData.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+    const pipeline = getOrCreatePipeline(RANDOM_SHADER, "randn");
+    dispatchCompute(pipeline, [out, paramsBuffer], calculateWorkgroups(length));
+    await syncDevice();
+    paramsBuffer.destroy();
+    const meta = this.registerTensor(out, shape, dtype, length);
+    return cloneHandle(meta);
+  }
+
+  async arange(start: number, end: number, step: number, dtype: string): Promise<TensorHandle> {
+    await this.ensureReady();
+    this.assertDType(dtype);
+    if (step === 0) {
+      throw new Error("arange step must be non-zero.");
+    }
+    const values: number[] = [];
+    if (step > 0) {
+      for (let value = start; value < end; value += step) {
+        values.push(this.coerceScalarByDType(value, dtype as SupportedDType));
+      }
+    } else {
+      for (let value = start; value > end; value += step) {
+        values.push(this.coerceScalarByDType(value, dtype as SupportedDType));
+      }
+    }
+    return this.tensorFromData(values, [values.length], dtype);
+  }
+
+  async full(shape: number[], fillValue: number, dtype: string): Promise<TensorHandle> {
+    return this.fill(shape, dtype, fillValue);
+  }
+
+  async fullLike(tensorId: number, fillValue: number, dtype?: string): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const outDtype = dtype ?? source.dtype;
+    return this.fill(source.shape, outDtype, fillValue);
+  }
+
   async add(aId: number, bId: number): Promise<TensorHandle> {
     return this.elementwise(aId, bId, "add");
   }
@@ -121,10 +172,41 @@ export class TorchPyodideRuntime {
   }
 
   async relu(tensorId: number): Promise<TensorHandle> {
+    this.assertUnaryDType(this.getTensor(tensorId).dtype, "relu");
+    return this.unary(tensorId, "relu");
+  }
+
+  async abs(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "abs_op");
+  }
+
+  async sqrt(tensorId: number): Promise<TensorHandle> {
+    this.assertUnaryDType(this.getTensor(tensorId).dtype, "sqrt");
+    return this.unary(tensorId, "sqrt_op");
+  }
+
+  async exp(tensorId: number): Promise<TensorHandle> {
+    this.assertUnaryDType(this.getTensor(tensorId).dtype, "exp");
+    return this.unary(tensorId, "exp_op");
+  }
+
+  async log(tensorId: number): Promise<TensorHandle> {
+    this.assertUnaryDType(this.getTensor(tensorId).dtype, "log");
+    return this.unary(tensorId, "log_op");
+  }
+
+  async neg(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "neg");
+  }
+
+  private async unary(
+    tensorId: number,
+    entrypoint: "relu" | "abs_op" | "sqrt_op" | "exp_op" | "log_op" | "neg"
+  ): Promise<TensorHandle> {
     await this.ensureReady();
     const source = this.getTensor(tensorId);
     const out = this.createStorageBuffer(Math.max(4, source.length * 4));
-    const pipeline = getOrCreatePipeline(UNARY_SHADER, "relu");
+    const pipeline = getOrCreatePipeline(UNARY_SHADER, entrypoint);
     dispatchCompute(pipeline, [source.buffer, out], calculateWorkgroups(source.length));
     await syncDevice();
     const meta = this.registerTensor(out, source.shape, source.dtype, source.length);
@@ -275,10 +357,7 @@ export class TorchPyodideRuntime {
     await readBuffer.mapAsync(MapMode.READ);
     const copied = readBuffer.getMappedRange();
     const copiedBuffer = copied.slice(0);
-    const values =
-      meta.dtype === "int32"
-        ? Array.from(new Int32Array(copiedBuffer))
-        : Array.from(new Float32Array(copiedBuffer));
+    const values = this.decodeValuesByDType(copiedBuffer, meta.dtype as SupportedDType);
     readBuffer.unmap();
     readBuffer.destroy();
     return values;
@@ -343,7 +422,7 @@ export class TorchPyodideRuntime {
     const out = this.createStorageBuffer(Math.max(4, length * 4));
     const params = new ArrayBuffer(8);
     const view = new DataView(params);
-    view.setFloat32(0, value, true);
+    view.setFloat32(0, this.coerceScalarByDType(value, dtype as SupportedDType), true);
     view.setUint32(4, length, true);
     const paramBuffer = this.device!.createBuffer({
       size: 8,
@@ -578,8 +657,34 @@ export class TorchPyodideRuntime {
   }
 
   private assertDType(dtype: string) {
+    if (dtype !== "float32" && dtype !== "int32" && dtype !== "bool") {
+      throw new Error(`Unsupported dtype: ${dtype}. Supported dtypes: float32, int32, bool.`);
+    }
+  }
+
+  private coerceScalarByDType(value: number, dtype: SupportedDType): number {
+    if (dtype === "bool") {
+      return value ? 1 : 0;
+    }
+    if (dtype === "int32") {
+      return Math.trunc(value);
+    }
+    return value;
+  }
+
+  private decodeValuesByDType(buffer: ArrayBuffer, dtype: SupportedDType): number[] {
+    if (dtype === "int32") {
+      return Array.from(new Int32Array(buffer));
+    }
+    if (dtype === "bool") {
+      return Array.from(new Float32Array(buffer)).map((value) => (value !== 0 ? 1 : 0));
+    }
+    return Array.from(new Float32Array(buffer));
+  }
+
+  private assertUnaryDType(dtype: string, op: "relu" | "sqrt" | "exp" | "log"): void {
     if (dtype !== "float32") {
-      throw new Error(`Only float32 is supported in MVP, received: ${dtype}.`);
+      throw new Error(`${op} currently supports only float32 tensors, received: ${dtype}.`);
     }
   }
 

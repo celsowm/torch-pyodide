@@ -83,6 +83,36 @@ class Tensor:
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
+    def abs(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.abs(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def sqrt(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.sqrt(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def exp(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.exp(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def log(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.log(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def neg(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.neg(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
     def clamp(self, min: float, max: float) -> "Tensor":
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.clamp(self._id, float(min), float(max)))
@@ -119,7 +149,7 @@ class Tensor:
         runtime = _get_runtime()
         result = _run_js_awaitable(runtime.toList(self._id))
         flat = list(result.to_py() if hasattr(result, "to_py") else result)
-        return _reshape_flat_values(flat, self._shape)
+        return _reshape_flat_values(flat, self._shape, self._dtype)
 
     def to_list(self) -> object:
         return self.tolist()
@@ -162,12 +192,20 @@ def _normalize_shape(shape: int | Sequence[int]) -> list[int]:
     return normalized
 
 
-def _reshape_flat_values(flat: list[float], shape: Sequence[int]) -> object:
+def _coerce_out_value(value: float, dtype: str) -> object:
+    if dtype == "bool":
+        return bool(value)
+    if dtype == "int32":
+        return int(value)
+    return float(value)
+
+
+def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str) -> object:
     if len(shape) == 0:
-        return float(flat[0]) if flat else 0.0
+        return _coerce_out_value(float(flat[0]), dtype) if flat else _coerce_out_value(0.0, dtype)
     if len(shape) == 1:
         width = int(shape[0])
-        return [float(v) for v in flat[:width]]
+        return [_coerce_out_value(float(v), dtype) for v in flat[:width]]
     stride = 1
     for dim in shape[1:]:
         stride *= int(dim)
@@ -175,7 +213,7 @@ def _reshape_flat_values(flat: list[float], shape: Sequence[int]) -> object:
     out: list[object] = []
     for i in range(width):
         start = i * stride
-        out.append(_reshape_flat_values(flat[start : start + stride], shape[1:]))
+        out.append(_reshape_flat_values(flat[start : start + stride], shape[1:], dtype))
     return out
 
 
@@ -208,6 +246,45 @@ def rand_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tenso
     runtime = _get_runtime()
     normalized = _normalize_shape(shape)
     meta = _run_js_awaitable(runtime.rand(normalized, dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def randn_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
+    runtime = _get_runtime()
+    normalized = _normalize_shape(shape)
+    meta = _run_js_awaitable(runtime.randn(normalized, dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def arange_from_values(start: float, end: float | None = None, step: float = 1.0, dtype: str = "float32") -> Tensor:
+    runtime = _get_runtime()
+    if end is None:
+        resolved_start = 0.0
+        resolved_end = float(start)
+    else:
+        resolved_start = float(start)
+        resolved_end = float(end)
+    meta = _run_js_awaitable(runtime.arange(resolved_start, resolved_end, float(step), dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def full_from_shape(shape: int | Sequence[int], fill_value: float, dtype: str = "float32") -> Tensor:
+    runtime = _get_runtime()
+    normalized = _normalize_shape(shape)
+    meta = _run_js_awaitable(runtime.full(normalized, float(fill_value), dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def full_like_from_tensor(tensor: Tensor, fill_value: float, dtype: str | None = None) -> Tensor:
+    runtime = _get_runtime()
+    if dtype is None:
+        meta = _run_js_awaitable(runtime.fullLike(tensor._id, float(fill_value)))
+    else:
+        meta = _run_js_awaitable(runtime.fullLike(tensor._id, float(fill_value), dtype))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
 

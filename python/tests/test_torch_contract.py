@@ -100,6 +100,40 @@ class FakeRuntime:
         vals = [((i * 1103515245 + 12345) % 65536) / 65535.0 for i in range(size)]
         return self._new(shape, vals, dtype)
 
+    def randn(self, shape: list[int], dtype: str) -> dict[str, object]:
+        self._ensure_ready()
+        size = _numel(shape)
+        vals = [((i % 11) - 5) / 3.0 for i in range(size)]
+        return self._new(shape, vals, dtype)
+
+    def arange(self, start: float, end: float, step: float, dtype: str) -> dict[str, object]:
+        self._ensure_ready()
+        if step == 0:
+            raise RuntimeError("arange step must be non-zero.")
+        vals = []
+        current = float(start)
+        if step > 0:
+            while current < float(end):
+                vals.append(current)
+                current += float(step)
+        else:
+            while current > float(end):
+                vals.append(current)
+                current += float(step)
+        return self._new([len(vals)], vals, dtype)
+
+    def full(self, shape: list[int], fill_value: float, dtype: str) -> dict[str, object]:
+        self._ensure_ready()
+        size = _numel(shape)
+        return self._new(shape, [float(fill_value)] * size, dtype)
+
+    def fullLike(self, tensor_id: int, fill_value: float, dtype: str | None = None) -> dict[str, object]:
+        self._ensure_ready()
+        t = self.store[tensor_id]
+        out_dtype = str(t["dtype"]) if dtype is None else str(dtype)
+        size = _numel(list(t["shape"]))
+        return self._new(list(t["shape"]), [float(fill_value)] * size, out_dtype)
+
     def add(self, a_id: int, b_id: int) -> dict[str, object]:
         return self._binary(a_id, b_id, lambda a, b: a + b)
 
@@ -146,6 +180,35 @@ class FakeRuntime:
     def relu(self, tensor_id: int) -> dict[str, object]:
         t = self.store[tensor_id]
         values = [max(0.0, float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def abs(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [abs(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def sqrt(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [float(v) ** 0.5 for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def exp(self, tensor_id: int) -> dict[str, object]:
+        import math
+
+        t = self.store[tensor_id]
+        values = [math.exp(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def log(self, tensor_id: int) -> dict[str, object]:
+        import math
+
+        t = self.store[tensor_id]
+        values = [math.log(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def neg(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [-float(v) for v in t["values"]]
         return self._new(list(t["shape"]), values, str(t["dtype"]))
 
     def clamp(self, tensor_id: int, min_val: float, max_val: float) -> dict[str, object]:
@@ -209,7 +272,12 @@ class FakeRuntime:
         return self._new([cols, rows], out, str(t["dtype"]))
 
     def toList(self, tensor_id: int) -> list[float]:
-        return [float(v) for v in self.store[tensor_id]["values"]]
+        t = self.store[tensor_id]
+        if str(t["dtype"]) == "bool":
+            return [1.0 if float(v) != 0.0 else 0.0 for v in t["values"]]
+        if str(t["dtype"]) == "int32":
+            return [float(int(v)) for v in t["values"]]
+        return [float(v) for v in t["values"]]
 
     def destroy(self, tensor_id: int) -> None:
         self.store.pop(tensor_id, None)
@@ -244,6 +312,16 @@ def test_torch_public_contract(monkeypatch):
     ix_max = torch_mod.argmax(torch_mod.tensor([[1.0, 3.0], [5.0, 4.0]]))
     ix_min = torch_mod.argmin(torch_mod.tensor([[1.0, 3.0], [5.0, 4.0]]))
     rnd = torch_mod.rand((2, 2))
+    rndn = torch_mod.randn((2, 2))
+    seq = torch_mod.arange(1, 6, 2, dtype="int32")
+    filled = torch_mod.full((2, 2), 7.0, dtype="int32")
+    filled_like = torch_mod.full_like(a, 9.0)
+    abs_v = torch_mod.abs(torch_mod.tensor([[-1.0, 2.0], [-3.0, 4.0]]))
+    sqrt_v = torch_mod.sqrt(torch_mod.tensor([[1.0, 4.0], [9.0, 16.0]]))
+    exp_v = torch_mod.exp(torch_mod.tensor([[0.0, 1.0], [2.0, 0.0]]))
+    log_v = torch_mod.log(torch_mod.tensor([[1.0, 2.718281828], [7.389056099, 1.0]]))
+    neg_v = torch_mod.neg(torch_mod.tensor([[1.0, -2.0], [3.0, -4.0]]))
+    bool_t = torch_mod.tensor([[1.0, 0.0], [0.0, 1.0]], dtype="bool")
 
     assert c.tolist() == [[2.0, 3.0], [4.0, 5.0]]
     assert d.tolist() == [[4.0, 6.0], [8.0, 10.0]]
@@ -257,6 +335,17 @@ def test_torch_public_contract(monkeypatch):
     assert ix_min.tolist() == [0.0, 1.0]
     assert tuple(rnd.shape) == (2, 2)
     assert all(0.0 <= float(v) <= 1.0 for row in rnd.tolist() for v in row)
+    assert tuple(rndn.shape) == (2, 2)
+    assert seq.tolist() == [1, 3, 5]
+    assert seq.dtype == "int32"
+    assert filled.tolist() == [[7, 7], [7, 7]]
+    assert filled_like.tolist() == [[9.0, 9.0], [9.0, 9.0]]
+    assert abs_v.tolist() == [[1.0, 2.0], [3.0, 4.0]]
+    assert sqrt_v.tolist() == [[1.0, 2.0], [3.0, 4.0]]
+    assert neg_v.tolist() == [[-1.0, 2.0], [-3.0, 4.0]]
+    assert bool_t.tolist() == [[True, False], [False, True]]
+    assert abs(float(exp_v.tolist()[0][1]) - 2.718281828) < 1e-6
+    assert abs(float(log_v.tolist()[0][1]) - 1.0) < 1e-5
     assert d.sum().tolist() == 28.0
     assert d.mean().tolist() == 7.0
     assert g.reshape((4,)).tolist() == [3.0, 1.0, 7.0, 3.0]
@@ -283,6 +372,11 @@ def test_torch_public_contract(monkeypatch):
     assert torch_mod.cuda.memory_allocated(0) == torch_mod.cuda.memory_reserved(0)
     assert torch_mod.cuda.memory.memory_allocated(0) == torch_mod.cuda.memory_allocated(0)
     assert torch_mod.cuda.memory.memory_reserved(0) == torch_mod.cuda.memory_reserved(0)
+    try:
+        torch_mod.arange(0, 10, 0)
+        assert False, "expected arange step error"
+    except RuntimeError as exc:
+        assert "step must be non-zero" in str(exc)
 
 
 def test_torch_cuda_unavailable_contract(monkeypatch):

@@ -35,7 +35,8 @@ test("demo falls back to local-dev when published install is forced to fail", as
 test("playground loads examples dropdown and runs selected code", async ({ page }) => {
   await page.goto("/playground/index.html");
   await page.waitForSelector("#run:not([disabled])", { timeout: 120000 });
-  await expect(page.locator("#example-select option")).toHaveCount(3);
+  const optionCount = await page.locator("#example-select option").count();
+  expect(optionCount).toBeGreaterThanOrEqual(7);
   await page.click("#run");
   await page.waitForFunction(() => {
     const output = document.querySelector("#output");

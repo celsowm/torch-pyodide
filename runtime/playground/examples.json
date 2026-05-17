@@ -35,6 +35,31 @@
       "id": "argmax_argmin",
       "label": "Argmax + Argmin",
       "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 3.0, 2.0], [9.0, 0.5, 7.0]])\nmax_idx = torch.argmax(x)\nmin_idx = torch.argmin(x)\nout = {\n  \"input\": x.tolist(),\n  \"argmax\": max_idx.tolist(),\n  \"argmin\": min_idx.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "randn_tensor",
+      "label": "Random Normal (randn)",
+      "code": "import json\nimport torch\n\nx = torch.randn((2, 4))\nout = {\n  \"shape\": list(x.shape),\n  \"values\": x.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "arange_int32",
+      "label": "Arange Int32",
+      "code": "import json\nimport torch\n\nx = torch.arange(1, 10, 2, dtype=\"int32\")\nout = {\n  \"dtype\": x.dtype,\n  \"values\": x.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "full_and_full_like",
+      "label": "Full + Full Like",
+      "code": "import json\nimport torch\n\nbase = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\na = torch.full((2, 2), 7.0, dtype=\"int32\")\nb = torch.full_like(base, 9.0)\nout = {\n  \"full\": a.tolist(),\n  \"full_dtype\": a.dtype,\n  \"full_like\": b.tolist(),\n  \"full_like_dtype\": b.dtype,\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "unary_abs_neg",
+      "label": "Unary Abs + Neg",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[-1.0, 2.0], [-3.0, 4.0]])\nout = {\n  \"input\": x.tolist(),\n  \"abs\": torch.abs(x).tolist(),\n  \"neg\": torch.neg(x).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "unary_sqrt_exp_log",
+      "label": "Unary Sqrt + Exp + Log",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 4.0], [9.0, 16.0]])\ny = torch.tensor([[0.0, 1.0], [2.0, 0.0]])\nz = torch.tensor([[1.0, 2.718281828], [7.389056099, 1.0]])\nout = {\n  \"sqrt\": torch.sqrt(x).tolist(),\n  \"exp\": torch.exp(y).tolist(),\n  \"log\": torch.log(z).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
     }
   ]
 }

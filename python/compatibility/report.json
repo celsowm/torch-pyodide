@@ -1,19 +1,19 @@
 {
-  "implemented": 34,
-  "total": 34,
+  "implemented": 56,
+  "total": 56,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
-      "implemented": 9,
-      "total": 9
+      "implemented": 22,
+      "total": 22
     },
     "cuda_func": {
       "implemented": 11,
       "total": 11
     },
     "tensor_method": {
-      "implemented": 11,
-      "total": 11
+      "implemented": 20,
+      "total": 20
     },
     "tensor_property": {
       "implemented": 3,
@@ -71,6 +71,84 @@
     },
     {
       "id": "torch.relu",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.randn",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.arange",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.full",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.full_like",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.abs",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sqrt",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.exp",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.neg",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.clamp",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.where",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.argmax",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.argmin",
       "kind": "module_func",
       "implemented": true,
       "note": "ok"
@@ -190,6 +268,54 @@
       "note": "ok"
     },
     {
+      "id": "Tensor.abs",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sqrt",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.exp",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.log",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.neg",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.clamp",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.argmax",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.argmin",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
       "id": "Tensor.reshape",
       "kind": "tensor_method",
       "implemented": true,
@@ -197,6 +323,12 @@
     },
     {
       "id": "Tensor.to_list",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.tolist",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"

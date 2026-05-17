@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import inspect
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,13 +28,29 @@ def _check_target(torch_mod: Any, tensor_cls: Any, target: dict[str, str]) -> Ta
 
     if kind == "module_func":
         name = target_id.split(".", 1)[1]
-        ok = hasattr(torch_mod, name) and callable(getattr(torch_mod, name))
-        return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
+        if not (hasattr(torch_mod, name) and callable(getattr(torch_mod, name))):
+            return TargetResult(target_id, kind, False, "missing")
+        obj = getattr(torch_mod, name)
+        expected_params = target.get("params")
+        if expected_params:
+            got = list(inspect.signature(obj).parameters.keys())
+            missing = [p for p in expected_params if p not in got]
+            if missing:
+                return TargetResult(target_id, kind, False, f"signature mismatch: missing params {missing}")
+        return TargetResult(target_id, kind, True, "ok")
 
     if kind == "tensor_method":
         name = target_id.split(".", 1)[1]
-        ok = hasattr(tensor_cls, name) and callable(getattr(tensor_cls, name))
-        return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
+        if not (hasattr(tensor_cls, name) and callable(getattr(tensor_cls, name))):
+            return TargetResult(target_id, kind, False, "missing")
+        obj = getattr(tensor_cls, name)
+        expected_params = target.get("params")
+        if expected_params:
+            got = list(inspect.signature(obj).parameters.keys())
+            missing = [p for p in expected_params if p not in got]
+            if missing:
+                return TargetResult(target_id, kind, False, f"signature mismatch: missing params {missing}")
+        return TargetResult(target_id, kind, True, "ok")
 
     if kind == "tensor_property":
         name = target_id.split(".", 1)[1]
