@@ -97,10 +97,14 @@ class Tensor:
         tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, out_shape, out_dtype)
 
-    def to_list(self) -> list[float]:
+    def tolist(self) -> object:
         runtime = _get_runtime()
         result = _run_js_awaitable(runtime.toList(self._id))
-        return list(result)
+        flat = list(result.to_py() if hasattr(result, "to_py") else result)
+        return _reshape_flat_values(flat, self._shape)
+
+    def to_list(self) -> object:
+        return self.tolist()
 
     def destroy(self) -> None:
         runtime = _get_runtime()
@@ -138,6 +142,23 @@ def _normalize_shape(shape: int | Sequence[int]) -> list[int]:
     if any(v < 0 for v in normalized):
         raise ValueError("shape values must be >= 0")
     return normalized
+
+
+def _reshape_flat_values(flat: list[float], shape: Sequence[int]) -> object:
+    if len(shape) == 0:
+        return float(flat[0]) if flat else 0.0
+    if len(shape) == 1:
+        width = int(shape[0])
+        return [float(v) for v in flat[:width]]
+    stride = 1
+    for dim in shape[1:]:
+        stride *= int(dim)
+    width = int(shape[0])
+    out: list[object] = []
+    for i in range(width):
+        start = i * stride
+        out.append(_reshape_flat_values(flat[start : start + stride], shape[1:]))
+    return out
 
 
 def tensor_from_data(data: object, dtype: str = "float32") -> Tensor:

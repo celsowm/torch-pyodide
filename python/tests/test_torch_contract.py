@@ -130,12 +130,12 @@ class FakeRuntime:
 
     def sum(self, tensor_id: int) -> dict[str, object]:
         t = self.store[tensor_id]
-        return self._new([1], [sum(float(v) for v in t["values"])], str(t["dtype"]))
+        return self._new([], [sum(float(v) for v in t["values"])], str(t["dtype"]))
 
     def mean(self, tensor_id: int) -> dict[str, object]:
         t = self.store[tensor_id]
         values = [float(v) for v in t["values"]]
-        return self._new([1], [sum(values) / len(values)], str(t["dtype"]))
+        return self._new([], [sum(values) / len(values)], str(t["dtype"]))
 
     def relu(self, tensor_id: int) -> dict[str, object]:
         t = self.store[tensor_id]
@@ -188,16 +188,17 @@ def test_torch_public_contract(monkeypatch):
     g = torch_mod.relu(f)
     h = torch_mod.matmul(a, torch_mod.tensor([[1.0, 0.0], [0.0, 1.0]]))
 
-    assert c.to_list() == [2.0, 3.0, 4.0, 5.0]
-    assert d.to_list() == [4.0, 6.0, 8.0, 10.0]
-    assert e.to_list() == [3.0, 5.0, 7.0, 9.0]
-    assert f.to_list() == [3.0, 1.0, 7.0, 3.0]
-    assert g.to_list() == [3.0, 1.0, 7.0, 3.0]
-    assert h.to_list() == [1.0, 2.0, 3.0, 4.0]
-    assert d.sum().to_list() == [28.0]
-    assert d.mean().to_list() == [7.0]
-    assert g.reshape((4,)).to_list() == [3.0, 1.0, 7.0, 3.0]
-    assert g.T.to_list() == [3.0, 7.0, 1.0, 3.0]
+    assert c.tolist() == [[2.0, 3.0], [4.0, 5.0]]
+    assert d.tolist() == [[4.0, 6.0], [8.0, 10.0]]
+    assert e.tolist() == [[3.0, 5.0], [7.0, 9.0]]
+    assert f.tolist() == [[3.0, 1.0], [7.0, 3.0]]
+    assert g.tolist() == [[3.0, 1.0], [7.0, 3.0]]
+    assert h.tolist() == [[1.0, 2.0], [3.0, 4.0]]
+    assert d.sum().tolist() == 28.0
+    assert d.mean().tolist() == 7.0
+    assert g.reshape((4,)).tolist() == [3.0, 1.0, 7.0, 3.0]
+    assert g.T.tolist() == [[3.0, 7.0], [1.0, 3.0]]
+    assert g.to_list() == g.tolist()
     assert tuple(a.shape) == (2, 2)
     assert a.dtype == "float32"
 

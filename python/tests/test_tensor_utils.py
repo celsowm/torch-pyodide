@@ -1,6 +1,6 @@
 import pytest
 
-from torch._tensor import _flatten, _infer_shape, _js_meta_to_tuple, _normalize_shape
+from torch._tensor import _flatten, _infer_shape, _js_meta_to_tuple, _normalize_shape, _reshape_flat_values
 
 def test_infer_shape_rectangular():
     assert _infer_shape([[1, 2], [3, 4]]) == [2, 2]
@@ -39,3 +39,11 @@ def test_js_meta_to_tuple_from_proxy_like():
         dtype = "float32"
 
     assert _js_meta_to_tuple(ProxyMeta()) == (9, [3, 1], "float32")
+
+
+def test_reshape_flat_values_scalar():
+    assert _reshape_flat_values([28.0], []) == 28.0
+
+
+def test_reshape_flat_values_nested():
+    assert _reshape_flat_values([1.0, 2.0, 3.0, 4.0], [2, 2]) == [[1.0, 2.0], [3.0, 4.0]]

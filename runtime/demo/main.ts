@@ -49,20 +49,20 @@ m = a.matmul(torch.tensor([[1.0, 0.0], [0.0, 1.0]]))
 s = d.sum()
 mean = d.mean()
 
-assert c.to_list() == [2.0, 3.0, 4.0, 5.0]
-assert d.to_list() == [4.0, 6.0, 8.0, 10.0]
-assert e.to_list() == [3.0, 5.0, 7.0, 9.0]
-assert f.to_list() == [3.0, 1.0, 7.0, 3.0]
-assert r.to_list() == [3.0, 1.0, 7.0, 3.0]
-assert t.to_list() == [3.0, 7.0, 1.0, 3.0]
-assert flat.to_list() == [3.0, 7.0, 1.0, 3.0]
-assert m.to_list() == [1.0, 2.0, 3.0, 4.0]
-assert abs(s.to_list()[0] - 28.0) < 1e-6
-assert abs(mean.to_list()[0] - 7.0) < 1e-6
+assert c.tolist() == [[2.0, 3.0], [4.0, 5.0]]
+assert d.tolist() == [[4.0, 6.0], [8.0, 10.0]]
+assert e.tolist() == [[3.0, 5.0], [7.0, 9.0]]
+assert f.tolist() == [[3.0, 1.0], [7.0, 3.0]]
+assert r.tolist() == [[3.0, 1.0], [7.0, 3.0]]
+assert t.tolist() == [[3.0, 7.0], [1.0, 3.0]]
+assert flat.tolist() == [3.0, 7.0, 1.0, 3.0]
+assert m.tolist() == [[1.0, 2.0], [3.0, 4.0]]
+assert abs(s.tolist() - 28.0) < 1e-6
+assert abs(mean.tolist() - 7.0) < 1e-6
 {
     "ok": True,
-    "sum": s.to_list()[0],
-    "mean": mean.to_list()[0],
+    "sum": s.tolist(),
+    "mean": mean.tolist(),
     "shape": list(a.shape),
     "cuda_available": torch.cuda.is_available(),
     "cuda_device_count": torch.cuda.device_count(),
