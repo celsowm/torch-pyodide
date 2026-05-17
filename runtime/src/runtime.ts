@@ -287,6 +287,19 @@ export class TorchPyodideRuntime {
     return this.shapeOps.indexSelect(tensorId, dim, indicesId);
   }
 
+  /** Execute a batch of operations — all compute work is accumulated and submitted once. */
+  async runBatch<T>(fn: () => Promise<T>): Promise<T> {
+    this.deviceMgr.beginFrame();
+    try {
+      const result = await fn();
+      await this.deviceMgr.endFrame();
+      return result;
+    } catch (err) {
+      this.deviceMgr.cancelFrame();
+      throw err;
+    }
+  }
+
   async toList(tensorId: number): Promise<number[]> {
     await this.deviceMgr.ensureReady();
     const meta = this.deviceMgr.getTensorMeta(tensorId);

@@ -58,6 +58,10 @@ export class DeviceManager {
   private _pendingBuffers: Array<{ id: number; shadow: ShadowBuffer }> = [];
   private _recoveryCallbacks: Array<() => Promise<void>> = [];
 
+  // Batch frame — accumulate compute passes, submit once
+  private _frameEncoder: GPUCommandEncoder | null = null;
+  private _frameDepth = 0;
+
   // Tensor registry
   private _tensors = new Map<number, TensorMeta>();
   private _nextTensorId = 1;
@@ -189,6 +193,34 @@ export class DeviceManager {
     return pipeline;
   }
 
+  // ── Batch frame ──────────────────────────────────────────────
+
+  /** Begin a batch frame. Nested calls are safe — only the outermost call creates the encoder. */
+  beginFrame(): void {
+    if (this._frameDepth === 0) {
+      if (!this._device) throw new Error("Device not initialized");
+      this._frameEncoder = this._device.createCommandEncoder();
+    }
+    this._frameDepth++;
+  }
+
+  /** End a batch frame. Only the outermost call submits. Returns a promise that resolves when work completes. */
+  async endFrame(): Promise<void> {
+    if (this._frameDepth === 0) throw new Error("endFrame() without beginFrame()");
+    this._frameDepth--;
+    if (this._frameDepth > 0) return;
+    const encoder = this._frameEncoder!;
+    this._frameEncoder = null;
+    this._device!.queue.submit([encoder.finish()]);
+    await this._device!.queue.onSubmittedWorkDone();
+  }
+
+  /** Cancel and discard a batch frame without submitting. */
+  cancelFrame(): void {
+    this._frameEncoder = null;
+    this._frameDepth = 0;
+  }
+
   dispatchCompute(pipeline: GPUComputePipeline, buffers: GPUBuffer[], workgroupCount: number[]): void {
     if (!this._device) throw new Error("Device not initialized");
     const bindGroup = this._device.createBindGroup({
@@ -198,7 +230,7 @@ export class DeviceManager {
         resource: { buffer },
       })),
     });
-    const encoder = this._device.createCommandEncoder();
+    const encoder = this._frameEncoder ?? this._device.createCommandEncoder();
     const pass = encoder.beginComputePass();
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, bindGroup);
@@ -208,7 +240,9 @@ export class DeviceManager {
       pass.dispatchWorkgroups(workgroupCount[0]!);
     }
     pass.end();
-    this._device.queue.submit([encoder.finish()]);
+    if (!this._frameEncoder) {
+      this._device.queue.submit([encoder.finish()]);
+    }
   }
 
   calculateWorkgroups(numElements: number, workgroupSize = 256): number[] {
@@ -222,6 +256,8 @@ export class DeviceManager {
   }
 
   syncDevice(): Promise<void> {
+    // If we're inside a batch frame, individual sync is deferred to endFrame
+    if (this._frameDepth > 0) return Promise.resolve();
     return this._device!.queue.onSubmittedWorkDone();
   }
 

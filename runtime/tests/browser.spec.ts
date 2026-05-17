@@ -164,3 +164,36 @@ test("device manager recovers from device lost and reads from shadow copy @webgp
   // After device lost + recovery, shadow copy fallback should return the same data
   expect(result.after).toEqual([10, 20, 30]);
 });
+
+test("runBatch accumulates compute ops into a single submit @webgpu", async ({ page }) => {
+  await page.goto("/demo/index.html");
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const result = await page.evaluate(async () => {
+    const mod = await import("/src/runtime.ts");
+    const rt = new mod.TorchPyodideRuntime();
+    await rt.init();
+
+    const result = await rt.runBatch(async () => {
+      // Create two tensors, add them, then multiply by 2 — all in one batch
+      const a = await rt.tensorFromData([1, 2, 3, 4], [4], "float32");
+      const b = await rt.tensorFromData([10, 20, 30, 40], [4], "float32");
+      const c = await rt.add(a.id, b.id);
+      const d = await rt.mul(c.id, b.id);
+      const e = await rt.relu(d.id);
+      return { aId: a.id, bId: b.id, dId: d.id, eId: e.id };
+    });
+
+    const finalData = await rt.toList(result.eId);
+    await rt.destroy(result.aId);
+    await rt.destroy(result.bId);
+    await rt.destroy(result.dId);
+    await rt.destroy(result.eId);
+    return finalData;
+  });
+
+  // (1+10)*10 = 110, (2+20)*20 = 440, (3+30)*30 = 990, (4+40)*40 = 1760
+  expect(result).toEqual([110, 440, 990, 1760]);
+});

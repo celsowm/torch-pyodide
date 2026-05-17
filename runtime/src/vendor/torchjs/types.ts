@@ -1,22 +1,14 @@
-/**
- * Unified WebGPU types that work for both browser and Node.js (wgpu-native).
- * We use 'any' internally to avoid the complexity of intersecting browser and native types.
- */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-// Re-export our device type as a generic interface
-export type WebGPUDevice = any;
-export type WebGPUAdapter = any;
-export type WebGPUBuffer = any;
-export type WebGPUShaderModule = any;
-export type WebGPUComputePipeline = any;
-export type WebGPUBindGroup = any;
-export type WebGPUBindGroupLayout = any;
-export type WebGPUCommandEncoder = any;
-export type WebGPUCommandBuffer = any;
-export type WebGPUComputePassEncoder = any;
-export type WebGPUQueue = any;
+export type WebGPUDevice = GPUDevice;
+export type WebGPUAdapter = GPUAdapter;
+export type WebGPUBuffer = GPUBuffer;
+export type WebGPUShaderModule = GPUShaderModule;
+export type WebGPUComputePipeline = GPUComputePipeline;
+export type WebGPUBindGroup = GPUBindGroup;
+export type WebGPUBindGroupLayout = GPUBindGroupLayout;
+export type WebGPUCommandEncoder = GPUCommandEncoder;
+export type WebGPUCommandBuffer = GPUCommandBuffer;
+export type WebGPUComputePassEncoder = GPUComputePassEncoder;
+export type WebGPUQueue = GPUQueue;
 
 /**
  * Check if we're running in Node.js environment.
