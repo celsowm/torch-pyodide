@@ -34,6 +34,10 @@ async function loadPyodideModule(indexURL: string): Promise<LoadPyodideFn> {
 }
 
 function installLocalTorchPackage(pyodide: PyodideApi): void {
+  pyodide.runPython(`
+import sys
+sys.modules.pop("torch", None)
+`);
   pyodide.FS.mkdirTree("/home/pyodide/torch");
   pyodide.FS.writeFile("/home/pyodide/torch/__init__.py", initPy);
   pyodide.FS.writeFile("/home/pyodide/torch/_runtime.py", runtimePy);
@@ -50,6 +54,17 @@ async function installPublishedTorchPackage(pyodide: PyodideApi): Promise<void> 
   await pyodide.runPythonAsync(`
 import micropip
 await micropip.install("torch-pyodide")
+`);
+}
+
+async function verifyInstalledTorch(pyodide: PyodideApi): Promise<void> {
+  await pyodide.runPythonAsync(`
+import torch
+torch.init()
+a = torch.tensor([1.0, 2.0])
+b = torch.ones((2,))
+c = a.add(b)
+assert c.to_list() == [2.0, 3.0]
 `);
 }
 
@@ -70,16 +85,19 @@ export async function bootstrapPyodideTorch() {
   let installMode: InstallMode = "published";
   let installDetail = "Installed torch-pyodide via micropip from published index.";
 
-  if (localHost) {
-    try {
-      await installPublishedTorchPackage(pyodide);
-    } catch (error) {
+  try {
+    await installPublishedTorchPackage(pyodide);
+    await verifyInstalledTorch(pyodide);
+  } catch (error) {
+    if (!localHost) {
       installLocalTorchPackage(pyodide);
       installMode = "local-dev";
-      installDetail = `Published install failed, using local-dev fallback: ${String(error)}`;
+      installDetail = `Published install/verify failed in production, using bundled local fallback: ${String(error)}`;
+    } else {
+      installLocalTorchPackage(pyodide);
+      installMode = "local-dev";
+      installDetail = `Published install/verify failed, using local-dev fallback: ${String(error)}`;
     }
-  } else {
-    await installPublishedTorchPackage(pyodide);
   }
 
   return { pyodide, indexURL, installMode, installDetail };
