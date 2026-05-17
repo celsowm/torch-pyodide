@@ -105,7 +105,8 @@ function assertValidCatalog(raw: unknown): ExamplesCatalog {
 }
 
 async function loadExamplesCatalog(): Promise<ExamplesCatalog> {
-  const response = await fetch("./examples.json", { cache: "no-store" });
+  const examplesUrl = new URL("./examples.json", import.meta.url);
+  const response = await fetch(examplesUrl, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Failed to load examples catalog: HTTP ${response.status}.`);
   }

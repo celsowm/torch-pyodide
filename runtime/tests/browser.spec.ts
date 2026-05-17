@@ -74,7 +74,7 @@ test("playground switches example immediately and reset restores selected exampl
 });
 
 test("playground shows explicit error when examples catalog fails to load", async ({ page }) => {
-  await page.route("**/playground/examples.json", async (route) => {
+  await page.route(/.*examples.*\.json.*/, async (route) => {
     await route.fulfill({
       status: 500,
       contentType: "application/json",
