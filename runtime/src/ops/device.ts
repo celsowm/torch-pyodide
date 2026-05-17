@@ -5,7 +5,7 @@ import {
   isInitialized as isWebGPUInitialized,
 } from "../vendor/torchjs/index.js";
 
-import { TensorMeta, SupportedDType, cloneHandle, product } from "./types.js";
+import { TensorMeta, TensorHandle, SupportedDType, cloneHandle, product } from "./types.js";
 import { decodeValuesByDType } from "./shape.js";
 
 const LOST_RECOVERY_RETRIES = 3;
@@ -402,6 +402,12 @@ export class DeviceManager {
     this._tensors.set(id, meta);
     this._allocatedBytes += bytes;
     return id;
+  }
+
+  /** Register a tensor buffer and return a TensorHandle (for public API consumption). */
+  registerTensorAsHandle(buffer: GPUBuffer, shape: number[], dtype: string, length: number): TensorHandle {
+    const id = this.registerTensor(buffer, shape, dtype, length);
+    return cloneHandle(this._tensors.get(id)!);
   }
 
   destroyTensor(id: number): void {

@@ -1,5 +1,5 @@
 import { TensorHandle, TensorMeta, SupportedDType } from "./types.js";
-import { cloneHandle, product } from "./types.js";
+import { product } from "./types.js";
 import {
   getOrCreatePipeline,
   dispatchCompute,
@@ -35,8 +35,7 @@ export class MaskingOps {
     dispatchCompute(pipeline, [meta.buffer, mask.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, [trueCount], meta.dtype, trueCount);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, [trueCount], meta.dtype, trueCount);
   }
 
   async maskedFill(tensorId: number, maskId: number, value: number): Promise<TensorHandle> {
@@ -61,7 +60,6 @@ export class MaskingOps {
     dispatchCompute(pipeline, [out, mask.buffer, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, meta.shape, meta.dtype, length);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
   }
 }

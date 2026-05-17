@@ -1,5 +1,5 @@
 import { TensorHandle, TensorMeta, SupportedDType } from "./types.js";
-import { product, cloneHandle } from "./types.js";
+import { product } from "./types.js";
 import {
   assertDType,
   coerceScalarByDType,
@@ -11,7 +11,6 @@ import {
   FILL_SHADER,
   RANDOM_SHADER,
   createStorageBuffer,
-  registerTensor,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 
@@ -26,8 +25,7 @@ export class CreationOps {
     const typed = new Float32Array(data.map((v) => coerceScalarByDType(v, dtype as SupportedDType)));
     const buffer = createStorageBuffer(this.deviceMgr.device!, typed.byteLength);
     this.deviceMgr.writeBuffer(buffer, 0, typed);
-    const meta = registerTensor(this.deviceMgr.tensors, { current: 1 }, { current: 0 }, buffer, shape, dtype, length);
-    return cloneHandle(meta);
+    return this.deviceMgr.registerTensorAsHandle(buffer, shape, dtype, length);
   }
 
   async zeros(shape: number[], dtype: string): Promise<TensorHandle> {
@@ -53,8 +51,7 @@ export class CreationOps {
     dispatchCompute(pipeline, [out, paramsBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramsBuffer.destroy();
-    const meta = registerTensor(this.deviceMgr.tensors, { current: 1 }, { current: 0 }, out, shape, dtype, length);
-    return cloneHandle(meta);
+    return this.deviceMgr.registerTensorAsHandle(out, shape, dtype, length);
   }
 
   async randn(shape: number[], dtype: string): Promise<TensorHandle> {
@@ -72,8 +69,7 @@ export class CreationOps {
     dispatchCompute(pipeline, [out, paramsBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramsBuffer.destroy();
-    const meta = registerTensor(this.deviceMgr.tensors, { current: 1 }, { current: 0 }, out, shape, dtype, length);
-    return cloneHandle(meta);
+    return this.deviceMgr.registerTensorAsHandle(out, shape, dtype, length);
   }
 
   async arange(start: number, end: number, step: number, dtype: string): Promise<TensorHandle> {
@@ -116,7 +112,6 @@ export class CreationOps {
     dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
-    const meta = registerTensor(this.deviceMgr.tensors, { current: 1 }, { current: 0 }, out, shape, dtype, length);
-    return cloneHandle(meta);
+    return this.deviceMgr.registerTensorAsHandle(out, shape, dtype, length);
   }
 }

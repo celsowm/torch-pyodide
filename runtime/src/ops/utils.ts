@@ -1,6 +1,3 @@
-// Compat layer — re-exports for existing *Ops.ts imports.
-// New code should import directly from device.ts and shape.ts.
-
 import { SupportedDType } from "./types.js";
 import { DeviceManager } from "./device.js";
 export { DeviceManager } from "./device.js";
@@ -19,13 +16,11 @@ export {
   normalizeSliceEnd,
   padShapeTo4,
   broadcastShapes,
-  registerTensor,
   getTensor,
 } from "./shape.js";
 
 import {
   BufferUsage,
-  MapMode,
   FILL_SHADER,
   RANDOM_SHADER,
   ELEMENTWISE_SHADER,
@@ -61,9 +56,9 @@ import {
   calculateWorkgroups,
   syncDevice,
 } from "../vendor/torchjs/index.js";
+
 export {
   BufferUsage,
-  MapMode,
   FILL_SHADER,
   RANDOM_SHADER,
   ELEMENTWISE_SHADER,

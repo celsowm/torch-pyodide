@@ -1,5 +1,5 @@
 import { TensorHandle, TensorMeta } from "./types.js";
-import { cloneHandle, product } from "./types.js";
+import { product } from "./types.js";
 import {
   getOrCreatePipeline,
   dispatchCompute,
@@ -20,7 +20,6 @@ import {
   normalizeSliceEnd,
   padShapeTo4,
   createStorageBuffer,
-  registerTensor,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 
@@ -35,8 +34,7 @@ export class ShapeOps {
     const encoder = this.deviceMgr.device!.createCommandEncoder();
     encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, meta.bytes);
     this.deviceMgr.device!.queue.submit([encoder.finish()]);
-    const result = this.deviceMgr.registerTensor(out, shape, meta.dtype, meta.length);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, shape, meta.dtype, meta.length);
   }
 
   async flatten(tensorId: number, startDim = 0, endDim = -1): Promise<TensorHandle> {
@@ -104,8 +102,7 @@ export class ShapeOps {
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, outShape, meta.dtype, outLength);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, meta.dtype, outLength);
   }
 
   async select(tensorId: number, dim: number, index: number): Promise<TensorHandle> {
@@ -132,8 +129,7 @@ export class ShapeOps {
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, outShape, meta.dtype, outLength);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, meta.dtype, outLength);
   }
 
   async slice(tensorId: number, dim: number, start?: number, end?: number, step = 1): Promise<TensorHandle> {
@@ -165,8 +161,7 @@ export class ShapeOps {
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, outShape, meta.dtype, outLength);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, meta.dtype, outLength);
   }
 
   async cat(tensorIds: number[], dim: number): Promise<TensorHandle> {
@@ -191,8 +186,7 @@ export class ShapeOps {
     dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, outShape, a.dtype, outLength);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, a.dtype, outLength);
   }
 
   async stack(tensorIds: number[], dim: number): Promise<TensorHandle> {
@@ -217,8 +211,7 @@ export class ShapeOps {
     dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, outShape, a.dtype, outLength);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, a.dtype, outLength);
   }
 
   async expand(tensorId: number, shape: number[]): Promise<TensorHandle> {
@@ -244,8 +237,7 @@ export class ShapeOps {
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, shape, meta.dtype, outLength);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, shape, meta.dtype, outLength);
   }
 
   async indexSelect(tensorId: number, dim: number, indicesId: number): Promise<TensorHandle> {
@@ -275,8 +267,7 @@ export class ShapeOps {
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, outShape, meta.dtype, outLength);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, meta.dtype, outLength);
   }
 
   private async transpose2dImpl(meta: TensorMeta): Promise<TensorHandle> {
@@ -292,7 +283,6 @@ export class ShapeOps {
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(rows * cols));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, [cols, rows], meta.dtype, rows * cols);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, [cols, rows], meta.dtype, rows * cols);
   }
 }

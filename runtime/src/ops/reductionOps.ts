@@ -1,5 +1,5 @@
 import { TensorHandle, TensorMeta, SupportedDType } from "./types.js";
-import { cloneHandle, product } from "./types.js";
+import { product } from "./types.js";
 import {
   getOrCreatePipeline,
   dispatchCompute,
@@ -14,7 +14,6 @@ import {
   REDUCE_MAX_SHADER,
   REDUCE_MIN_SHADER,
   createStorageBuffer,
-  registerTensor,
   padShapeTo4,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
@@ -96,8 +95,7 @@ export class ReductionOps {
     const scalarBuf = createStorageBuffer(this.deviceMgr.device!, 4);
     this.deviceMgr.writeBuffer(scalarBuf, 0, new Float32Array([scalarValue]));
 
-    const id = this.deviceMgr.registerTensor(scalarBuf, [1], meta.dtype, 1);
-    return cloneHandle({ id, buffer: scalarBuf, shape: [1], dtype: meta.dtype, length: 1, bytes: 4 });
+    return this.deviceMgr.registerTensorAsHandle(scalarBuf, [1], meta.dtype, 1);
   }
 
   private async reduceDim(tensorId: number, dim: number, keepdim: boolean, mode: string): Promise<TensorHandle> {
@@ -138,8 +136,7 @@ export class ReductionOps {
     const finalShape = keepdim
       ? meta.shape.map((s, i) => (i === resolvedDim ? 1 : s))
       : outShape;
-    const result = this.deviceMgr.registerTensor(out, finalShape, meta.dtype, outLength);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, finalShape, meta.dtype, outLength);
   }
 
   private async argReduce(tensorId: number, shader: string, entrypoint: string): Promise<TensorHandle> {
@@ -160,8 +157,7 @@ export class ReductionOps {
     paramBuffer.destroy();
 
     const finalShape = meta.shape.slice(0, -1).length > 0 ? meta.shape.slice(0, -1) : [1];
-    const result = this.deviceMgr.registerTensor(out, finalShape, "int32", batchElements);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, finalShape, "int32", batchElements);
   }
 
   private shaderForMode(mode: string): string {

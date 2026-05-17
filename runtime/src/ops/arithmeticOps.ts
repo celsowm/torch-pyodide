@@ -1,5 +1,5 @@
 import { TensorHandle, TensorMeta, SupportedDType } from "./types.js";
-import { cloneHandle, product } from "./types.js";
+import { product } from "./types.js";
 import {
   assertDType,
   coerceScalarByDType,
@@ -53,8 +53,7 @@ export class ArithmeticOps {
     const pipeline = getOrCreatePipeline(WHERE_SHADER, "main");
     dispatchCompute(pipeline, [c.buffer, x.buffer, y.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    const meta = this.deviceMgr.registerTensor(out, x.shape, x.dtype, length);
-    return cloneHandle(meta);
+    return this.deviceMgr.registerTensorAsHandle(out, x.shape, x.dtype, length);
   }
 
   async clamp(tensorId: number, minVal: number, maxVal: number): Promise<TensorHandle> {
@@ -72,8 +71,7 @@ export class ArithmeticOps {
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, meta.shape, meta.dtype, length);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
   }
 
   async matmul(aId: number, bId: number): Promise<TensorHandle> {
@@ -97,8 +95,7 @@ export class ArithmeticOps {
     dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(m * n));
     await syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, [m, n], a.dtype, m * n);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, [m, n], a.dtype, m * n);
   }
 
   private async elementwise(aId: number, bId: number, op: "add" | "mul" | "sub" | "div_op"): Promise<TensorHandle> {
@@ -113,7 +110,6 @@ export class ArithmeticOps {
     const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, op);
     dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    const meta = this.deviceMgr.registerTensor(out, a.shape, a.dtype, length);
-    return cloneHandle(meta);
+    return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, length);
   }
 }

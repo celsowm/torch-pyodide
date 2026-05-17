@@ -1,5 +1,5 @@
 import { TensorHandle, TensorMeta } from "./types.js";
-import { cloneHandle, product } from "./types.js";
+import { product } from "./types.js";
 import {
   getOrCreatePipeline,
   dispatchCompute,
@@ -38,8 +38,7 @@ export class BroadcastOps {
     dispatchCompute(pipeline, [aExpanded.buffer, bExpanded.buffer, out], calculateWorkgroups(outLength));
     await syncDevice();
 
-    const meta = this.deviceMgr.registerTensor(out, outShape, a.dtype, outLength);
-    return cloneHandle(meta);
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, a.dtype, outLength);
   }
 
   broadcastShapes(a: number[], b: number[]): number[] {

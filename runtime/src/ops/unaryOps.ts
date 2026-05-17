@@ -1,5 +1,5 @@
 import { TensorHandle, TensorMeta } from "./types.js";
-import { cloneHandle, product } from "./types.js";
+import { product } from "./types.js";
 import {
   assertUnaryDType,
   getOrCreatePipeline,
@@ -10,7 +10,6 @@ import {
   UNARY_SHADER,
   LEAKY_RELU_SHADER,
   createStorageBuffer,
-  registerTensor,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 
@@ -96,8 +95,7 @@ export class UnaryOps {
     this.deviceMgr.device!.queue.submit([encoder.finish()]);
     await this.deviceMgr.syncDevice();
     paramBuffer.destroy();
-    const result = this.deviceMgr.registerTensor(out, meta.shape, meta.dtype, length);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
   }
 
   async floor(tensorId: number): Promise<TensorHandle> {
@@ -131,7 +129,6 @@ export class UnaryOps {
     const pipeline = getOrCreatePipeline(UNARY_SHADER, entrypoint);
     dispatchCompute(pipeline, [meta.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    const result = this.deviceMgr.registerTensor(out, meta.shape, meta.dtype, length);
-    return cloneHandle(result);
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
   }
 }

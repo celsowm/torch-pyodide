@@ -1,25 +1,6 @@
-/**
- * WebGPU backend exports.
- * @status implemented
- */
-
-export { initWebGPU, getDevice, getAdapter, getTgpuRoot, isInitialized, ensureInitialized } from './device';
-export { bufferPool, createStorageBuffer, createBufferWithData, readBuffer } from './buffer';
-export { getOrCreatePipeline, dispatchCompute, calculateWorkgroups, syncDevice, bindEntry } from './dispatch';
-export { detectCapabilities, getCapabilities } from './capabilities';
+export { initWebGPU, getDevice, getAdapter, isInitialized } from './device';
+export { detectCapabilities } from './capabilities';
 export type { GPUCapabilities } from './capabilities';
-export { BufferUsage, MapMode } from './types';
+export { BufferUsage } from './types';
+export { getOrCreatePipeline, dispatchCompute, calculateWorkgroups, syncDevice } from './dispatch';
 export * from './shaders';
-
-// TypeGPU integration
-export {
-  d,
-  getRoot,
-  resolveShader,
-  TensorSchemas,
-  createTypedBuffer,
-  createComputeLayout,
-  writeUniform,
-  Schemas,
-  getStructWgsl,
-} from './tgpu';

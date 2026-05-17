@@ -1,5 +1,5 @@
 import { TensorHandle, TensorMeta, SupportedDType } from "./types.js";
-import { cloneHandle, product } from "./types.js";
+import { product } from "./types.js";
 import {
   getOrCreatePipeline,
   dispatchCompute,
@@ -55,7 +55,6 @@ export class CompareOps {
     const pipeline = getOrCreatePipeline(COMPARE_SHADER, op);
     dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    const meta = this.deviceMgr.registerTensor(out, a.shape, "bool", length);
-    return cloneHandle(meta);
+    return this.deviceMgr.registerTensorAsHandle(out, a.shape, "bool", length);
   }
 }
