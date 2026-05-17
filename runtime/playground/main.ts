@@ -38,7 +38,7 @@ const editorState = EditorState.create({
     python(),
     oneDark,
     EditorView.theme({
-      "&": { minHeight: "280px", fontSize: "13px" },
+      "&": { height: "100%", minHeight: "0", fontSize: "13px" },
       ".cm-scroller": { fontFamily: '"JetBrains Mono", Consolas, monospace' },
       ".cm-content": { caretColor: "#ffffff" }
     })
