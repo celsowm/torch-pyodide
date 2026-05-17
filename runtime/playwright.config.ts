@@ -14,25 +14,23 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-headless",
+      grepInvert: /@webgpu/,
       use: {
-        headless: true,
-        launchOptions: {
-          args: [
-            "--enable-unsafe-webgpu",
-            "--use-angle=swiftshader-webgpu",
-            "--enable-features=Vulkan"
-          ]
-        }
+        headless: true
       }
     },
     {
       name: "gpu-headed",
+      grep: /@webgpu/,
       use: {
+        channel: "chromium",
         headless: false,
         launchOptions: {
           args: [
             "--enable-unsafe-webgpu",
-            "--enable-features=Vulkan,UseSkiaRenderer"
+            "--enable-features=Vulkan,UseSkiaRenderer",
+            "--start-minimized",
+            "--window-position=2400,0"
           ]
         }
       }

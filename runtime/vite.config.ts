@@ -17,7 +17,7 @@ function wgslLoader() {
 }
 
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS ? "/torch-pyodide/" : "/",
+  base: process.env.VITE_BASE_PATH || "/",
   plugins: [wgslLoader()],
   server: {
     fs: {

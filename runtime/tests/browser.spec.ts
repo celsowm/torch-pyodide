@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("mvp demo runs tensor + matmul + reductions in pyodide", async ({ page }) => {
+test("mvp demo runs tensor + matmul + reductions in pyodide @webgpu", async ({ page }) => {
   await page.goto("/demo/index.html");
 
   await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
@@ -8,14 +8,11 @@ test("mvp demo runs tensor + matmul + reductions in pyodide", async ({ page }) =
   });
 
   const status = await page.evaluate(() => (window as any).__torchMvpStatus);
-  if (status.ok) {
-    expect(status.result.ok).toBe(true);
-    expect(status.result.sum).toBe(28);
-    expect(status.result.mean).toBe(7);
-    expect(["published", "local-dev"]).toContain(status.installMode);
-  } else {
-    expect(String(status.error)).toContain("Failed to request WebGPU adapter");
-  }
+  expect(status.ok).toBe(true);
+  expect(status.result.ok).toBe(true);
+  expect(status.result.sum).toBe(28);
+  expect(status.result.mean).toBe(7);
+  expect(["published", "local-dev"]).toContain(status.installMode);
 });
 
 test("demo falls back to local-dev when published install is forced to fail", async ({ page }) => {

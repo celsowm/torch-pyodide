@@ -38,6 +38,8 @@ jobs:
         run: npm run setup:pyodide:dist
 
       - name: Build runtime
+        env:
+          VITE_BASE_PATH: /torch-pyodide/
         run: npm run build:runtime
 
       - name: Setup Pages
