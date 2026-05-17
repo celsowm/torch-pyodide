@@ -85,6 +85,41 @@
       "id": "expand_index_select",
       "label": "Expand + Index Select",
       "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\ne = x.expand(3, 2, 2)\nindices = torch.tensor([0, 1], dtype=\"int32\")\ns = torch.index_select(x, 0, indices)\nout = {\n  \"input\": x.tolist(),\n  \"expand_shape\": list(e.shape),\n  \"expand\": e.tolist(),\n  \"index_select\": s.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "broadcasting",
+      "label": "Broadcasting",
+      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nb = torch.tensor([10.0, 20.0, 30.0])\nc = torch.tensor([[1.0], [2.0]])\nout = {\n  \"a + b (broadcast)\": a.add(b).tolist(),\n  \"a * c (broadcast)\": a.mul(c).tolist(),\n  \"b - a (broadcast)\": b.sub(a).tolist(),\n  \"shape_a\": list(a.shape),\n  \"shape_b\": list(b.shape),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "compare_ops",
+      "label": "Compare Ops",
+      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 5.0], [3.0, 2.0]])\nb = torch.tensor([[1.0, 3.0], [3.0, 4.0]])\nout = {\n  \"a\": a.tolist(),\n  \"b\": b.tolist(),\n  \"eq\": torch.eq(a, b).tolist(),\n  \"ne\": torch.ne(a, b).tolist(),\n  \"lt\": torch.lt(a, b).tolist(),\n  \"le\": torch.le(a, b).tolist(),\n  \"gt\": torch.gt(a, b).tolist(),\n  \"ge\": torch.ge(a, b).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "unary_advanced",
+      "label": "Unary Advanced (sigmoid, tanh, gelu...)",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[-1.0, 0.0, 1.0], [2.0, -2.0, 0.5]])\nout = {\n  \"input\": x.tolist(),\n  \"sigmoid\": torch.sigmoid(x).tolist(),\n  \"tanh\": torch.tanh(x).tolist(),\n  \"sin\": torch.sin(x).tolist(),\n  \"cos\": torch.cos(x).tolist(),\n  \"gelu\": torch.gelu(x).tolist(),\n  \"silu\": torch.silu(x).tolist(),\n  \"leaky_relu\": torch.leaky_relu(x, 0.01).tolist(),\n  \"floor\": torch.floor(x).tolist(),\n  \"ceil\": torch.ceil(x).tolist(),\n  \"round\": torch.round(x).tolist(),\n  \"reciprocal\": torch.reciprocal(x).tolist(),\n  \"square\": torch.square(x).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "reduce_dim",
+      "label": "Reduction by dim",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nout = {\n  \"input\": x.tolist(),\n  \"sum(0)\": torch.sum(x, 0).tolist(),\n  \"sum(1)\": torch.sum(x, 1).tolist(),\n  \"mean(0)\": torch.mean(x, 0).tolist(),\n  \"mean(1)\": torch.mean(x, 1).tolist(),\n  \"prod\": torch.prod(x).tolist(),\n  \"min\": torch.min(x).tolist(),\n  \"max\": torch.max(x).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "masked_select_fill",
+      "label": "Masked Select + Fill",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nmask = torch.tensor([[1.0, 0.0, 1.0], [0.0, 1.0, 0.0]])\nfilled = torch.masked_fill(x, mask, 99.0)\nselected = torch.masked_select(x, mask)\nout = {\n  \"input\": x.tolist(),\n  \"mask\": mask.tolist(),\n  \"masked_fill\": filled.tolist(),\n  \"masked_select\": selected.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "broadcast_compare",
+      "label": "Broadcast + Compare",
+      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 5.0, 3.0], [4.0, 2.0, 6.0]])\nthreshold = torch.tensor([3.0, 3.0, 3.0])\nout = {\n  \"a\": a.tolist(),\n  \"threshold\": threshold.tolist(),\n  \"a > threshold\": torch.gt(a, threshold).tolist(),\n  \"a <= threshold\": torch.le(a, threshold).tolist(),\n  \"where(a > 3, a, 0)\": torch.where(torch.gt(a, torch.tensor(3.0)), a, torch.zeros_like(a)).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "reduce_dim_keepdim",
+      "label": "Reduction keepdim",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nout = {\n  \"input_shape\": list(x.shape),\n  \"sum(0, keepdim)\": torch.sum(x, 0, True).tolist(),\n  \"sum(0, keepdim)_shape\": list(torch.sum(x, 0, True).shape),\n  \"mean(1, keepdim)\": torch.mean(x, 1, True).tolist(),\n  \"mean(1, keepdim)_shape\": list(torch.mean(x, 1, True).shape),\n}\nprint(json.dumps(out, indent=2))\n"
     }
   ]
 }
