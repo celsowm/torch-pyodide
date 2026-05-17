@@ -11,7 +11,7 @@ function setStatus(message: string) {
 async function main() {
   let runSyncError = "";
   try {
-    const { pyodide, indexURL } = await bootstrapPyodideTorch();
+    const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch();
 
     try {
       pyodide.runPython(`
@@ -25,8 +25,6 @@ run_sync(asyncio.sleep(0))
 
     const script = `
 import math
-import sys
-sys.path.insert(0, "/home/pyodide")
 import torch
 
 torch.init()
@@ -67,6 +65,8 @@ assert abs(mean.to_list()[0] - 7.0) < 1e-6
       ok: true,
       result,
       indexURL,
+      installMode,
+      installDetail,
       runSyncError
     };
     (globalThis as typeof globalThis & { __torchMvpStatus?: unknown }).__torchMvpStatus = statusPayload;

@@ -12,6 +12,7 @@ test("mvp demo runs tensor + matmul + reductions in pyodide", async ({ page }) =
     expect(status.result.ok).toBe(true);
     expect(status.result.sum).toBe(28);
     expect(status.result.mean).toBe(7);
+    expect(["published", "local-dev"]).toContain(status.installMode);
   } else {
     expect(String(status.error)).toContain("Failed to request WebGPU adapter");
   }

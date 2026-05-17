@@ -6,8 +6,6 @@ import { python } from "@codemirror/lang-python";
 import { oneDark } from "@codemirror/theme-one-dark";
 
 const defaultCode = `import json
-import sys
-sys.path.insert(0, "/home/pyodide")
 import torch
 
 torch.init()
@@ -54,8 +52,8 @@ async function main() {
   try {
     runButton.disabled = true;
     meta.textContent = "Loading Pyodide + runtime...";
-    const { pyodide, indexURL } = await bootstrapPyodideTorch();
-    meta.textContent = `Ready. Pyodide source: ${indexURL}`;
+    const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch();
+    meta.textContent = `Ready. Pyodide: ${indexURL} | mode: ${installMode} | ${installDetail}`;
 
     runButton.disabled = false;
     runButton.onclick = async () => {
