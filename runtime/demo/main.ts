@@ -36,7 +36,6 @@ run_sync(asyncio.sleep(0))
 import math
 import torch
 
-torch.init()
 a = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
 b = torch.ones((2, 2))
 c = a.add(b)
@@ -65,6 +64,8 @@ assert abs(mean.to_list()[0] - 7.0) < 1e-6
     "sum": s.to_list()[0],
     "mean": mean.to_list()[0],
     "shape": list(a.shape),
+    "cuda_available": torch.cuda.is_available(),
+    "cuda_device_count": torch.cuda.device_count(),
 }
 `;
 

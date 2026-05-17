@@ -12,6 +12,8 @@ test("mvp demo runs tensor + matmul + reductions in pyodide @webgpu", async ({ p
   expect(status.result.ok).toBe(true);
   expect(status.result.sum).toBe(28);
   expect(status.result.mean).toBe(7);
+  expect(typeof status.result.cuda_available).toBe("boolean");
+  expect(typeof status.result.cuda_device_count).toBe("number");
   expect(["published", "local-dev"]).toContain(status.installMode);
 });
 

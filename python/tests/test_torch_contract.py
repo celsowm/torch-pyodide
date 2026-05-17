@@ -5,7 +5,9 @@ import torch._tensor as tensor_mod
 
 
 class FakeRuntime:
-    def __init__(self) -> None:
+    def __init__(self, available: bool = True) -> None:
+        self.available = available
+        self.initialized = False
         self.next_id = 100
         self.store: dict[int, dict[str, object]] = {}
 
@@ -16,16 +18,79 @@ class FakeRuntime:
         return {"id": tensor_id, "shape": shape, "dtype": dtype}
 
     def init(self) -> None:
+        if not self.available:
+            raise RuntimeError("WebGPU unavailable in this browser.")
+        self.initialized = True
         return None
 
+    def _ensure_ready(self) -> None:
+        if not self.available:
+            raise RuntimeError("WebGPU unavailable in this browser.")
+        if not self.initialized:
+            self.initialized = True
+
+    def isAvailable(self) -> bool:
+        return self.available
+
+    def isInitialized(self) -> bool:
+        return self.initialized
+
+    def deviceCount(self) -> int:
+        return 1 if self.available else 0
+
+    def currentDevice(self) -> int:
+        self._ensure_ready()
+        return 0
+
+    def getDeviceName(self, idx: int = 0) -> str:
+        if idx != 0:
+            raise RuntimeError("Only device index 0 is supported in MVP")
+        self._ensure_ready()
+        return "Fake WebGPU Adapter"
+
+    def getDeviceProperties(self, idx: int = 0) -> dict[str, object]:
+        if idx != 0:
+            raise RuntimeError("Only device index 0 is supported in MVP")
+        self._ensure_ready()
+        return {
+            "name": "Fake WebGPU Adapter",
+            "total_memory": 0,
+            "major": 0,
+            "minor": 0,
+            "multi_processor_count": 0,
+            "vendor": "fake-vendor",
+            "architecture": "fake-arch",
+            "description": "fake-description",
+            "device": "fake-device",
+            "is_fallback_adapter": False,
+            "subgroup_min_size": 0,
+            "subgroup_max_size": 0,
+            "limits": {"maxBufferSize": 1024},
+        }
+
+    def memoryAllocated(self, idx: int = 0) -> int:
+        if idx != 0:
+            raise RuntimeError("Only device index 0 is supported in MVP")
+        self._ensure_ready()
+        total = 0
+        for tensor in self.store.values():
+            total += _numel(list(tensor["shape"])) * 4
+        return total
+
+    def memoryReserved(self, idx: int = 0) -> int:
+        return self.memoryAllocated(idx)
+
     def tensorFromData(self, flat: list[float], shape: list[int], dtype: str) -> dict[str, object]:
+        self._ensure_ready()
         return self._new(shape, flat, dtype)
 
     def zeros(self, shape: list[int], dtype: str) -> dict[str, object]:
+        self._ensure_ready()
         size = _numel(shape)
         return self._new(shape, [0.0] * size, dtype)
 
     def ones(self, shape: list[int], dtype: str) -> dict[str, object]:
+        self._ensure_ready()
         size = _numel(shape)
         return self._new(shape, [1.0] * size, dtype)
 
@@ -110,10 +175,9 @@ def test_torch_public_contract(monkeypatch):
     fake = FakeRuntime()
     monkeypatch.setattr(tensor_mod, "_get_runtime", lambda: fake)
     monkeypatch.setattr(tensor_mod, "_run_js_awaitable", lambda value: value)
-    monkeypatch.setattr(torch_mod, "_get_runtime", lambda: fake)
-    monkeypatch.setattr(torch_mod, "_run_js_awaitable", lambda value: value)
+    monkeypatch.setattr(torch_mod.cuda, "_get_runtime", lambda: fake)
+    monkeypatch.setattr(torch_mod.cuda, "_run_js_awaitable", lambda value: value)
 
-    torch_mod.init()
     a = torch_mod.tensor([[1.0, 2.0], [3.0, 4.0]])
     b = torch_mod.ones((2, 2))
 
@@ -141,3 +205,40 @@ def test_torch_public_contract(monkeypatch):
     doomed_id = doomed._id
     doomed.destroy()
     assert doomed_id not in fake.store
+    assert torch_mod.cuda.is_available() is True
+    assert torch_mod.cuda.device_count() == 1
+    assert torch_mod.cuda.current_device() == 0
+    assert torch_mod.cuda.get_device_name(0) == "Fake WebGPU Adapter"
+    props = torch_mod.cuda.get_device_properties(0)
+    assert props.total_memory == 0
+    assert props.major == 0
+    assert props.minor == 0
+    assert props.multi_processor_count == 0
+    assert props.vendor == "fake-vendor"
+    assert isinstance(props.limits, dict)
+    assert torch_mod.cuda.memory_allocated(0) == torch_mod.cuda.memory_reserved(0)
+    assert torch_mod.cuda.memory.memory_allocated(0) == torch_mod.cuda.memory_allocated(0)
+    assert torch_mod.cuda.memory.memory_reserved(0) == torch_mod.cuda.memory_reserved(0)
+
+
+def test_torch_cuda_unavailable_contract(monkeypatch):
+    fake = FakeRuntime(available=False)
+    monkeypatch.setattr(tensor_mod, "_get_runtime", lambda: fake)
+    monkeypatch.setattr(tensor_mod, "_run_js_awaitable", lambda value: value)
+    monkeypatch.setattr(torch_mod.cuda, "_get_runtime", lambda: fake)
+    monkeypatch.setattr(torch_mod.cuda, "_run_js_awaitable", lambda value: value)
+
+    assert torch_mod.cuda.is_available() is False
+    assert torch_mod.cuda.device_count() == 0
+    for fn in (
+        torch_mod.cuda.current_device,
+        lambda: torch_mod.cuda.get_device_name(0),
+        lambda: torch_mod.cuda.get_device_properties(0),
+        lambda: torch_mod.cuda.memory_allocated(0),
+        lambda: torch_mod.cuda.memory_reserved(0),
+    ):
+        try:
+            fn()
+            assert False, "expected unavailable error"
+        except RuntimeError as exc:
+            assert "WebGPU unavailable" in str(exc)

@@ -2,7 +2,6 @@
   "version": 1,
   "description": "Subset de APIs do PyTorch usado para medir progresso do torch-pyodide.",
   "targets": [
-    { "id": "torch.init", "kind": "module_func" },
     { "id": "torch.tensor", "kind": "module_func" },
     { "id": "torch.zeros", "kind": "module_func" },
     { "id": "torch.ones", "kind": "module_func" },
@@ -12,6 +11,17 @@
     { "id": "torch.div", "kind": "module_func" },
     { "id": "torch.matmul", "kind": "module_func" },
     { "id": "torch.relu", "kind": "module_func" },
+    { "id": "torch.cuda.is_available", "kind": "cuda_func" },
+    { "id": "torch.cuda.is_initialized", "kind": "cuda_func" },
+    { "id": "torch.cuda.init", "kind": "cuda_func" },
+    { "id": "torch.cuda.device_count", "kind": "cuda_func" },
+    { "id": "torch.cuda.current_device", "kind": "cuda_func" },
+    { "id": "torch.cuda.get_device_name", "kind": "cuda_func" },
+    { "id": "torch.cuda.get_device_properties", "kind": "cuda_func" },
+    { "id": "torch.cuda.memory_allocated", "kind": "cuda_func" },
+    { "id": "torch.cuda.memory_reserved", "kind": "cuda_func" },
+    { "id": "torch.cuda.memory.memory_allocated", "kind": "cuda_func" },
+    { "id": "torch.cuda.memory.memory_reserved", "kind": "cuda_func" },
     { "id": "Tensor.add", "kind": "tensor_method" },
     { "id": "Tensor.sub", "kind": "tensor_method" },
     { "id": "Tensor.mul", "kind": "tensor_method" },
@@ -28,4 +38,3 @@
     { "id": "Tensor.dtype", "kind": "tensor_property" }
   ]
 }
-

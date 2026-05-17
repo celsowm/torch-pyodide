@@ -1,4 +1,5 @@
 import initPy from "../../python/torch/__init__.py?raw";
+import cudaPy from "../../python/torch/cuda.py?raw";
 import runtimePy from "../../python/torch/_runtime.py?raw";
 import tensorPy from "../../python/torch/_tensor.py?raw";
 import { installTorchRuntime } from "../src";
@@ -47,6 +48,7 @@ for name in list(sys.modules):
 `);
   pyodide.FS.mkdirTree("/home/pyodide/torch");
   pyodide.FS.writeFile("/home/pyodide/torch/__init__.py", initPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/cuda.py", cudaPy);
   pyodide.FS.writeFile("/home/pyodide/torch/_runtime.py", runtimePy);
   pyodide.FS.writeFile("/home/pyodide/torch/_tensor.py", tensorPy);
   pyodide.runPython(`
@@ -74,6 +76,8 @@ tensor_id, shape, dtype = _js_meta_to_tuple({"id": 1, "shape": [2], "dtype": "fl
 assert tensor_id == 1
 assert shape == [2]
 assert dtype == "float32"
+assert hasattr(torch, "cuda")
+assert callable(torch.cuda.is_available)
 `);
 }
 

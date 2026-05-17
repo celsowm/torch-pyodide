@@ -2,15 +2,10 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from ._runtime import _get_runtime, _run_js_awaitable
+from . import cuda
 from ._tensor import Tensor, ones_from_shape, tensor_from_data, zeros_from_shape
 
-__all__ = ["Tensor", "init", "tensor", "zeros", "ones", "add", "sub", "mul", "div", "matmul", "relu"]
-
-
-def init() -> None:
-    runtime = _get_runtime()
-    _run_js_awaitable(runtime.init())
+__all__ = ["Tensor", "cuda", "tensor", "zeros", "ones", "add", "sub", "mul", "div", "matmul", "relu"]
 
 
 def tensor(data: object, dtype: str = "float32") -> Tensor:

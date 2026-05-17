@@ -41,6 +41,16 @@ def _check_target(torch_mod: Any, tensor_cls: Any, target: dict[str, str]) -> Ta
         ok = isinstance(attr, property) or attr is not None
         return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
 
+    if kind == "cuda_func":
+        parts = target_id.split(".")[1:]  # drop torch
+        current = torch_mod
+        for part in parts:
+            if not hasattr(current, part):
+                return TargetResult(target_id, kind, False, "missing")
+            current = getattr(current, part)
+        ok = callable(current)
+        return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
+
     return TargetResult(target_id, kind, False, f"unknown kind: {kind}")
 
 

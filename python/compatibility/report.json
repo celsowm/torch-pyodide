@@ -1,11 +1,15 @@
 {
-  "implemented": 24,
-  "total": 24,
+  "implemented": 34,
+  "total": 34,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
-      "implemented": 10,
-      "total": 10
+      "implemented": 9,
+      "total": 9
+    },
+    "cuda_func": {
+      "implemented": 11,
+      "total": 11
     },
     "tensor_method": {
       "implemented": 11,
@@ -17,12 +21,6 @@
     }
   },
   "targets": [
-    {
-      "id": "torch.init",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
     {
       "id": "torch.tensor",
       "kind": "module_func",
@@ -74,6 +72,72 @@
     {
       "id": "torch.relu",
       "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.is_available",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.is_initialized",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.init",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.device_count",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.current_device",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.get_device_name",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.get_device_properties",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.memory_allocated",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.memory_reserved",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.memory.memory_allocated",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.memory.memory_reserved",
+      "kind": "cuda_func",
       "implemented": true,
       "note": "ok"
     },

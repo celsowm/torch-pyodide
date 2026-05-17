@@ -9,6 +9,7 @@ type TensorMeta = {
   shape: number[];
   dtype: string;
   length: number;
+  bytes: number;
 };
 
 type TensorHandle = {
@@ -64,33 +65,19 @@ export class TorchPyodideRuntime {
   private device: GPUDevice | null = null;
   private adapter: GPUAdapter | null = null;
   private initialized = false;
+  private initPromise: Promise<void> | null = null;
+  private initError: string | null = null;
   private nextId = 1;
   private tensors = new Map<number, TensorMeta>();
   private pipelineCache = new Map<string, GPUComputePipeline>();
+  private currentAllocatedBytes = 0;
 
   async init(gpuProvider?: GPU | null): Promise<void> {
-    if (this.initialized) {
-      return;
-    }
-    const gpu = gpuProvider === undefined ? globalThis.navigator?.gpu : gpuProvider;
-    if (!gpu) {
-      throw new Error("WebGPU unavailable in this browser.");
-    }
-    let adapter = await gpu.requestAdapter({ powerPreference: "high-performance" });
-    if (!adapter) {
-      adapter = await gpu.requestAdapter();
-    }
-    if (!adapter) {
-      throw new Error("Failed to request WebGPU adapter.");
-    }
-    const device = await adapter.requestDevice();
-    this.adapter = adapter;
-    this.device = device;
-    this.initialized = true;
+    await this.ensureReady(gpuProvider);
   }
 
   async tensorFromData(data: number[], shape: number[], dtype: string): Promise<TensorHandle> {
-    this.ensureReady();
+    await this.ensureReady();
     this.assertDType(dtype);
     const length = product(shape);
     if (length !== data.length) {
@@ -128,7 +115,7 @@ export class TorchPyodideRuntime {
   }
 
   async relu(tensorId: number): Promise<TensorHandle> {
-    this.ensureReady();
+    await this.ensureReady();
     const source = this.getTensor(tensorId);
     const out = this.createStorageBuffer(Math.max(4, source.length * 4));
     const pipeline = this.getPipeline(unaryReluShader, "relu");
@@ -139,7 +126,7 @@ export class TorchPyodideRuntime {
   }
 
   async matmul(aId: number, bId: number): Promise<TensorHandle> {
-    this.ensureReady();
+    await this.ensureReady();
     const a = this.getTensor(aId);
     const b = this.getTensor(bId);
     if (a.shape.length !== 2 || b.shape.length !== 2) {
@@ -182,7 +169,7 @@ export class TorchPyodideRuntime {
   }
 
   async reshape(tensorId: number, shape: number[]): Promise<TensorHandle> {
-    this.ensureReady();
+    await this.ensureReady();
     const source = this.getTensor(tensorId);
     const outLength = product(shape);
     if (outLength !== source.length) {
@@ -198,7 +185,7 @@ export class TorchPyodideRuntime {
   }
 
   async transpose2d(tensorId: number): Promise<TensorHandle> {
-    this.ensureReady();
+    await this.ensureReady();
     const source = this.getTensor(tensorId);
     if (source.shape.length !== 2) {
       throw new Error("transpose2d currently supports only rank-2 tensors.");
@@ -220,7 +207,7 @@ export class TorchPyodideRuntime {
   }
 
   async toList(tensorId: number): Promise<number[]> {
-    this.ensureReady();
+    await this.ensureReady();
     const meta = this.getTensor(tensorId);
     const readBuffer = this.device!.createBuffer({
       size: meta.length * 4,
@@ -243,11 +230,54 @@ export class TorchPyodideRuntime {
       return;
     }
     meta.buffer.destroy();
+    this.currentAllocatedBytes = Math.max(0, this.currentAllocatedBytes - meta.bytes);
     this.tensors.delete(tensorId);
   }
 
+  isAvailable(): boolean {
+    return Boolean(globalThis.navigator?.gpu);
+  }
+
+  isInitialized(): boolean {
+    return this.initialized;
+  }
+
+  deviceCount(): number {
+    return this.isAvailable() ? 1 : 0;
+  }
+
+  async currentDevice(): Promise<number> {
+    await this.ensureReady();
+    return 0;
+  }
+
+  async getDeviceName(deviceIndex?: number): Promise<string> {
+    this.assertDeviceIndex(deviceIndex);
+    await this.ensureReady();
+    const properties = this.collectDeviceProperties();
+    return properties.name as string;
+  }
+
+  async getDeviceProperties(deviceIndex?: number): Promise<Record<string, unknown>> {
+    this.assertDeviceIndex(deviceIndex);
+    await this.ensureReady();
+    return this.collectDeviceProperties();
+  }
+
+  async memoryAllocated(deviceIndex?: number): Promise<number> {
+    this.assertDeviceIndex(deviceIndex);
+    await this.ensureReady();
+    return this.currentAllocatedBytes;
+  }
+
+  async memoryReserved(deviceIndex?: number): Promise<number> {
+    this.assertDeviceIndex(deviceIndex);
+    await this.ensureReady();
+    return this.currentAllocatedBytes;
+  }
+
   private async fill(shape: number[], dtype: string, value: number): Promise<TensorHandle> {
-    this.ensureReady();
+    await this.ensureReady();
     this.assertDType(dtype);
     const length = product(shape);
     const out = this.createStorageBuffer(Math.max(4, length * 4));
@@ -271,7 +301,7 @@ export class TorchPyodideRuntime {
   }
 
   private async elementwise(aId: number, bId: number, op: "add" | "mul" | "sub" | "div_op"): Promise<TensorHandle> {
-    this.ensureReady();
+    await this.ensureReady();
     const a = this.getTensor(aId);
     const b = this.getTensor(bId);
     if (a.length !== b.length) {
@@ -289,7 +319,7 @@ export class TorchPyodideRuntime {
   }
 
   private async reduce(tensorId: number, asMean: boolean): Promise<TensorHandle> {
-    this.ensureReady();
+    await this.ensureReady();
     const source = this.getTensor(tensorId);
     let currentBuffer = source.buffer;
     let currentLength = source.length;
@@ -353,14 +383,17 @@ export class TorchPyodideRuntime {
 
   private registerTensor(buffer: GPUBuffer, shape: number[], dtype: string, length: number): TensorMeta {
     const id = this.nextId++;
+    const bytes = buffer.size;
     const meta: TensorMeta = {
       id,
       buffer,
       shape: [...shape],
       dtype,
-      length
+      length,
+      bytes
     };
     this.tensors.set(id, meta);
+    this.currentAllocatedBytes += bytes;
     return meta;
   }
 
@@ -379,10 +412,87 @@ export class TorchPyodideRuntime {
     });
   }
 
-  private ensureReady() {
-    if (!this.device || !this.initialized || !this.adapter) {
-      throw new Error("Runtime not initialized. Call torch.init() first.");
+  private async ensureReady(gpuProvider?: GPU | null): Promise<void> {
+    if (this.initialized && this.device && this.adapter) {
+      return;
     }
+    if (this.initPromise) {
+      await this.initPromise;
+      return;
+    }
+    this.initPromise = this.initializeInternal(gpuProvider);
+    try {
+      await this.initPromise;
+    } finally {
+      this.initPromise = null;
+    }
+  }
+
+  private async initializeInternal(gpuProvider?: GPU | null): Promise<void> {
+    this.initError = null;
+    const gpu = gpuProvider === undefined ? globalThis.navigator?.gpu : gpuProvider;
+    if (!gpu) {
+      this.initialized = false;
+      this.initError = "WebGPU unavailable in this browser.";
+      throw new Error(this.initError);
+    }
+    let adapter = await gpu.requestAdapter({ powerPreference: "high-performance" });
+    if (!adapter) {
+      adapter = await gpu.requestAdapter();
+    }
+    if (!adapter) {
+      this.initialized = false;
+      this.initError = "Failed to request WebGPU adapter.";
+      throw new Error(this.initError);
+    }
+    const device = await adapter.requestDevice();
+    this.adapter = adapter;
+    this.device = device;
+    this.initialized = true;
+  }
+
+  private assertDeviceIndex(deviceIndex?: number): void {
+    if (deviceIndex === undefined || deviceIndex === null) {
+      return;
+    }
+    if (deviceIndex !== 0) {
+      throw new Error(`Only device index 0 is supported in MVP, received: ${deviceIndex}.`);
+    }
+  }
+
+  private collectDeviceProperties(): Record<string, unknown> {
+    const adapterAny = this.adapter as unknown as {
+      info?: {
+        vendor?: string;
+        architecture?: string;
+        device?: string;
+        description?: string;
+      };
+      isFallbackAdapter?: boolean;
+    };
+    const limits = this.adapter!.limits as unknown as Record<string, number>;
+    const info = adapterAny.info ?? {};
+    const name =
+      info.description ||
+      info.device ||
+      info.architecture ||
+      info.vendor ||
+      "WebGPU Adapter";
+    return {
+      name,
+      total_memory: 0,
+      major: 0,
+      minor: 0,
+      multi_processor_count: 0,
+      vendor: info.vendor ?? "",
+      architecture: info.architecture ?? "",
+      description: info.description ?? "",
+      device: info.device ?? "",
+      is_fallback_adapter: Boolean(adapterAny.isFallbackAdapter),
+      subgroup_min_size: limits.minSubgroupSize ?? 0,
+      subgroup_max_size: limits.maxSubgroupSize ?? 0,
+      limits
+    };
   }
 
   private assertDType(dtype: string) {
