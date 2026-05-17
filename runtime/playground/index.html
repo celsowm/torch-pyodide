@@ -96,6 +96,27 @@
       button:disabled { opacity: 0.5; cursor: default; }
       .row { display: flex; gap: 8px; align-items: center; }
       .muted { color: #475569; font-size: 0.9rem; }
+      .gpu-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #ecfeff;
+        border: 1px solid #99f6e4;
+        color: #134e4a;
+        font-size: 0.86rem;
+        max-width: 100%;
+      }
+      .gpu-chip strong {
+        color: #0f766e;
+        white-space: nowrap;
+      }
+      .gpu-chip span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
       @media (max-width: 960px) {
         .wrap {
           min-height: auto;
@@ -122,6 +143,7 @@
           <button id="reset">Reset</button>
         </div>
         <div class="muted" id="meta">Booting...</div>
+        <div class="gpu-chip" id="gpu-chip"><strong>GPU</strong><span id="gpu-label">Detecting...</span></div>
       </div>
       <section class="panes">
         <article class="panel">

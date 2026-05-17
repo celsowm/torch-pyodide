@@ -27,6 +27,29 @@ const resetButton = document.getElementById("reset") as HTMLButtonElement;
 const editorHost = document.getElementById("editor") as HTMLDivElement;
 const output = document.getElementById("output") as HTMLElement;
 const meta = document.getElementById("meta") as HTMLElement;
+const gpuLabel = document.getElementById("gpu-label") as HTMLElement;
+
+function detectWebglRenderer(): string {
+  const canvas = document.createElement("canvas");
+  const gl =
+    (canvas.getContext("webgl2") as WebGLRenderingContext | null) ||
+    (canvas.getContext("webgl") as WebGLRenderingContext | null);
+  if (!gl) {
+    return "";
+  }
+  const ext = gl.getExtension("WEBGL_debug_renderer_info") as {
+    UNMASKED_RENDERER_WEBGL: number;
+  } | null;
+  if (!ext) {
+    return "";
+  }
+  const renderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
+  return typeof renderer === "string" ? renderer : "";
+}
+
+function setGpuLabel(value: string): void {
+  gpuLabel.textContent = value || "Unknown GPU";
+}
 
 const editorState = EditorState.create({
   doc: defaultCode,
@@ -60,6 +83,23 @@ async function main() {
     meta.textContent = `Ready. Pyodide: ${indexURL} | mode: ${installMode} | ${shortInstallDetail}`;
     if (installMode !== "published") {
       console.warn(`[torch-pyodide] ${installDetail}`);
+    }
+
+    const webglRenderer = detectWebglRenderer();
+    if (webglRenderer) {
+      setGpuLabel(`${webglRenderer} (WEBGL_debug_renderer_info)`);
+    } else {
+      try {
+        const runtimeGpu = String(
+          pyodide.runPython(`
+import torch
+torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No WebGPU adapter available"
+`)
+        );
+        setGpuLabel(`${runtimeGpu} (torch.cuda)`);
+      } catch {
+        setGpuLabel("No GPU details available");
+      }
     }
 
     runButton.disabled = false;
