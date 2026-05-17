@@ -78,7 +78,7 @@ export class ReductionOps {
       this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
       const shader = this.shaderForMode(mode);
-      const pipeline = getOrCreatePipeline(shader, mode);
+      const pipeline = getOrCreatePipeline(shader, "main");
       dispatchCompute(pipeline, [src, out, paramBuffer], calculateWorkgroups(groups));
 
       src = out;
@@ -128,7 +128,7 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
     const shader = REDUCE_DIM_SHADER;
-    const pipeline = getOrCreatePipeline(shader, mode);
+    const pipeline = getOrCreatePipeline(shader, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
