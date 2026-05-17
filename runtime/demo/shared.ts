@@ -80,6 +80,7 @@ type InstallMode = "published" | "local-dev";
 
 type BootstrapOptions = {
   forcePublishedFailure?: boolean;
+  preferLocalFallbackInProduction?: boolean;
 };
 
 function summarizeError(error: unknown): string {
@@ -97,9 +98,18 @@ export async function bootstrapPyodideTorch(options?: BootstrapOptions) {
   const pyodide = await loadPyodide({ indexURL });
   const hostname = globalThis.location?.hostname ?? "";
   const localHost = isLocalhostHost(hostname);
+  const preferLocalFallbackInProduction = options?.preferLocalFallbackInProduction ?? true;
 
   let installMode: InstallMode = "published";
   let installDetail = "Installed torch-pyodide via micropip from published index.";
+
+  if (!localHost && preferLocalFallbackInProduction) {
+    installLocalTorchPackage(pyodide);
+    await verifyInstalledTorch(pyodide);
+    installMode = "local-dev";
+    installDetail = "Using bundled local fallback in production.";
+    return { pyodide, indexURL, installMode, installDetail };
+  }
 
   try {
     if (options?.forcePublishedFailure) {

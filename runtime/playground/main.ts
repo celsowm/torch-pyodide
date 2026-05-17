@@ -51,11 +51,18 @@ const editor = new EditorView({
 async function main() {
   try {
     runButton.disabled = true;
+    resetButton.disabled = true;
     meta.textContent = "Loading Pyodide + runtime...";
     const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch();
-    meta.textContent = `Ready. Pyodide: ${indexURL} | mode: ${installMode} | ${installDetail}`;
+    const shortInstallDetail =
+      installMode === "published" ? "Published package active." : "Using bundled local fallback.";
+    meta.textContent = `Ready. Pyodide: ${indexURL} | mode: ${installMode} | ${shortInstallDetail}`;
+    if (installMode !== "published") {
+      console.warn(`[torch-pyodide] ${installDetail}`);
+    }
 
     runButton.disabled = false;
+    resetButton.disabled = false;
     runButton.onclick = async () => {
       output.textContent = "";
       runButton.disabled = true;
@@ -91,6 +98,8 @@ _torch_playground_buf.getvalue()
   } catch (error) {
     meta.textContent = "Failed to initialize playground.";
     output.textContent = String(error);
+    runButton.disabled = true;
+    resetButton.disabled = true;
   }
 }
 
