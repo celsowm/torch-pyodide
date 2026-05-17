@@ -145,7 +145,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
     });
     this.deviceMgr.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
-    const pipeline = getOrCreatePipeline(REDUCE_DIM_SHADER, "main");
+    const pipeline = getOrCreatePipeline(REDUCE_SUM_SHADER, "main");
     dispatchCompute(pipeline, [source.buffer, out, paramsBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramsBuffer.destroy();

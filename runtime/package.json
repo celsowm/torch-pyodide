@@ -8,7 +8,8 @@
     "demo": "vite --host 127.0.0.1 --port 4173",
     "validate:shaders": "node scripts/validate-shaders.mjs",
     "validate:api": "node scripts/validate-runtime-api.mjs",
-    "validate": "npm run validate:shaders && npm run validate:api",
+    "validate:imports": "node scripts/validate-imports.mjs",
+    "validate": "npm run validate:shaders && npm run validate:api && npm run validate:imports",
     "test": "npm run validate && playwright test --project=chromium-headless",
     "test:gpu": "playwright test --project=gpu-headed --grep @webgpu"
   },

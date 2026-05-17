@@ -43,6 +43,9 @@ jobs:
       - name: Validate runtime API against Python layer
         run: npm --workspace runtime run validate:api
 
+      - name: Validate imports (no dangling references to unimported constants)
+        run: npm --workspace runtime run validate:imports
+
       - name: Setup Pyodide dist
         run: npm run setup:pyodide:dist
 
