@@ -36,7 +36,9 @@ async function loadPyodideModule(indexURL: string): Promise<LoadPyodideFn> {
 function installLocalTorchPackage(pyodide: PyodideApi): void {
   pyodide.runPython(`
 import sys
-sys.modules.pop("torch", None)
+for name in list(sys.modules):
+    if name == "torch" or name.startswith("torch."):
+        sys.modules.pop(name, None)
 `);
   pyodide.FS.mkdirTree("/home/pyodide/torch");
   pyodide.FS.writeFile("/home/pyodide/torch/__init__.py", initPy);
@@ -44,8 +46,10 @@ sys.modules.pop("torch", None)
   pyodide.FS.writeFile("/home/pyodide/torch/_tensor.py", tensorPy);
   pyodide.runPython(`
 import sys
-if "/home/pyodide" not in sys.path:
-    sys.path.insert(0, "/home/pyodide")
+home = "/home/pyodide"
+if home in sys.path:
+    sys.path.remove(home)
+sys.path.insert(0, home)
 `);
 }
 
