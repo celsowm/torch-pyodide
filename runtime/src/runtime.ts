@@ -3,6 +3,8 @@ import { product, cloneHandle } from "./ops/types.js";
 import {
   decodeValuesByDType,
   readFromGPU,
+  setDeviceManager,
+  getShadowId,
 } from "./ops/utils.js";
 import { DeviceManager } from "./ops/device.js";
 import { CreationOps } from "./ops/creationOps.js";
@@ -27,6 +29,7 @@ export class TorchPyodideRuntime {
   private maskingOps: MaskingOps;
 
   constructor() {
+    setDeviceManager(this.deviceMgr);
     this.creationOps = new CreationOps(this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes);
     this.arithmeticOps = new ArithmeticOps(this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes);
     this.unaryOps = new UnaryOps(this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes);
@@ -317,7 +320,11 @@ export class TorchPyodideRuntime {
   async destroy(tensorId: number): Promise<void> {
     const meta = this.tensors.get(tensorId);
     if (!meta) return;
-    meta.buffer.destroy();
+    const shadowId = getShadowId(meta.buffer);
+    if (shadowId !== undefined) {
+      this.deviceMgr.discardShadow(shadowId);
+    }
+    try { meta.buffer.destroy(); } catch { /* device may be gone */ }
     this.allocatedBytes.current = Math.max(0, this.allocatedBytes.current - meta.bytes);
     this.tensors.delete(tensorId);
   }
