@@ -143,9 +143,9 @@ async function initializeExampleSelection(catalog: { metaList: { id: string; lab
     exampleSelect.appendChild(option);
   }
 
-  for (const meta of catalog.metaList) {
-    const code = await loadExample(meta);
-    examplesById.set(meta.id, code);
+  const examples = await Promise.all(catalog.metaList.map(loadExample));
+  for (const ex of examples) {
+    examplesById.set(ex.id, ex);
   }
 
   const firstMeta = catalog.metaList.find((m) => m.id === defaultMeta) ?? catalog.metaList[0];
