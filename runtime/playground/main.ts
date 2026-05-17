@@ -5,21 +5,15 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { python } from "@codemirror/lang-python";
 import { oneDark } from "@codemirror/theme-one-dark";
 
-type PlaygroundExample = {
+type ExampleMeta = {
   id: string;
   label: string;
   file: string;
-  code: string;
 };
 
-type ExamplesCatalog = {
-  default?: string;
-  examples: PlaygroundExample[];
-};
-
-function exampleFromJson(raw: { id: string; label: string; file: string }, code: string): PlaygroundExample {
-  return { id: raw.id, label: raw.label, file: raw.file, code };
-}
+let selectedMeta: ExampleMeta | null = null;
+let metaList: ExampleMeta[] = [];
+let codeCache = new Map<string, string>();
 
 const runButton = document.getElementById("run") as HTMLButtonElement;
 const resetButton = document.getElementById("reset") as HTMLButtonElement;
@@ -28,8 +22,8 @@ const editorHost = document.getElementById("editor") as HTMLDivElement;
 const output = document.getElementById("output") as HTMLElement;
 const meta = document.getElementById("meta") as HTMLElement;
 const gpuLabel = document.getElementById("gpu-label") as HTMLElement;
-let selectedExample: PlaygroundExample | null = null;
-let examplesById = new Map<string, PlaygroundExample>();
+let selectedExample: ExampleMeta | null = null;
+let examplesById = new Map<string, ExampleMeta>();
 
 function detectWebglRenderer(): string {
   const canvas = document.createElement("canvas");
@@ -80,7 +74,20 @@ function setEditorCode(code: string): void {
   });
 }
 
-function assertValidCatalog(raw: unknown): { default?: string; metaList: { id: string; label: string; file: string }[] } {
+async function fetchCode(file: string): Promise<string> {
+  const cached = codeCache.get(file);
+  if (cached !== undefined) return cached;
+  const url = new URL(file, import.meta.url);
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch example "${file}": HTTP ${response.status}.`);
+  }
+  const code = await response.text();
+  codeCache.set(file, code);
+  return code;
+}
+
+function assertValidCatalog(raw: unknown): { default?: string; metaList: ExampleMeta[] } {
   if (!raw || typeof raw !== "object") {
     throw new Error("Invalid examples catalog: expected object.");
   }
@@ -88,7 +95,7 @@ function assertValidCatalog(raw: unknown): { default?: string; metaList: { id: s
   if (!Array.isArray(value.examples)) {
     throw new Error("Invalid examples catalog: 'examples' must be an array.");
   }
-  const metaList: { id: string; label: string; file: string }[] = value.examples.map((item, index) => {
+  metaList = value.examples.map((item, index) => {
     const candidate = item as { id?: unknown; label?: unknown; file?: unknown };
     if (
       !candidate ||
@@ -109,49 +116,34 @@ function assertValidCatalog(raw: unknown): { default?: string; metaList: { id: s
   };
 }
 
-async function fetchExampleCode(file: string): Promise<string> {
-  const url = new URL(file, import.meta.url);
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch example "${file}": HTTP ${response.status}.`);
-  }
-  return await response.text();
-}
-
-async function loadExamplesCatalog(): Promise<{ metaList: { id: string; label: string; file: string }[]; default: string | undefined }> {
+async function loadCatalog(): Promise<string | undefined> {
   const examplesUrl = new URL("./examples.json", import.meta.url);
   const response = await fetch(examplesUrl, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Failed to load examples catalog: HTTP ${response.status}.`);
   }
-  const data = (await response.json()) as unknown;
-  return assertValidCatalog(data);
-}
+  const raw = (await response.json()) as unknown;
+  const catalog = assertValidCatalog(raw);
 
-async function loadExample(meta: { id: string; label: string; file: string }): Promise<PlaygroundExample> {
-  const code = await fetchExampleCode(meta.file);
-  return exampleFromJson(meta, code);
-}
-
-async function initializeExampleSelection(catalog: { metaList: { id: string; label: string; file: string }[]; default: string | undefined }): Promise<void> {
-  const defaultMeta = catalog.default && catalog.metaList.find((m) => m.id === catalog.default) ? catalog.default : catalog.metaList[0].id;
   exampleSelect.innerHTML = "";
   for (const meta of catalog.metaList) {
+    examplesById.set(meta.id, meta);
     const option = document.createElement("option");
     option.value = meta.id;
     option.textContent = meta.label;
     exampleSelect.appendChild(option);
   }
 
-  const examples = await Promise.all(catalog.metaList.map(loadExample));
-  for (const ex of examples) {
-    examplesById.set(ex.id, ex);
-  }
+  const defaultId = catalog.default && examplesById.has(catalog.default) ? catalog.default : catalog.metaList[0].id;
+  return defaultId;
+}
 
-  const firstMeta = catalog.metaList.find((m) => m.id === defaultMeta) ?? catalog.metaList[0];
-  selectedExample = examplesById.get(firstMeta.id)!;
-  exampleSelect.value = selectedExample.id;
-  setEditorCode(selectedExample.code);
+async function switchToExample(id: string): Promise<void> {
+  const meta = examplesById.get(id);
+  if (!meta) return;
+  selectedMeta = meta;
+  const code = await fetchCode(meta.file);
+  setEditorCode(code);
 }
 
 async function main() {
@@ -161,8 +153,8 @@ async function main() {
     exampleSelect.disabled = true;
     meta.textContent = "Loading Pyodide + runtime...";
     const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch();
-    const catalog = await loadExamplesCatalog();
-    await initializeExampleSelection(catalog);
+    const defaultId = await loadCatalog();
+    await switchToExample(defaultId!);
     const shortInstallDetail =
       installMode === "published" ? "Published package active." : "Using bundled local fallback.";
     meta.textContent = `Ready. Pyodide: ${indexURL} | mode: ${installMode} | ${shortInstallDetail}`;
@@ -191,12 +183,8 @@ torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No WebGPU adapt
     resetButton.disabled = false;
     exampleSelect.disabled = false;
     exampleSelect.onchange = () => {
-      const next = examplesById.get(exampleSelect.value);
-      if (!next) {
-        return;
-      }
-      selectedExample = next;
-      setEditorCode(next.code);
+      const id = exampleSelect.value;
+      switchToExample(id);
     };
     runButton.onclick = async () => {
       output.textContent = "";
@@ -234,10 +222,8 @@ _torch_playground_buf.getvalue()
     };
 
     resetButton.onclick = () => {
-      if (!selectedExample) {
-        return;
-      }
-      setEditorCode(selectedExample.code);
+      if (!selectedMeta) return;
+      fetchCode(selectedMeta.file).then(setEditorCode);
     };
   } catch (error) {
     meta.textContent = `Failed to initialize playground: ${String(error)}`;
