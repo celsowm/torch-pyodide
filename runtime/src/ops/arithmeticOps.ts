@@ -11,6 +11,7 @@ import {
   CLAMP_SHADER,
   createStorageBuffer,
   registerTensor,
+  BufferUsage,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 import { BroadcastOps } from "./broadcastOps.js";
