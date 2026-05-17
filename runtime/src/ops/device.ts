@@ -11,6 +11,7 @@ export class DeviceManager {
   private _initialized = false;
   private _initPromise: Promise<void> | null = null;
   private _initError: string | null = null;
+  private _lostHandler: ((ev: GPUDeviceLostInfo) => void) | null = null;
 
   get device(): GPUDevice | null {
     return this._device;
@@ -81,6 +82,15 @@ export class DeviceManager {
     this._device = getDevice() as GPUDevice;
     this._adapter = getAdapter() as GPUAdapter;
     this._initialized = isWebGPUInitialized();
+    this._lostHandler = (_ev: GPUDeviceLostInfo) => {
+      this._device = null;
+      this._adapter = null;
+      this._initialized = false;
+      this._initPromise = null;
+    };
+    if (this._device?.lost) {
+      this._device.lost.then(this._lostHandler);
+    }
   }
 
   private assertDeviceIndex(deviceIndex?: number): void {
