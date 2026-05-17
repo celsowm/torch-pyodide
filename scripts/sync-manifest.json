@@ -1,0 +1,34 @@
+{
+  "sourceRoot": "C:/Users/celso/Documents/projetos/torch-javascript-wsgl",
+  "files": [
+    {
+      "from": "src/backend/webgpu/shaders/fill.wgsl",
+      "to": "runtime/src/vendor/torchjs/shaders/fill.wgsl"
+    },
+    {
+      "from": "src/backend/webgpu/shaders/elementwise.wgsl",
+      "to": "runtime/src/vendor/torchjs/shaders/elementwise.wgsl"
+    },
+    {
+      "from": "src/backend/webgpu/shaders/matmul.wgsl",
+      "to": "runtime/src/vendor/torchjs/shaders/matmul.wgsl"
+    },
+    {
+      "from": "src/backend/webgpu/shaders/reduce_sum.wgsl",
+      "to": "runtime/src/vendor/torchjs/shaders/reduce_sum.wgsl"
+    },
+    {
+      "from": "src/backend/webgpu/device.ts",
+      "to": "runtime/src/vendor/torchjs/device.ts"
+    },
+    {
+      "from": "src/backend/webgpu/buffer.ts",
+      "to": "runtime/src/vendor/torchjs/buffer.ts"
+    },
+    {
+      "from": "src/backend/webgpu/dispatch.ts",
+      "to": "runtime/src/vendor/torchjs/dispatch.ts"
+    }
+  ]
+}
+

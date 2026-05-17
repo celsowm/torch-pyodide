@@ -1,0 +1,16 @@
+{
+  "name": "torch-pyodide-monorepo",
+  "private": true,
+  "version": "0.0.1",
+  "workspaces": [
+    "runtime"
+  ],
+  "scripts": {
+    "sync:torchjs": "node scripts/sync_torchjs_assets.mjs",
+    "setup:pyodide:dist": "node scripts/setup_pyodide_dist.mjs",
+    "build:runtime": "npm --workspace runtime run build",
+    "demo": "npm --workspace runtime run demo",
+    "test:browser": "npm --workspace runtime run test",
+    "test:python": "cd python && python -m pytest tests"
+  }
+}

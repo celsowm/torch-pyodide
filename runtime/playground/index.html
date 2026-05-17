@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>torch-pyodide playground</title>
+    <style>
+      :root { color-scheme: light; }
+      body { margin: 0; font-family: "IBM Plex Sans", system-ui, sans-serif; background: linear-gradient(120deg, #f7fafc, #edf2f7); color: #1a202c; }
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 20px; display: grid; gap: 12px; }
+      h1 { margin: 0; font-size: 1.5rem; }
+      .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
+      #editor { min-height: 280px; border: 1px solid #1f2937; border-radius: 8px; overflow: hidden; }
+      pre { margin: 0; min-height: 180px; white-space: pre-wrap; word-break: break-word; font-family: "JetBrains Mono", Consolas, monospace; font-size: 13px; }
+      button { border: 0; border-radius: 8px; background: #2b6cb0; color: #fff; padding: 8px 14px; cursor: pointer; }
+      button:disabled { opacity: 0.5; cursor: default; }
+      .row { display: flex; gap: 8px; align-items: center; }
+      .muted { color: #4a5568; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>torch-pyodide playground</h1>
+      <div class="muted" id="meta">Booting...</div>
+      <section class="panel">
+        <div class="row">
+          <button id="run">Run</button>
+          <button id="reset">Reset</button>
+        </div>
+        <div id="editor"></div>
+      </section>
+      <section class="panel">
+        <pre id="output"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

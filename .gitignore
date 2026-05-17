@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+playwright-report/
+test-results/
+runtime/.vite/
+runtime/public/pyodide/
+

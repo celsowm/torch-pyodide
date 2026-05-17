@@ -1,0 +1,4 @@
+[submodule "external/pyodide"]
+	path = external/pyodide
+	url = https://github.com/pyodide/pyodide.git
+	ignore = dirty

@@ -1,0 +1,71 @@
+import { bootstrapPyodideTorch } from "./shared";
+
+const statusEl = document.getElementById("status");
+
+function setStatus(message: string) {
+  if (statusEl) {
+    statusEl.textContent = message;
+  }
+}
+
+async function main() {
+  let runSyncError = "";
+  try {
+    const { pyodide, indexURL } = await bootstrapPyodideTorch();
+
+    try {
+      pyodide.runPython(`
+from pyodide.ffi import run_sync
+import asyncio
+run_sync(asyncio.sleep(0))
+`);
+    } catch (error) {
+      runSyncError = String(error);
+    }
+
+    const script = `
+import math
+import sys
+sys.path.insert(0, "/home/pyodide")
+import torch
+
+torch.init()
+a = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+b = torch.ones((2, 2))
+c = a.add(b)
+d = c.mul(torch.tensor([[2.0, 2.0], [2.0, 2.0]]))
+m = a.matmul(torch.tensor([[1.0, 0.0], [0.0, 1.0]]))
+s = d.sum()
+mean = d.mean()
+
+assert c.to_list() == [2.0, 3.0, 4.0, 5.0]
+assert d.to_list() == [4.0, 6.0, 8.0, 10.0]
+assert m.to_list() == [1.0, 2.0, 3.0, 4.0]
+assert abs(s.to_list()[0] - 28.0) < 1e-6
+assert abs(mean.to_list()[0] - 7.0) < 1e-6
+{
+    "ok": True,
+    "sum": s.to_list()[0],
+    "mean": mean.to_list()[0],
+    "shape": list(a.shape),
+}
+`;
+
+    const result = (await pyodide.runPythonAsync(script)) as Record<string, unknown>;
+
+    const statusPayload = {
+      ok: true,
+      result,
+      indexURL,
+      runSyncError
+    };
+    (globalThis as typeof globalThis & { __torchMvpStatus?: unknown }).__torchMvpStatus = statusPayload;
+    setStatus(JSON.stringify(statusPayload, null, 2));
+  } catch (error) {
+    const payload = { ok: false, error: String(error), runSyncError };
+    (globalThis as typeof globalThis & { __torchMvpStatus?: unknown }).__torchMvpStatus = payload;
+    setStatus(JSON.stringify(payload, null, 2));
+  }
+}
+
+main();
