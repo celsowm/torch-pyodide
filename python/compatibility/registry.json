@@ -68,7 +68,6 @@
     { "id": "Tensor.permute", "kind": "tensor_method" },
     { "id": "Tensor.select", "kind": "tensor_method" },
     { "id": "Tensor.slice", "kind": "tensor_method" },
-    { "id": "Tensor.to_list", "kind": "tensor_method" },
     { "id": "Tensor.tolist", "kind": "tensor_method" },
     { "id": "Tensor.destroy", "kind": "tensor_method" },
     { "id": "Tensor.T", "kind": "tensor_property" },

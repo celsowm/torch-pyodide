@@ -1,6 +1,6 @@
 {
-  "implemented": 72,
-  "total": 72,
+  "implemented": 71,
+  "total": 71,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
@@ -12,8 +12,8 @@
       "total": 11
     },
     "tensor_method": {
-      "implemented": 28,
-      "total": 28
+      "implemented": 27,
+      "total": 27
     },
     "tensor_property": {
       "implemented": 3,
@@ -413,12 +413,6 @@
     },
     {
       "id": "Tensor.slice",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.to_list",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"

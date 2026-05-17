@@ -485,7 +485,6 @@ def test_torch_public_contract(monkeypatch):
     assert d.mean().tolist() == 7.0
     assert g.reshape((4,)).tolist() == [3.0, 1.0, 7.0, 3.0]
     assert g.T.tolist() == [[3.0, 7.0], [1.0, 3.0]]
-    assert g.to_list() == g.tolist()
     assert torch_mod.reshape(g, (4,)).tolist() == [3.0, 1.0, 7.0, 3.0]
     assert torch_mod.flatten(torch_mod.tensor([[[1.0], [2.0]], [[3.0], [4.0]]]), 1, 2).tolist() == [[1.0, 2.0], [3.0, 4.0]]
     assert torch_mod.squeeze(torch_mod.tensor([[[1.0, 2.0]]])).shape == (2,)

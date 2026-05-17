@@ -206,9 +206,6 @@ class Tensor:
         flat = list(result.to_py() if hasattr(result, "to_py") else result)
         return _reshape_flat_values(flat, self._shape, self._dtype)
 
-    def to_list(self) -> object:
-        return self.tolist()
-
     def destroy(self) -> None:
         runtime = _get_runtime()
         _run_js_awaitable(runtime.destroy(self._id))
@@ -268,7 +265,7 @@ def _coerce_out_value(value: float, dtype: str) -> object:
     return float(value)
 
 
-def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str = "float32") -> object:
+def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str) -> object:
     if len(shape) == 0:
         return _coerce_out_value(float(flat[0]), dtype) if flat else _coerce_out_value(0.0, dtype)
     if len(shape) == 1:

@@ -42,8 +42,8 @@ def test_js_meta_to_tuple_from_proxy_like():
 
 
 def test_reshape_flat_values_scalar():
-    assert _reshape_flat_values([28.0], []) == 28.0
+    assert _reshape_flat_values([28.0], [], "float32") == 28.0
 
 
 def test_reshape_flat_values_nested():
-    assert _reshape_flat_values([1.0, 2.0, 3.0, 4.0], [2, 2]) == [[1.0, 2.0], [3.0, 4.0]]
+    assert _reshape_flat_values([1.0, 2.0, 3.0, 4.0], [2, 2], "float32") == [[1.0, 2.0], [3.0, 4.0]]
