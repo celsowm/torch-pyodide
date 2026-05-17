@@ -1,0 +1,20 @@
+{
+  "default": "tensor_basics",
+  "examples": [
+    {
+      "id": "tensor_basics",
+      "label": "Tensor Basics + CUDA Info",
+      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nb = torch.ones((2, 2))\nc = a.add(b).mul(torch.tensor([[2.0, 2.0], [2.0, 2.0]]))\nout = {\n  \"shape\": list(c.shape),\n  \"values\": c.tolist(),\n  \"sum\": c.sum().tolist(),\n  \"mean\": c.mean().tolist(),\n  \"cuda_available\": torch.cuda.is_available(),\n  \"cuda_device_count\": torch.cuda.device_count(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "matmul_relu",
+      "label": "Matmul + ReLU",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, -2.0], [3.0, -4.0]])\nw = torch.tensor([[0.5, 1.0], [1.5, -1.0]])\ny = x.matmul(w).relu()\nout = {\n  \"shape\": list(y.shape),\n  \"values\": y.tolist(),\n  \"sum\": y.sum().tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "reshape_transpose",
+      "label": "Reshape + Transpose",
+      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nt = a.T\nr = t.reshape((4,))\nout = {\n  \"transpose\": t.tolist(),\n  \"reshape\": r.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    }
+  ]
+}

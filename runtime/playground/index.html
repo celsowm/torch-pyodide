@@ -95,6 +95,17 @@
       button:hover { background: var(--accent-hover); }
       button:disabled { opacity: 0.5; cursor: default; }
       .row { display: flex; gap: 8px; align-items: center; }
+      select {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        background: #fff;
+        color: #0f172a;
+        font-size: 0.9rem;
+      }
+      select:disabled {
+        opacity: 0.5;
+      }
       .muted { color: #475569; font-size: 0.9rem; }
       .gpu-chip {
         display: inline-flex;
@@ -141,6 +152,7 @@
         <div class="row">
           <button id="run">Run</button>
           <button id="reset">Reset</button>
+          <select id="example-select" aria-label="Choose example" disabled></select>
         </div>
         <div class="muted" id="meta">Booting...</div>
         <div class="gpu-chip" id="gpu-chip"><strong>GPU</strong><span id="gpu-label">Detecting...</span></div>

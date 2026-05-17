@@ -5,29 +5,26 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { python } from "@codemirror/lang-python";
 import { oneDark } from "@codemirror/theme-one-dark";
 
-const defaultCode = `import json
-import torch
+type PlaygroundExample = {
+  id: string;
+  label: string;
+  code: string;
+};
 
-a = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
-b = torch.ones((2, 2))
-c = a.add(b).mul(torch.tensor([[2.0, 2.0], [2.0, 2.0]]))
-out = {
-  "shape": list(c.shape),
-  "values": c.tolist(),
-  "sum": c.sum().tolist(),
-  "mean": c.mean().tolist(),
-  "cuda_available": torch.cuda.is_available(),
-  "cuda_device_count": torch.cuda.device_count(),
-}
-print(json.dumps(out, indent=2))
-`;
+type ExamplesCatalog = {
+  default?: string;
+  examples: PlaygroundExample[];
+};
 
 const runButton = document.getElementById("run") as HTMLButtonElement;
 const resetButton = document.getElementById("reset") as HTMLButtonElement;
+const exampleSelect = document.getElementById("example-select") as HTMLSelectElement;
 const editorHost = document.getElementById("editor") as HTMLDivElement;
 const output = document.getElementById("output") as HTMLElement;
 const meta = document.getElementById("meta") as HTMLElement;
 const gpuLabel = document.getElementById("gpu-label") as HTMLElement;
+let selectedExample: PlaygroundExample | null = null;
+let examplesById = new Map<string, PlaygroundExample>();
 
 function detectWebglRenderer(): string {
   const canvas = document.createElement("canvas");
@@ -52,7 +49,7 @@ function setGpuLabel(value: string): void {
 }
 
 const editorState = EditorState.create({
-  doc: defaultCode,
+  doc: "",
   extensions: [
     lineNumbers(),
     history(),
@@ -72,12 +69,75 @@ const editor = new EditorView({
   parent: editorHost
 });
 
+function setEditorCode(code: string): void {
+  editor.dispatch({
+    changes: { from: 0, to: editor.state.doc.length, insert: code }
+  });
+}
+
+function assertValidCatalog(raw: unknown): ExamplesCatalog {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Invalid examples catalog: expected object.");
+  }
+  const value = raw as { default?: unknown; examples?: unknown };
+  if (!Array.isArray(value.examples)) {
+    throw new Error("Invalid examples catalog: 'examples' must be an array.");
+  }
+  const parsed: PlaygroundExample[] = value.examples.map((item, index) => {
+    const candidate = item as { id?: unknown; label?: unknown; code?: unknown };
+    if (
+      !candidate ||
+      typeof candidate.id !== "string" ||
+      typeof candidate.label !== "string" ||
+      typeof candidate.code !== "string"
+    ) {
+      throw new Error(`Invalid examples catalog: item at index ${index} must include string id/label/code.`);
+    }
+    return { id: candidate.id, label: candidate.label, code: candidate.code };
+  });
+  if (parsed.length === 0) {
+    throw new Error("Invalid examples catalog: 'examples' cannot be empty.");
+  }
+  return {
+    default: typeof value.default === "string" ? value.default : undefined,
+    examples: parsed
+  };
+}
+
+async function loadExamplesCatalog(): Promise<ExamplesCatalog> {
+  const response = await fetch("./examples.json", { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Failed to load examples catalog: HTTP ${response.status}.`);
+  }
+  const data = (await response.json()) as unknown;
+  return assertValidCatalog(data);
+}
+
+function initializeExampleSelection(catalog: ExamplesCatalog): void {
+  examplesById = new Map(catalog.examples.map((example) => [example.id, example]));
+  exampleSelect.innerHTML = "";
+  for (const example of catalog.examples) {
+    const option = document.createElement("option");
+    option.value = example.id;
+    option.textContent = example.label;
+    exampleSelect.appendChild(option);
+  }
+
+  const preferred = catalog.default && examplesById.has(catalog.default) ? catalog.default : catalog.examples[0].id;
+  selectedExample = examplesById.get(preferred) ?? catalog.examples[0];
+  exampleSelect.value = selectedExample.id;
+  setEditorCode(selectedExample.code);
+}
+
 async function main() {
   try {
     runButton.disabled = true;
     resetButton.disabled = true;
+    exampleSelect.disabled = true;
     meta.textContent = "Loading Pyodide + runtime...";
     const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch();
+    const catalog = await loadExamplesCatalog();
+    initializeExampleSelection(catalog);
     const shortInstallDetail =
       installMode === "published" ? "Published package active." : "Using bundled local fallback.";
     meta.textContent = `Ready. Pyodide: ${indexURL} | mode: ${installMode} | ${shortInstallDetail}`;
@@ -104,6 +164,15 @@ torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No WebGPU adapt
 
     runButton.disabled = false;
     resetButton.disabled = false;
+    exampleSelect.disabled = false;
+    exampleSelect.onchange = () => {
+      const next = examplesById.get(exampleSelect.value);
+      if (!next) {
+        return;
+      }
+      selectedExample = next;
+      setEditorCode(next.code);
+    };
     runButton.onclick = async () => {
       output.textContent = "";
       runButton.disabled = true;
@@ -132,15 +201,17 @@ _torch_playground_buf.getvalue()
     };
 
     resetButton.onclick = () => {
-      editor.dispatch({
-        changes: { from: 0, to: editor.state.doc.length, insert: defaultCode }
-      });
+      if (!selectedExample) {
+        return;
+      }
+      setEditorCode(selectedExample.code);
     };
   } catch (error) {
-    meta.textContent = "Failed to initialize playground.";
+    meta.textContent = `Failed to initialize playground: ${String(error)}`;
     output.textContent = String(error);
     runButton.disabled = true;
     resetButton.disabled = true;
+    exampleSelect.disabled = true;
   }
 }
 

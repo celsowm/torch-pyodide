@@ -32,9 +32,10 @@ test("demo falls back to local-dev when published install is forced to fail", as
   }
 });
 
-test("playground runs default code and prints json output", async ({ page }) => {
+test("playground loads examples dropdown and runs selected code", async ({ page }) => {
   await page.goto("/playground/index.html");
   await page.waitForSelector("#run:not([disabled])", { timeout: 120000 });
+  await expect(page.locator("#example-select option")).toHaveCount(3);
   await page.click("#run");
   await page.waitForFunction(() => {
     const output = document.querySelector("#output");
@@ -52,6 +53,41 @@ test("playground runs default code and prints json output", async ({ page }) => 
     expect(outputText).toContain('"values"');
   }
   expect(outputText).not.toContain("dict' object has no attribute 'id'");
+});
+
+test("playground switches example immediately and reset restores selected example", async ({ page }) => {
+  await page.goto("/playground/index.html");
+  await page.waitForSelector("#run:not([disabled])", { timeout: 120000 });
+
+  const editor = page.locator(".cm-content");
+  await page.selectOption("#example-select", "reshape_transpose");
+  await expect(editor).toContainText("transpose");
+
+  await editor.click();
+  await page.keyboard.press("Control+a");
+  await page.keyboard.type("print('edited')");
+  await expect(editor).toContainText("edited");
+
+  await page.click("#reset");
+  await expect(editor).toContainText("reshape");
+  await expect(editor).not.toContainText("edited");
+});
+
+test("playground shows explicit error when examples catalog fails to load", async ({ page }) => {
+  await page.route("**/playground/examples.json", async (route) => {
+    await route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "forced failure" })
+    });
+  });
+
+  await page.goto("/playground/index.html");
+  await page.waitForSelector("#meta");
+  await expect(page.locator("#meta")).toContainText("Failed to initialize playground:");
+  await expect(page.locator("#run")).toBeDisabled();
+  await expect(page.locator("#reset")).toBeDisabled();
+  await expect(page.locator("#example-select")).toBeDisabled();
 });
 
 test("runtime returns explicit error when webgpu is unavailable", async ({ page }) => {
