@@ -52,6 +52,11 @@ jobs:
       - name: Run python tests
         run: npm run test:python
 
+      - name: Check compatibility report is up to date
+        run: |
+          python python/compatibility/report.py
+          git diff --exit-code -- python/compatibility/report.md python/compatibility/report.json
+
       - name: Build wheel
         run: npm run build:wheel
 

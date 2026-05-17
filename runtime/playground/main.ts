@@ -178,6 +178,14 @@ torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No WebGPU adapt
       output.textContent = "";
       runButton.disabled = true;
       try {
+        const webgpuActive = String(
+          pyodide.runPython(`
+import torch
+str(bool(torch.cuda.is_available()))
+`)
+        );
+        console.log(`[torch-pyodide] WebGPU active: ${webgpuActive}`);
+
         const code = editor.state.doc.toString();
         pyodide.runPython(`
 import io
