@@ -65,18 +65,6 @@ class Tensor:
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
-    def sum(self) -> "Tensor":
-        runtime = _get_runtime()
-        meta = _run_js_awaitable(runtime.sum(self._id))
-        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, shape, dtype)
-
-    def mean(self) -> "Tensor":
-        runtime = _get_runtime()
-        meta = _run_js_awaitable(runtime.mean(self._id))
-        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, shape, dtype)
-
     def relu(self) -> "Tensor":
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.relu(self._id))
@@ -216,6 +204,91 @@ class Tensor:
     def destroy(self) -> None:
         runtime = _get_runtime()
         _run_js_awaitable(runtime.destroy(self._id))
+
+    def sigmoid(self) -> "Tensor":
+        return sigmoid_from_tensor(self)
+
+    def tanh(self) -> "Tensor":
+        return tanh_from_tensor(self)
+
+    def sin(self) -> "Tensor":
+        return sin_from_tensor(self)
+
+    def cos(self) -> "Tensor":
+        return cos_from_tensor(self)
+
+    def gelu(self) -> "Tensor":
+        return gelu_from_tensor(self)
+
+    def silu(self) -> "Tensor":
+        return silu_from_tensor(self)
+
+    def leaky_relu(self) -> "Tensor":
+        return leaky_relu_from_tensor(self)
+
+    def floor(self) -> "Tensor":
+        return floor_from_tensor(self)
+
+    def ceil(self) -> "Tensor":
+        return ceil_from_tensor(self)
+
+    def round(self) -> "Tensor":
+        return round_from_tensor(self)
+
+    def reciprocal(self) -> "Tensor":
+        return reciprocal_from_tensor(self)
+
+    def square(self) -> "Tensor":
+        return square_from_tensor(self)
+
+    def eq(self, other: "Tensor") -> "Tensor":
+        return eq_from_tensors(self, other)
+
+    def ne(self, other: "Tensor") -> "Tensor":
+        return ne_from_tensors(self, other)
+
+    def lt(self, other: "Tensor") -> "Tensor":
+        return lt_from_tensors(self, other)
+
+    def le(self, other: "Tensor") -> "Tensor":
+        return le_from_tensors(self, other)
+
+    def gt(self, other: "Tensor") -> "Tensor":
+        return gt_from_tensors(self, other)
+
+    def ge(self, other: "Tensor") -> "Tensor":
+        return ge_from_tensors(self, other)
+
+    def sum(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
+        if dim is not None:
+            return sum_dim_from_tensor(self, dim, keepdim)
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.sum(self._id))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    def mean(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
+        if dim is not None:
+            return mean_dim_from_tensor(self, dim, keepdim)
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.mean(self._id))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    def prod(self) -> "Tensor":
+        return prod_from_tensor(self)
+
+    def min(self) -> "Tensor":
+        return min_from_tensor(self)
+
+    def max(self) -> "Tensor":
+        return max_from_tensor(self)
+
+    def masked_select(self, mask: "Tensor") -> "Tensor":
+        return masked_select_from_tensor(self, mask)
+
+    def masked_fill(self, mask: "Tensor", value: float) -> "Tensor":
+        return masked_fill_from_tensor(self, mask, value)
 
     def __getitem__(self, key: object) -> object:
         if isinstance(key, int):
@@ -395,5 +468,180 @@ def expand_from_tensor(tensor: Tensor, shape: int | Sequence[int]) -> Tensor:
 def index_select_from_tensor(input: Tensor, dim: int, index: Tensor) -> Tensor:
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.indexSelect(input._id, int(dim), index._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def sigmoid_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.sigmoid(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def tanh_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.tanh(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def sin_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.sin(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def cos_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.cos(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def gelu_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.gelu(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def silu_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.silu(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def leaky_relu_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.leakyRelu(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def floor_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.floor(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def ceil_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.ceil(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def round_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.round(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def reciprocal_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.reciprocal(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def square_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.square(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def eq_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.eq(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def ne_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.ne(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def lt_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.lt(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def le_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.le(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def gt_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.gt(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def ge_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.ge(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def sum_dim_from_tensor(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.sumDim(tensor._id, int(dim), keepdim))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def mean_dim_from_tensor(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.meanDim(tensor._id, int(dim), keepdim))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def prod_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.prod(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def min_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.min(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def max_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.max(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def masked_select_from_tensor(tensor: Tensor, mask: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.maskedSelect(tensor._id, mask._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def masked_fill_from_tensor(tensor: Tensor, mask: Tensor, value: float) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.maskedFill(tensor._id, mask._id, float(value)))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)

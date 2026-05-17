@@ -18,6 +18,31 @@ from ._tensor import (
     tensor_from_data,
     where_from_tensors,
     zeros_from_shape,
+    sigmoid_from_tensor,
+    tanh_from_tensor,
+    sin_from_tensor,
+    cos_from_tensor,
+    gelu_from_tensor,
+    silu_from_tensor,
+    leaky_relu_from_tensor,
+    floor_from_tensor,
+    ceil_from_tensor,
+    round_from_tensor,
+    reciprocal_from_tensor,
+    square_from_tensor,
+    eq_from_tensors,
+    ne_from_tensors,
+    lt_from_tensors,
+    le_from_tensors,
+    gt_from_tensors,
+    ge_from_tensors,
+    sum_dim_from_tensor,
+    mean_dim_from_tensor,
+    prod_from_tensor,
+    min_from_tensor,
+    max_from_tensor,
+    masked_select_from_tensor,
+    masked_fill_from_tensor,
 )
 
 __all__ = [
@@ -58,6 +83,31 @@ __all__ = [
     "stack",
     "expand",
     "index_select",
+    "sigmoid",
+    "tanh",
+    "sin",
+    "cos",
+    "gelu",
+    "silu",
+    "leaky_relu",
+    "floor",
+    "ceil",
+    "round",
+    "reciprocal",
+    "square",
+    "eq",
+    "ne",
+    "lt",
+    "le",
+    "gt",
+    "ge",
+    "sum",
+    "mean",
+    "prod",
+    "min",
+    "max",
+    "masked_select",
+    "masked_fill",
 ]
 
 
@@ -204,3 +254,103 @@ def expand(input: Tensor, shape: int | Sequence[int]) -> Tensor:
 
 def index_select(input: Tensor, dim: int, index: Tensor) -> Tensor:
     return index_select_from_tensor(input, dim=dim, index=index)
+
+
+def sigmoid(x: Tensor) -> Tensor:
+    return x.sigmoid()
+
+
+def tanh(x: Tensor) -> Tensor:
+    return x.tanh()
+
+
+def sin(x: Tensor) -> Tensor:
+    return x.sin()
+
+
+def cos(x: Tensor) -> Tensor:
+    return x.cos()
+
+
+def gelu(x: Tensor) -> Tensor:
+    return x.gelu()
+
+
+def silu(x: Tensor) -> Tensor:
+    return x.silu()
+
+
+def leaky_relu(x: Tensor) -> Tensor:
+    return x.leaky_relu()
+
+
+def floor(x: Tensor) -> Tensor:
+    return x.floor()
+
+
+def ceil(x: Tensor) -> Tensor:
+    return x.ceil()
+
+
+def round(x: Tensor) -> Tensor:
+    return x.round()
+
+
+def reciprocal(x: Tensor) -> Tensor:
+    return x.reciprocal()
+
+
+def square(x: Tensor) -> Tensor:
+    return x.square()
+
+
+def eq(a: Tensor, b: Tensor) -> Tensor:
+    return a.eq(b)
+
+
+def ne(a: Tensor, b: Tensor) -> Tensor:
+    return a.ne(b)
+
+
+def lt(a: Tensor, b: Tensor) -> Tensor:
+    return a.lt(b)
+
+
+def le(a: Tensor, b: Tensor) -> Tensor:
+    return a.le(b)
+
+
+def gt(a: Tensor, b: Tensor) -> Tensor:
+    return a.gt(b)
+
+
+def ge(a: Tensor, b: Tensor) -> Tensor:
+    return a.ge(b)
+
+
+def sum(input: Tensor, dim: int | None = None, keepdim: bool = False) -> Tensor:
+    return input.sum(dim=dim, keepdim=keepdim)
+
+
+def mean(input: Tensor, dim: int | None = None, keepdim: bool = False) -> Tensor:
+    return input.mean(dim=dim, keepdim=keepdim)
+
+
+def prod(input: Tensor) -> Tensor:
+    return input.prod()
+
+
+def min(input: Tensor) -> Tensor:
+    return input.min()
+
+
+def max(input: Tensor) -> Tensor:
+    return input.max()
+
+
+def masked_select(input: Tensor, mask: Tensor) -> Tensor:
+    return masked_select_from_tensor(input, mask=mask)
+
+
+def masked_fill(input: Tensor, mask: Tensor, value: float) -> Tensor:
+    return masked_fill_from_tensor(input, mask=mask, value=value)
