@@ -238,19 +238,31 @@ export async function readScalar(device: GPUDevice, buffer: GPUBuffer): Promise<
   return value;
 }
 
-export async function readFromGPU(device: GPUDevice, source: GPUBuffer, length: number, dtype: SupportedDType): Promise<number[]> {
-  const readBuffer = device.createBuffer({
-    size: length * 4,
-    usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ
-  });
-  const encoder = device.createCommandEncoder();
-  encoder.copyBufferToBuffer(source, 0, readBuffer, 0, length * 4);
-  device.queue.submit([encoder.finish()]);
-  await readBuffer.mapAsync(MapMode.READ);
-  const copied = readBuffer.getMappedRange();
-  const copiedBuffer = copied.slice(0);
-  const values = decodeValuesByDType(copiedBuffer, dtype);
-  readBuffer.unmap();
-  readBuffer.destroy();
-  return values;
+export async function readFromGPU(device: GPUDevice, source: GPUBuffer, length: number, dtype: SupportedDType, maxRetries = 3): Promise<number[]> {
+  const byteSize = length * 4;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const readBuffer = device.createBuffer({
+        size: byteSize,
+        usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ
+      });
+      const encoder = device.createCommandEncoder();
+      encoder.copyBufferToBuffer(source, 0, readBuffer, 0, byteSize);
+      device.queue.submit([encoder.finish()]);
+      await readBuffer.mapAsync(MapMode.READ);
+      const copied = readBuffer.getMappedRange();
+      const copiedBuffer = copied.slice(0);
+      const values = decodeValuesByDType(copiedBuffer, dtype);
+      readBuffer.unmap();
+      readBuffer.destroy();
+      return values;
+    } catch (err) {
+      if (attempt < maxRetries - 1 && err instanceof Error && err.message?.includes("lost")) {
+        await new Promise(r => setTimeout(r, 100 * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("readFromGPU failed after retries");
 }
