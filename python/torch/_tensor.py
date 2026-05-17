@@ -7,6 +7,13 @@ from ._runtime import _get_runtime, _run_js_awaitable
 
 
 def _js_meta_to_tuple(meta: object) -> tuple[int, list[int], str]:
+    if isinstance(meta, dict):
+        tensor_id = int(meta["id"])
+        shape_raw = meta["shape"]
+        shape = list(shape_raw.to_py() if hasattr(shape_raw, "to_py") else shape_raw)
+        dtype = str(meta["dtype"])
+        return tensor_id, shape, dtype
+
     tensor_id = int(getattr(meta, "id"))
     shape_raw = getattr(meta, "shape")
     shape = list(shape_raw.to_py() if hasattr(shape_raw, "to_py") else shape_raw)
