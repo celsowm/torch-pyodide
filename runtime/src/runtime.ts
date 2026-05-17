@@ -154,8 +154,8 @@ export class TorchPyodideRuntime {
     return this.unaryOps.silu(tensorId);
   }
 
-  async leakyRelu(tensorId: number): Promise<TensorHandle> {
-    return this.unaryOps.leakyRelu(tensorId);
+  async leakyRelu(tensorId: number, alpha: number = 0.01): Promise<TensorHandle> {
+    return this.unaryOps.leakyRelu(tensorId, alpha);
   }
 
   async floor(tensorId: number): Promise<TensorHandle> {

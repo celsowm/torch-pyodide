@@ -280,8 +280,8 @@ def silu(x: Tensor) -> Tensor:
     return x.silu()
 
 
-def leaky_relu(x: Tensor) -> Tensor:
-    return x.leaky_relu()
+def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
+    return x.leaky_relu(alpha)
 
 
 def floor(x: Tensor) -> Tensor:

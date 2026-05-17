@@ -223,8 +223,8 @@ class Tensor:
     def silu(self) -> "Tensor":
         return silu_from_tensor(self)
 
-    def leaky_relu(self) -> "Tensor":
-        return leaky_relu_from_tensor(self)
+    def leaky_relu(self, alpha: float = 0.01) -> "Tensor":
+        return leaky_relu_from_tensor(self, alpha)
 
     def floor(self) -> "Tensor":
         return floor_from_tensor(self)
@@ -514,9 +514,9 @@ def silu_from_tensor(tensor: Tensor) -> Tensor:
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
-def leaky_relu_from_tensor(tensor: Tensor) -> Tensor:
+def leaky_relu_from_tensor(tensor: Tensor, alpha: float = 0.01) -> Tensor:
     runtime = _get_runtime()
-    meta = _run_js_awaitable(runtime.leakyRelu(tensor._id))
+    meta = _run_js_awaitable(runtime.leakyRelu(tensor._id, alpha))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
 

@@ -38,6 +38,7 @@ import {
   CUMPROD_SHADER,
   MASKED_SELECT_SHADER,
   MASKED_FILL_SHADER,
+  LEAKY_RELU_SHADER,
 } from "../vendor/torchjs/index.js";
 
 export {
@@ -75,6 +76,7 @@ export {
   CUMPROD_SHADER,
   MASKED_SELECT_SHADER,
   MASKED_FILL_SHADER,
+  LEAKY_RELU_SHADER,
 };
 
 export function assertDType(dtype: string) {

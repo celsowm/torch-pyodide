@@ -65,6 +65,7 @@ import CAT_SHADER from './cat.wgsl';
 import STACK_SHADER from './stack.wgsl';
 import PERMUTE_ND_SHADER from './permute_nd.wgsl';
 import SELECT_SHADER from './select.wgsl';
+import LEAKY_RELU_SHADER from './leaky_relu.wgsl';
 
 export {
   ELEMENTWISE_SHADER,
@@ -128,4 +129,5 @@ export {
   STACK_SHADER,
   PERMUTE_ND_SHADER,
   SELECT_SHADER,
+  LEAKY_RELU_SHADER,
 };
