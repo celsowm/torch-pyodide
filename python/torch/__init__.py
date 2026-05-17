@@ -6,11 +6,15 @@ from . import cuda
 from ._tensor import (
     Tensor,
     arange_from_values,
+    cat_from_tensors,
+    expand_from_tensor,
     full_from_shape,
     full_like_from_tensor,
+    index_select_from_tensor,
     ones_from_shape,
     rand_from_shape,
     randn_from_shape,
+    stack_from_tensors,
     tensor_from_data,
     where_from_tensors,
     zeros_from_shape,
@@ -50,6 +54,10 @@ __all__ = [
     "permute",
     "select",
     "slice",
+    "cat",
+    "stack",
+    "expand",
+    "index_select",
 ]
 
 
@@ -180,3 +188,19 @@ def select(input: Tensor, dim: int, index: int) -> Tensor:
 
 def slice(input: Tensor, dim: int, start: int | None = None, end: int | None = None, step: int = 1) -> Tensor:
     return input.slice(dim=dim, start=start, end=end, step=step)
+
+
+def cat(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
+    return cat_from_tensors(tensors, dim=dim)
+
+
+def stack(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
+    return stack_from_tensors(tensors, dim=dim)
+
+
+def expand(input: Tensor, shape: int | Sequence[int]) -> Tensor:
+    return expand_from_tensor(input, shape=shape)
+
+
+def index_select(input: Tensor, dim: int, index: Tensor) -> Tensor:
+    return index_select_from_tensor(input, dim=dim, index=index)

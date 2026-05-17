@@ -176,6 +176,13 @@ class Tensor:
         tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, out_shape, out_dtype)
 
+    def expand(self, *shape: int) -> "Tensor":
+        runtime = _get_runtime()
+        normalized = _normalize_shape_from_args(shape)
+        meta = _run_js_awaitable(runtime.expand(self._id, normalized))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
     def select(self, dim: int, index: int) -> "Tensor":
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.select(self._id, int(dim), int(index)))
@@ -357,5 +364,36 @@ def full_like_from_tensor(tensor: Tensor, fill_value: float, dtype: str | None =
 def where_from_tensors(condition: Tensor, x: Tensor, y: Tensor) -> Tensor:
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.where(condition._id, x._id, y._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def cat_from_tensors(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
+    runtime = _get_runtime()
+    ids = [t._id for t in tensors]
+    meta = _run_js_awaitable(runtime.cat(ids, int(dim)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def stack_from_tensors(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
+    runtime = _get_runtime()
+    ids = [t._id for t in tensors]
+    meta = _run_js_awaitable(runtime.stack(ids, int(dim)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def expand_from_tensor(tensor: Tensor, shape: int | Sequence[int]) -> Tensor:
+    runtime = _get_runtime()
+    normalized = _normalize_shape(shape)
+    meta = _run_js_awaitable(runtime.expand(tensor._id, normalized))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def index_select_from_tensor(input: Tensor, dim: int, index: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.indexSelect(input._id, int(dim), index._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)

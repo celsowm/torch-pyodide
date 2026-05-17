@@ -70,6 +70,11 @@
     { "id": "Tensor.slice", "kind": "tensor_method" },
     { "id": "Tensor.tolist", "kind": "tensor_method" },
     { "id": "Tensor.destroy", "kind": "tensor_method" },
+    { "id": "torch.cat", "kind": "module_func", "params": ["tensors", "dim"] },
+    { "id": "torch.stack", "kind": "module_func", "params": ["tensors", "dim"] },
+    { "id": "torch.expand", "kind": "module_func", "params": ["input", "shape"] },
+    { "id": "torch.index_select", "kind": "module_func", "params": ["input", "dim", "index"] },
+    { "id": "Tensor.expand", "kind": "tensor_method" },
     { "id": "Tensor.T", "kind": "tensor_property" },
     { "id": "Tensor.shape", "kind": "tensor_property" },
     { "id": "Tensor.dtype", "kind": "tensor_property" }

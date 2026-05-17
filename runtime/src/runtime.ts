@@ -19,7 +19,14 @@ import {
   ARGMAX_SHADER,
   ARGMIN_SHADER,
   UNARY_SHADER,
-  TRANSPOSE_SHADER
+  TRANSPOSE_SHADER,
+  CAT_SHADER,
+  STACK_SHADER,
+  PERMUTE_ND_SHADER,
+  SELECT_SHADER,
+  SLICE_SHADER,
+  EXPAND_SHADER,
+  INDEX_SELECT_SHADER
 } from "./vendor/torchjs/index.js";
 
 type TensorMeta = {
@@ -417,21 +424,47 @@ export class TorchPyodideRuntime {
     if (new Set(normalized).size !== rank) {
       throw new Error("permute dims must be a permutation without repeats.");
     }
-    const values = await this.toList(tensorId);
-    const inStrides = this.computeStrides(source.shape);
-    const outShape = normalized.map((axis) => source.shape[axis]!);
-    const outStrides = this.computeStrides(outShape);
-    const out = new Array<number>(source.length);
-    for (let outIdx = 0; outIdx < source.length; outIdx += 1) {
-      const outCoords = this.linearToCoords(outIdx, outShape, outStrides);
-      const inCoords = new Array<number>(rank);
-      for (let i = 0; i < rank; i += 1) {
-        inCoords[normalized[i]!] = outCoords[i]!;
-      }
-      const inIdx = this.coordsToLinear(inCoords, inStrides);
-      out[outIdx] = values[inIdx]!;
+    if (rank > 4) {
+      throw new Error("permute currently supports up to 4D tensors.");
     }
-    return this.tensorFromData(out, outShape, source.dtype);
+    const outShape = normalized.map((axis) => source.shape[axis]!);
+    const outLength = product(outShape);
+    const out = this.createStorageBuffer(Math.max(4, outLength * 4));
+
+    const inStrides = this.computeStrides(source.shape);
+    const outStrides = this.computeStrides(outShape);
+
+    const inStridesPadded = this.padShapeTo4(inStrides);
+    const outShapePadded = this.padShapeTo4(outShape);
+    const outStridesPadded = this.padShapeTo4(outStrides);
+
+    const paramsData = new Uint32Array([
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+      inStridesPadded[0], inStridesPadded[1], inStridesPadded[2], inStridesPadded[3],
+      outStridesPadded[0], outStridesPadded[1], outStridesPadded[2], outStridesPadded[3],
+      rank, outLength, 0, 0,
+    ]);
+    const paramsBuffer = this.device!.createBuffer({
+      size: paramsData.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+
+    // Permutation array as storage buffer (u32)
+    const permData = new Uint32Array(normalized);
+    const permBuffer = this.device!.createBuffer({
+      size: permData.byteLength,
+      usage: BufferUsage.STORAGE | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(permBuffer, 0, permData);
+
+    const pipeline = getOrCreatePipeline(PERMUTE_ND_SHADER, "main");
+    dispatchCompute(pipeline, [source.buffer, permBuffer, out, paramsBuffer], calculateWorkgroups(outLength));
+    await syncDevice();
+    paramsBuffer.destroy();
+    permBuffer.destroy();
+    const meta = this.registerTensor(out, outShape, source.dtype, outLength);
+    return cloneHandle(meta);
   }
 
   async select(tensorId: number, dim: number, index: number): Promise<TensorHandle> {
@@ -441,25 +474,36 @@ export class TorchPyodideRuntime {
     if (rank === 0) {
       throw new Error("select is not supported for scalar tensors.");
     }
+    if (rank > 4) {
+      throw new Error("select currently supports up to 4D tensors.");
+    }
     const resolvedDim = this.normalizeDim(dim, rank);
     const axisSize = source.shape[resolvedDim]!;
     const resolvedIndex = index < 0 ? index + axisSize : index;
     if (resolvedIndex < 0 || resolvedIndex >= axisSize) {
       throw new Error(`select index out of range for dim ${dim}: ${index}.`);
     }
-    const values = await this.toList(tensorId);
-    const inShape = source.shape;
-    const inStrides = this.computeStrides(inShape);
-    const outShape = inShape.slice(0, resolvedDim).concat(inShape.slice(resolvedDim + 1));
+    const outShape = source.shape.slice(0, resolvedDim).concat(source.shape.slice(resolvedDim + 1));
     const outLength = Math.max(1, product(outShape));
-    const out = new Array<number>(outLength);
-    const outStrides = this.computeStrides(outShape);
-    for (let outIdx = 0; outIdx < outLength; outIdx += 1) {
-      const outCoords = outShape.length === 0 ? [] : this.linearToCoords(outIdx, outShape, outStrides);
-      const inCoords = [...outCoords.slice(0, resolvedDim), resolvedIndex, ...outCoords.slice(resolvedDim)];
-      out[outIdx] = values[this.coordsToLinear(inCoords, inStrides)]!;
-    }
-    return this.tensorFromData(out, outShape, source.dtype);
+    const out = this.createStorageBuffer(Math.max(4, outLength * 4));
+    const inShapePadded = this.padShapeTo4(source.shape);
+    const outShapePadded = this.padShapeTo4(outShape);
+    const paramsData = new Uint32Array([
+      inShapePadded[0], inShapePadded[1], inShapePadded[2], inShapePadded[3],
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+      resolvedDim, resolvedIndex, rank, outLength,
+    ]);
+    const paramsBuffer = this.device!.createBuffer({
+      size: paramsData.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+    const pipeline = getOrCreatePipeline(SELECT_SHADER, "main");
+    dispatchCompute(pipeline, [source.buffer, out, paramsBuffer], calculateWorkgroups(outLength));
+    await syncDevice();
+    paramsBuffer.destroy();
+    const meta = this.registerTensor(out, outShape, source.dtype, outLength);
+    return cloneHandle(meta);
   }
 
   async slice(
@@ -475,30 +519,54 @@ export class TorchPyodideRuntime {
       throw new Error("slice step must be non-zero.");
     }
     const rank = source.shape.length;
+    if (rank > 4) {
+      throw new Error("slice currently supports up to 4D tensors.");
+    }
     const resolvedDim = this.normalizeDim(dim, rank);
     const axisSize = source.shape[resolvedDim]!;
     const normalizedStart = this.normalizeSliceStart(start, axisSize, step);
     const normalizedEnd = this.normalizeSliceEnd(end, axisSize, step);
-    const axisIndices: number[] = [];
+
+    let axisIndicesCount: number;
     if (step > 0) {
-      for (let i = normalizedStart; i < normalizedEnd; i += step) axisIndices.push(i);
+      axisIndicesCount = Math.max(0, Math.ceil((normalizedEnd - normalizedStart) / step));
     } else {
-      for (let i = normalizedStart; i > normalizedEnd; i += step) axisIndices.push(i);
+      axisIndicesCount = Math.max(0, Math.ceil((normalizedStart - normalizedEnd) / (-step)));
     }
+
     const outShape = [...source.shape];
-    outShape[resolvedDim] = axisIndices.length;
+    outShape[resolvedDim] = axisIndicesCount;
     const outLength = product(outShape);
-    const out = new Array<number>(outLength);
-    const values = await this.toList(tensorId);
-    const inStrides = this.computeStrides(source.shape);
-    const outStrides = this.computeStrides(outShape);
-    for (let outIdx = 0; outIdx < outLength; outIdx += 1) {
-      const outCoords = this.linearToCoords(outIdx, outShape, outStrides);
-      const inCoords = [...outCoords];
-      inCoords[resolvedDim] = axisIndices[outCoords[resolvedDim]!]!;
-      out[outIdx] = values[this.coordsToLinear(inCoords, inStrides)]!;
-    }
-    return this.tensorFromData(out, outShape, source.dtype);
+    const out = this.createStorageBuffer(Math.max(4, outLength * 4));
+
+    const inShapePadded = this.padShapeTo4(source.shape);
+    const outShapePadded = this.padShapeTo4(outShape);
+
+    // Slice shader params: input_shape, output_shape, starts, steps, ndim, output_size
+    // Only one dim varies; for other dims start=0, step=1
+    const starts = new Array(4).fill(0);
+    const steps = new Array(4).fill(1);
+    starts[resolvedDim] = normalizedStart;
+    steps[resolvedDim] = step;
+
+    const paramsData = new Int32Array([
+      inShapePadded[0], inShapePadded[1], inShapePadded[2], inShapePadded[3],
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+      starts[0]!, starts[1]!, starts[2]!, starts[3]!,
+      steps[0]!, steps[1]!, steps[2]!, steps[3]!,
+      rank, outLength, 0, 0,
+    ]);
+    const paramsBuffer = this.device!.createBuffer({
+      size: paramsData.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+    const pipeline = getOrCreatePipeline(SLICE_SHADER, "slice");
+    dispatchCompute(pipeline, [source.buffer, out, paramsBuffer], calculateWorkgroups(outLength));
+    await syncDevice();
+    paramsBuffer.destroy();
+    const meta = this.registerTensor(out, outShape, source.dtype, outLength);
+    return cloneHandle(meta);
   }
 
   async toList(tensorId: number): Promise<number[]> {
@@ -528,6 +596,194 @@ export class TorchPyodideRuntime {
     meta.buffer.destroy();
     this.currentAllocatedBytes = Math.max(0, this.currentAllocatedBytes - meta.bytes);
     this.tensors.delete(tensorId);
+  }
+
+  async cat(tensorIds: number[], dim: number): Promise<TensorHandle> {
+    return this.catStack(tensorIds, dim, false);
+  }
+
+  async stack(tensorIds: number[], dim: number): Promise<TensorHandle> {
+    return this.catStack(tensorIds, dim, true);
+  }
+
+  private async catStack(tensorIds: number[], dim: number, isStack: boolean): Promise<TensorHandle> {
+    await this.ensureReady();
+    if (tensorIds.length !== 2) {
+      throw new Error(`${isStack ? "stack" : "cat"} currently supports exactly 2 tensors.`);
+    }
+    const a = this.getTensor(tensorIds[0]!);
+    const b = this.getTensor(tensorIds[1]!);
+    const ndim = isStack ? a.shape.length : a.shape.length;
+    if (a.dtype !== b.dtype) {
+      throw new Error(`${isStack ? "stack" : "cat"} requires tensors with same dtype.`);
+    }
+    const rank = a.shape.length;
+
+    if (isStack) {
+      const resolvedDim = this.normalizeDim(dim, rank + 1);
+      for (let i = 0; i < rank; i++) {
+        if (a.shape[i] !== b.shape[i]) {
+          throw new Error(`stack requires tensors with same shape, got [${a.shape}] vs [${b.shape}].`);
+        }
+      }
+      const outShape = [...a.shape];
+      outShape.splice(resolvedDim, 0, 2);
+      const outLength = product(outShape);
+      const out = this.createStorageBuffer(Math.max(4, outLength * 4));
+      const inShapePadded = this.padShapeTo4(a.shape);
+      const outShapePadded = this.padShapeTo4(outShape);
+      const paramsData = new Uint32Array([
+        inShapePadded[0], inShapePadded[1], inShapePadded[2], inShapePadded[3],
+        outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+        resolvedDim, ndim, 0, 0
+      ]);
+      const paramsBuffer = this.device!.createBuffer({
+        size: paramsData.byteLength,
+        usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+      });
+      this.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+      const pipeline = getOrCreatePipeline(STACK_SHADER, "main");
+      dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramsBuffer], calculateWorkgroups(outLength));
+      await syncDevice();
+      paramsBuffer.destroy();
+      const meta = this.registerTensor(out, outShape, a.dtype, outLength);
+      return cloneHandle(meta);
+    } else {
+      const resolvedDim = this.normalizeDim(dim, rank);
+      if (rank === 0) {
+        throw new Error("cat requires at least 1D tensors.");
+      }
+      for (let i = 0; i < rank; i++) {
+        if (i !== resolvedDim && a.shape[i] !== b.shape[i]) {
+          throw new Error(`cat requires tensors with same shape except dim ${dim}, got [${a.shape}] vs [${b.shape}].`);
+        }
+      }
+      const outShape = [...a.shape];
+      outShape[resolvedDim] = a.shape[resolvedDim] + b.shape[resolvedDim];
+      const outLength = product(outShape);
+      const out = this.createStorageBuffer(Math.max(4, outLength * 4));
+      const aShapePadded = this.padShapeTo4(a.shape);
+      const bShapePadded = this.padShapeTo4(b.shape);
+      const outShapePadded = this.padShapeTo4(outShape);
+      const paramsData = new Uint32Array([
+        aShapePadded[0], aShapePadded[1], aShapePadded[2], aShapePadded[3],
+        bShapePadded[0], bShapePadded[1], bShapePadded[2], bShapePadded[3],
+        outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+        resolvedDim, ndim, 0, 0
+      ]);
+      const paramsBuffer = this.device!.createBuffer({
+        size: paramsData.byteLength,
+        usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+      });
+      this.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+      const pipeline = getOrCreatePipeline(CAT_SHADER, "main");
+      dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramsBuffer], calculateWorkgroups(outLength));
+      await syncDevice();
+      paramsBuffer.destroy();
+      const meta = this.registerTensor(out, outShape, a.dtype, outLength);
+      return cloneHandle(meta);
+    }
+  }
+
+  async expand(tensorId: number, shape: number[]): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    if (shape.length > 4) {
+      throw new Error("expand currently supports up to 4D tensors.");
+    }
+    if (source.shape.length > 4) {
+      throw new Error("expand currently supports up to 4D input tensors.");
+    }
+    const rankDiff = shape.length - source.shape.length;
+    const paddedSourceShape = [...new Array(rankDiff).fill(1), ...source.shape];
+    for (let i = 0; i < shape.length; i++) {
+      if (paddedSourceShape[i] !== 1 && paddedSourceShape[i] !== shape[i]) {
+        throw new Error(`expand: shape[${i}] mismatch: ${paddedSourceShape[i]} vs ${shape[i]}.`);
+      }
+    }
+    const outLength = product(shape);
+    const out = this.createStorageBuffer(Math.max(4, outLength * 4));
+    const srcStrides = this.computeStrides(paddedSourceShape);
+    const padded = this.padShapeTo4(paddedSourceShape);
+    const outPadded = this.padShapeTo4(shape);
+    const stridesPadded = this.padShapeTo4(srcStrides.map((s) => paddedSourceShape[s]!));
+    // Actually strides: if a dim is 1, its stride should be 0 for broadcast
+    const broadcastStrides = paddedSourceShape.map((s, i) => (s === 1 ? 0 : srcStrides[i]!));
+    const bsPadded = this.padShapeTo4(broadcastStrides);
+    // Use expand shader: input shape and strides
+    const paramsData = new Uint32Array([
+      padded[0], padded[1], padded[2], padded[3],
+      bsPadded[0], bsPadded[1], bsPadded[2], bsPadded[3],
+    ]);
+    const paramsBuffer = this.device!.createBuffer({
+      size: paramsData.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+    const pipeline = getOrCreatePipeline(EXPAND_SHADER, "main");
+    dispatchCompute(pipeline, [source.buffer, out, paramsBuffer], calculateWorkgroups(outLength));
+    await syncDevice();
+    paramsBuffer.destroy();
+    const meta = this.registerTensor(out, shape, source.dtype, outLength);
+    return cloneHandle(meta);
+  }
+
+  async indexSelect(tensorId: number, dim: number, indicesId: number): Promise<TensorHandle> {
+    await this.ensureReady();
+    const source = this.getTensor(tensorId);
+    const indices = this.getTensor(indicesId);
+    if (source.shape.length > 2) {
+      throw new Error("indexSelect currently supports up to 2D input tensors.");
+    }
+    if (indices.shape.length !== 1) {
+      throw new Error("indexSelect requires 1D indices tensor.");
+    }
+    const resolvedDim = this.normalizeDim(dim, source.shape.length);
+    const numIndices = indices.length;
+
+    let outShape: number[];
+    let outLength: number;
+    if (source.shape.length === 1) {
+      outShape = [numIndices];
+      outLength = numIndices;
+    } else {
+      if (resolvedDim === 0) {
+        outShape = [numIndices, source.shape[1]!];
+      } else {
+        outShape = [source.shape[0]!, numIndices];
+      }
+      outLength = product(outShape);
+    }
+
+    // Read indices from GPU and recreate as Int32 buffer for the shader
+    const indexValues = await this.toList(indicesId);
+    const indicesInt32 = new Int32Array(indexValues.map((v) => Math.trunc(v)));
+    const indicesBuffer = this.device!.createBuffer({
+      size: indicesInt32.byteLength,
+      usage: BufferUsage.STORAGE | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(indicesBuffer, 0, indicesInt32);
+
+    const out = this.createStorageBuffer(Math.max(4, outLength * 4));
+    const paramsData = new Uint32Array([
+      resolvedDim,
+      source.shape.length >= 1 ? source.shape[0]! : 1,
+      source.shape.length >= 2 ? source.shape[1]! : 1,
+      numIndices,
+    ]);
+    const paramsBuffer = this.device!.createBuffer({
+      size: paramsData.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    });
+    this.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+    const shader = source.shape.length === 1 ? "index_select_1d" : "index_select_2d";
+    const pipeline = getOrCreatePipeline(INDEX_SELECT_SHADER, shader);
+    dispatchCompute(pipeline, [source.buffer, indicesBuffer, out, paramsBuffer], calculateWorkgroups(outLength));
+    await syncDevice();
+    paramsBuffer.destroy();
+    indicesBuffer.destroy();
+    const meta = this.registerTensor(out, outShape, source.dtype, outLength);
+    return cloneHandle(meta);
   }
 
   isAvailable(): boolean {
@@ -899,6 +1155,14 @@ export class TorchPyodideRuntime {
       value = Math.max(-1, Math.min(size - 1, value));
     }
     return value;
+  }
+
+  private padShapeTo4(shape: number[]): [number, number, number, number] {
+    if (shape.length === 0) return [1, 1, 1, 1];
+    if (shape.length === 1) return [1, 1, 1, shape[0]!] as [number, number, number, number];
+    if (shape.length === 2) return [1, 1, shape[0]!, shape[1]!] as [number, number, number, number];
+    if (shape.length === 3) return [1, shape[0]!, shape[1]!, shape[2]!] as [number, number, number, number];
+    return shape as [number, number, number, number];
   }
 
   private normalizeSliceEnd(end: number | undefined, size: number, step: number): number {

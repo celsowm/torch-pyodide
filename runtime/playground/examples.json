@@ -75,6 +75,16 @@
       "id": "index_select_slice",
       "label": "Index Select + Slice",
       "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nout = {\n  \"select_row_1\": torch.select(x, 0, 1).tolist(),\n  \"slice_rows_0_3_step2\": torch.slice(x, 0, 0, 3, 2).tolist(),\n  \"getitem_row_1\": x[1].tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "cat_stack",
+      "label": "Cat + Stack",
+      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nb = torch.tensor([[5.0, 6.0], [7.0, 8.0]])\ncat_rows = torch.cat([a, b], dim=0)\ncat_cols = torch.cat([a, b], dim=1)\nstacked = torch.stack([a, b], dim=0)\nout = {\n  \"cat_dim0\": cat_rows.tolist(),\n  \"cat_dim0_shape\": list(cat_rows.shape),\n  \"cat_dim1\": cat_cols.tolist(),\n  \"cat_dim1_shape\": list(cat_cols.shape),\n  \"stack_dim0\": stacked.tolist(),\n  \"stack_dim0_shape\": list(stacked.shape),\n}\nprint(json.dumps(out, indent=2))\n"
+    },
+    {
+      "id": "expand_index_select",
+      "label": "Expand + Index Select",
+      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\ne = x.expand(3, 2, 2)\nindices = torch.tensor([0, 1], dtype=\"int32\")\ns = torch.index_select(x, 0, indices)\nout = {\n  \"input\": x.tolist(),\n  \"expand_shape\": list(e.shape),\n  \"expand\": e.tolist(),\n  \"index_select\": s.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
     }
   ]
 }

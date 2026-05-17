@@ -1,19 +1,19 @@
 {
-  "implemented": 71,
-  "total": 71,
+  "implemented": 76,
+  "total": 76,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
-      "implemented": 30,
-      "total": 30
+      "implemented": 34,
+      "total": 34
     },
     "cuda_func": {
       "implemented": 11,
       "total": 11
     },
     "tensor_method": {
-      "implemented": 27,
-      "total": 27
+      "implemented": 28,
+      "total": 28
     },
     "tensor_property": {
       "implemented": 3,
@@ -425,6 +425,36 @@
     },
     {
       "id": "Tensor.destroy",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cat",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.stack",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.expand",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.index_select",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.expand",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
