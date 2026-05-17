@@ -1,53 +1,42 @@
 import { TensorHandle, TensorMeta } from "./types.js";
-import { cloneHandle } from "./types.js";
+import { cloneHandle, product } from "./types.js";
 import {
+  assertUnaryDType,
   getOrCreatePipeline,
   dispatchCompute,
   calculateWorkgroups,
   syncDevice,
+  BufferUsage,
   UNARY_SHADER,
   LEAKY_RELU_SHADER,
   createStorageBuffer,
   registerTensor,
-  assertUnaryDType,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 
-type UnaryEntrypoint = "relu" | "abs_op" | "sqrt_op" | "exp_op" | "log_op" | "neg"
-  | "sigmoid" | "tanh_op" | "sin_op" | "cos_op" | "gelu" | "silu_op"
-  | "floor_op" | "ceil_op" | "round_op" | "reciprocal_op" | "square_op"
-  | "leaky_relu";
-
-const FLOAT32_ONLY_OPS: ReadonlySet<string> = new Set([
-  "relu", "sqrt", "exp", "log", "sigmoid", "tanh", "gelu", "silu"
-]);
+const FLOAT32_ONLY_OPS = new Set(["relu", "sqrt", "exp", "log", "sigmoid", "tanh", "sin", "cos", "gelu", "silu"]);
 
 export class UnaryOps {
-  constructor(
-    private deviceMgr: DeviceManager,
-    private tensors: Map<number, TensorMeta>,
-    private nextId: { current: number },
-    private allocatedBytes: { current: number }
-  ) {}
+  constructor(private deviceMgr: DeviceManager) {}
 
   async relu(tensorId: number): Promise<TensorHandle> {
     return this.unary(tensorId, "relu");
   }
 
   async abs(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "abs_op");
+    return this.unary(tensorId, "abs");
   }
 
   async sqrt(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "sqrt_op");
+    return this.unary(tensorId, "sqrt");
   }
 
   async exp(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "exp_op");
+    return this.unary(tensorId, "exp");
   }
 
   async log(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "log_op");
+    return this.unary(tensorId, "log");
   }
 
   async neg(tensorId: number): Promise<TensorHandle> {
@@ -59,15 +48,15 @@ export class UnaryOps {
   }
 
   async tanh(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "tanh_op");
+    return this.unary(tensorId, "tanh");
   }
 
   async sin(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "sin_op");
+    return this.unary(tensorId, "sin");
   }
 
   async cos(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "cos_op");
+    return this.unary(tensorId, "cos");
   }
 
   async gelu(tensorId: number): Promise<TensorHandle> {
@@ -75,79 +64,74 @@ export class UnaryOps {
   }
 
   async silu(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "silu_op");
+    return this.unary(tensorId, "silu");
   }
 
-  async leakyRelu(tensorId: number, alpha: number = 0.01): Promise<TensorHandle> {
+  async leakyRelu(tensorId: number, alpha = 0.01): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
-    const source = this.getMeta(tensorId);
-    const device = this.deviceMgr.device!;
-    const out = createStorageBuffer(device, Math.max(4, source.length * 4));
-    const paramsBuf = device.createBuffer({
-      size: 4,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const params = new Float32Array([alpha]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
-    device.queue.writeBuffer(paramsBuf, 0, new Float32Array([alpha]));
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(LEAKY_RELU_SHADER, "leaky_relu");
-    const bindGroup = device.createBindGroup({
+    const bindGroup = this.deviceMgr.device!.createBindGroup({
       layout: pipeline.getBindGroupLayout(0),
       entries: [
-        { binding: 0, resource: { buffer: source.buffer, offset: 0, size: source.buffer.size } },
-        { binding: 1, resource: { buffer: out, offset: 0, size: out.size } },
-        { binding: 2, resource: { buffer: paramsBuf, offset: 0, size: 4 } },
+        { binding: 0, resource: { buffer: meta.buffer } },
+        { binding: 1, resource: { buffer: out } },
+        { binding: 2, resource: { buffer: paramBuffer } },
       ],
     });
-    const wg = calculateWorkgroups(source.length);
-    const encoder = device.createCommandEncoder();
+    const encoder = this.deviceMgr.device!.createCommandEncoder();
     const pass = encoder.beginComputePass();
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, bindGroup);
-    pass.dispatchWorkgroups(wg[0], wg[1], wg[2]);
+    pass.dispatchWorkgroups(Math.ceil(length / 256));
     pass.end();
-    device.queue.submit([encoder.finish()]);
-    await syncDevice();
-    const meta = registerTensor(this.tensors, this.nextId, this.allocatedBytes, out, source.shape, source.dtype, source.length);
-    return cloneHandle(meta);
+    this.deviceMgr.device!.queue.submit([encoder.finish()]);
+    await this.deviceMgr.syncDevice();
+    paramBuffer.destroy();
+    const result = this.deviceMgr.registerTensor(out, meta.shape, meta.dtype, length);
+    return cloneHandle(result);
   }
 
   async floor(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "floor_op");
+    return this.unary(tensorId, "floor");
   }
 
   async ceil(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "ceil_op");
+    return this.unary(tensorId, "ceil");
   }
 
   async round(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "round_op");
+    return this.unary(tensorId, "round");
   }
 
   async reciprocal(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "reciprocal_op");
+    return this.unary(tensorId, "reciprocal");
   }
 
   async square(tensorId: number): Promise<TensorHandle> {
-    return this.unary(tensorId, "square_op");
+    return this.unary(tensorId, "square");
   }
 
-  private async unary(tensorId: number, entrypoint: UnaryEntrypoint): Promise<TensorHandle> {
+  private async unary(tensorId: number, entrypoint: string): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
-    const source = this.getMeta(tensorId);
-    if (FLOAT32_ONLY_OPS.has(entrypoint!)) {
-      const opName = entrypoint!.replace("_op", "").replace("_relu", "_relu");
-      assertUnaryDType(source.dtype, opName as any);
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    if (FLOAT32_ONLY_OPS.has(entrypoint)) {
+      assertUnaryDType(meta.dtype, entrypoint);
     }
-    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, source.length * 4));
-    const pipeline = getOrCreatePipeline(UNARY_SHADER, entrypoint!);
-    dispatchCompute(pipeline, [source.buffer, out], calculateWorkgroups(source.length));
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const pipeline = getOrCreatePipeline(UNARY_SHADER, entrypoint);
+    dispatchCompute(pipeline, [meta.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    const meta = registerTensor(this.tensors, this.nextId, this.allocatedBytes, out, source.shape, source.dtype, source.length);
-    return cloneHandle(meta);
-  }
-
-  private getMeta(id: number): TensorMeta {
-    const meta = this.tensors.get(id);
-    if (!meta) throw new Error(`Unknown tensor id: ${id}.`);
-    return meta;
+    const result = this.deviceMgr.registerTensor(out, meta.shape, meta.dtype, length);
+    return cloneHandle(result);
   }
 }

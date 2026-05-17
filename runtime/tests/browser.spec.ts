@@ -116,3 +116,51 @@ test("run_sync entrypoint error is explicit when executed from synchronous runPy
   const status = await page.evaluate(() => (window as any).__torchMvpStatus);
   expect(String(status.runSyncError)).toContain("Cannot stack switch");
 });
+
+test("device manager creates and reads tensors @webgpu", async ({ page }) => {
+  await page.goto("/demo/index.html");
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const result = await page.evaluate(async () => {
+    const mod = await import("/src/runtime.ts");
+    const rt = new mod.TorchPyodideRuntime();
+    await rt.init();
+    const t = await rt.tensorFromData([1, 2, 3, 4], [2, 2], "float32");
+    const data = await rt.toList(t.id);
+    await rt.destroy(t.id);
+    return data;
+  });
+
+  expect(result).toEqual([1, 2, 3, 4]);
+});
+
+test("device manager recovers from device lost and reads from shadow copy @webgpu", async ({ page }) => {
+  await page.goto("/demo/index.html");
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const result = await page.evaluate(async () => {
+    const mod = await import("/src/runtime.ts");
+    const rt = new mod.TorchPyodideRuntime();
+    await rt.init();
+    const t = await rt.tensorFromData([10, 20, 30], [3], "float32");
+    const dataBefore = await rt.toList(t.id);
+
+    // Force device lost by destroying the device and letting DeviceManager recover
+    const dm = (rt as any).deviceMgr;
+    const device = dm.device;
+    device.destroy();
+
+    // After device lost, reading should trigger recovery and fall back to shadow copy
+    const recovered = await rt.toList(t.id);
+    await rt.destroy(t.id);
+    return { before: dataBefore, after: recovered };
+  });
+
+  expect(result.before).toEqual([10, 20, 30]);
+  // After device lost + recovery, shadow copy fallback should return the same data
+  expect(result.after).toEqual([10, 20, 30]);
+});

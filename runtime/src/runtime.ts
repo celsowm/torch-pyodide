@@ -1,11 +1,5 @@
-import { TensorHandle, TensorMeta, SupportedDType } from "./ops/types.js";
-import { product, cloneHandle } from "./ops/types.js";
-import {
-  decodeValuesByDType,
-  readFromGPU,
-  setDeviceManager,
-  getShadowId,
-} from "./ops/utils.js";
+import { TensorHandle, SupportedDType } from "./ops/types.js";
+import { setDeviceManager } from "./ops/utils.js";
 import { DeviceManager } from "./ops/device.js";
 import { CreationOps } from "./ops/creationOps.js";
 import { ArithmeticOps } from "./ops/arithmeticOps.js";
@@ -17,9 +11,6 @@ import { MaskingOps } from "./ops/maskingOps.js";
 
 export class TorchPyodideRuntime {
   private deviceMgr = new DeviceManager();
-  private tensors = new Map<number, TensorMeta>();
-  private nextId = { current: 1 };
-  private allocatedBytes = { current: 0 };
   private creationOps: CreationOps;
   private arithmeticOps: ArithmeticOps;
   private unaryOps: UnaryOps;
@@ -30,23 +21,20 @@ export class TorchPyodideRuntime {
 
   constructor() {
     setDeviceManager(this.deviceMgr);
-    this.creationOps = new CreationOps(this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes);
-    this.arithmeticOps = new ArithmeticOps(this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes);
-    this.unaryOps = new UnaryOps(this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes);
-    this.reductionOps = new ReductionOps(this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes);
-    this.shapeOps = new ShapeOps(
-      this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes,
-      (id) => this.toList(id)
-    );
-    this.compareOps = new CompareOps(this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes);
-    this.maskingOps = new MaskingOps(this.deviceMgr, this.tensors, this.nextId, this.allocatedBytes);
+    const dm = this.deviceMgr;
+    this.creationOps = new CreationOps(dm);
+    this.arithmeticOps = new ArithmeticOps(dm);
+    this.unaryOps = new UnaryOps(dm);
+    this.reductionOps = new ReductionOps(dm);
+    this.shapeOps = new ShapeOps(dm);
+    this.compareOps = new CompareOps(dm);
+    this.maskingOps = new MaskingOps(dm);
   }
 
   async init(gpuProvider?: GPU | null): Promise<void> {
     await this.deviceMgr.ensureReady(gpuProvider);
   }
 
-  // Creation ops
   async tensorFromData(data: number[], shape: number[], dtype: string): Promise<TensorHandle> {
     return this.creationOps.tensorFromData(data, shape, dtype);
   }
@@ -79,7 +67,6 @@ export class TorchPyodideRuntime {
     return this.creationOps.fullLike(tensorId, fillValue, dtype);
   }
 
-  // Arithmetic ops
   async add(aId: number, bId: number): Promise<TensorHandle> {
     return this.arithmeticOps.add(aId, bId);
   }
@@ -108,7 +95,6 @@ export class TorchPyodideRuntime {
     return this.arithmeticOps.matmul(aId, bId);
   }
 
-  // Unary ops
   async relu(tensorId: number): Promise<TensorHandle> {
     return this.unaryOps.relu(tensorId);
   }
@@ -157,7 +143,7 @@ export class TorchPyodideRuntime {
     return this.unaryOps.silu(tensorId);
   }
 
-  async leakyRelu(tensorId: number, alpha: number = 0.01): Promise<TensorHandle> {
+  async leakyRelu(tensorId: number, alpha = 0.01): Promise<TensorHandle> {
     return this.unaryOps.leakyRelu(tensorId, alpha);
   }
 
@@ -181,7 +167,6 @@ export class TorchPyodideRuntime {
     return this.unaryOps.square(tensorId);
   }
 
-  // Reduction ops
   async sum(tensorId: number): Promise<TensorHandle> {
     return this.reductionOps.sum(tensorId);
   }
@@ -218,7 +203,6 @@ export class TorchPyodideRuntime {
     return this.reductionOps.argmin(tensorId);
   }
 
-  // Compare ops
   async eq(aId: number, bId: number): Promise<TensorHandle> {
     return this.compareOps.eq(aId, bId);
   }
@@ -243,7 +227,6 @@ export class TorchPyodideRuntime {
     return this.compareOps.ge(aId, bId);
   }
 
-  // Masking ops
   async maskedSelect(tensorId: number, maskId: number): Promise<TensorHandle> {
     return this.maskingOps.maskedSelect(tensorId, maskId);
   }
@@ -252,7 +235,6 @@ export class TorchPyodideRuntime {
     return this.maskingOps.maskedFill(tensorId, maskId, value);
   }
 
-  // Shape ops
   async reshape(tensorId: number, shape: number[]): Promise<TensorHandle> {
     return this.shapeOps.reshape(tensorId, shape);
   }
@@ -305,37 +287,22 @@ export class TorchPyodideRuntime {
     return this.shapeOps.indexSelect(tensorId, dim, indicesId);
   }
 
-  // I/O
   async toList(tensorId: number): Promise<number[]> {
     await this.deviceMgr.ensureReady();
-    const meta = this.getTensor(tensorId);
-    return readFromGPU(
-      this.deviceMgr.device!,
-      meta.buffer,
-      meta.length,
-      meta.dtype as SupportedDType
-    );
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    return this.deviceMgr.readFromGPU(meta.buffer, meta.length, meta.dtype as SupportedDType);
   }
 
   async destroy(tensorId: number): Promise<void> {
-    const meta = this.tensors.get(tensorId);
-    if (!meta) return;
-    const shadowId = getShadowId(meta.buffer);
-    if (shadowId !== undefined) {
-      this.deviceMgr.discardShadow(shadowId);
-    }
-    try { meta.buffer.destroy(); } catch { /* device may be gone */ }
-    this.allocatedBytes.current = Math.max(0, this.allocatedBytes.current - meta.bytes);
-    this.tensors.delete(tensorId);
+    this.deviceMgr.destroyTensor(tensorId);
   }
 
-  // Device info
   isAvailable(): boolean {
     return this.deviceMgr.isAvailable();
   }
 
   isInitialized(): boolean {
-    return this.deviceMgr.isInitialized();
+    return this.deviceMgr.initialized;
   }
 
   deviceCount(): number {
@@ -354,20 +321,12 @@ export class TorchPyodideRuntime {
     return this.deviceMgr.getDeviceProperties(deviceIndex);
   }
 
-  async memoryAllocated(deviceIndex?: number): Promise<number> {
-    await this.deviceMgr.ensureReady();
-    return this.allocatedBytes.current;
+  async memoryAllocated(_deviceIndex?: number): Promise<number> {
+    return this.deviceMgr.memoryAllocated();
   }
 
-  async memoryReserved(deviceIndex?: number): Promise<number> {
-    await this.deviceMgr.ensureReady();
-    return this.allocatedBytes.current;
-  }
-
-  private getTensor(id: number): TensorMeta {
-    const meta = this.tensors.get(id);
-    if (!meta) throw new Error(`Unknown tensor id: ${id}.`);
-    return meta;
+  async memoryReserved(_deviceIndex?: number): Promise<number> {
+    return this.deviceMgr.memoryReserved();
   }
 }
 

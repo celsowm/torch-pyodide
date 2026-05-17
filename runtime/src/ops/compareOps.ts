@@ -1,29 +1,22 @@
-import { TensorHandle, TensorMeta } from "./types.js";
-import { cloneHandle } from "./types.js";
+import { TensorHandle, TensorMeta, SupportedDType } from "./types.js";
+import { cloneHandle, product } from "./types.js";
 import {
   getOrCreatePipeline,
   dispatchCompute,
   calculateWorkgroups,
   syncDevice,
+  BufferUsage,
   COMPARE_SHADER,
   createStorageBuffer,
-  registerTensor,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 import { BroadcastOps } from "./broadcastOps.js";
 
-type CompareOp = "eq" | "ne" | "lt" | "le" | "gt" | "ge";
-
 export class CompareOps {
-  private broadcast: BroadcastOps;
+  private broadcastOps: BroadcastOps;
 
-  constructor(
-    private deviceMgr: DeviceManager,
-    private tensors: Map<number, TensorMeta>,
-    private nextId: { current: number },
-    private allocatedBytes: { current: number }
-  ) {
-    this.broadcast = new BroadcastOps(deviceMgr, tensors, nextId, allocatedBytes);
+  constructor(private deviceMgr: DeviceManager) {
+    this.broadcastOps = new BroadcastOps(deviceMgr);
   }
 
   async eq(aId: number, bId: number): Promise<TensorHandle> {
@@ -50,31 +43,19 @@ export class CompareOps {
     return this.compare(aId, bId, "ge");
   }
 
-  private async compare(aId: number, bId: number, op: CompareOp): Promise<TensorHandle> {
+  private async compare(aId: number, bId: number, op: string): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
-    const a = this.getMeta(aId);
-    const b = this.getMeta(bId);
-
+    const a = this.deviceMgr.getTensorMeta(aId);
+    const b = this.deviceMgr.getTensorMeta(bId);
     if (a.shape.join(",") !== b.shape.join(",")) {
-      const result = await this.broadcast.elementwiseWithBroadcast(a, b, op as any);
-      // Re-cast as bool
-      return result;
+      return this.broadcastOps.elementwiseWithBroadcast(a, b, op as any);
     }
-    if (a.length !== b.length) {
-      throw new Error(`Shape mismatch for ${op}: ${a.length} != ${b.length}.`);
-    }
-
-    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, a.length * 4));
+    const length = product(a.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
     const pipeline = getOrCreatePipeline(COMPARE_SHADER, op);
-    dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(a.length));
+    dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    const meta = registerTensor(this.tensors, this.nextId, this.allocatedBytes, out, a.shape, "bool", a.length);
+    const meta = this.deviceMgr.registerTensor(out, a.shape, "bool", length);
     return cloneHandle(meta);
-  }
-
-  private getMeta(id: number): TensorMeta {
-    const meta = this.tensors.get(id);
-    if (!meta) throw new Error(`Unknown tensor id: ${id}.`);
-    return meta;
   }
 }

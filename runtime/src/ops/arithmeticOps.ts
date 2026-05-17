@@ -1,31 +1,27 @@
-import { TensorHandle, TensorMeta } from "./types.js";
-import { cloneHandle } from "./types.js";
+import { TensorHandle, TensorMeta, SupportedDType } from "./types.js";
+import { cloneHandle, product } from "./types.js";
 import {
+  assertDType,
+  coerceScalarByDType,
   getOrCreatePipeline,
   dispatchCompute,
   calculateWorkgroups,
   syncDevice,
+  BufferUsage,
   ELEMENTWISE_SHADER,
   WHERE_SHADER,
   MATMUL_SHADER,
   CLAMP_SHADER,
   createStorageBuffer,
-  registerTensor,
-  BufferUsage,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 import { BroadcastOps } from "./broadcastOps.js";
 
 export class ArithmeticOps {
-  private broadcast: BroadcastOps;
+  private broadcastOps: BroadcastOps;
 
-  constructor(
-    private deviceMgr: DeviceManager,
-    private tensors: Map<number, TensorMeta>,
-    private nextId: { current: number },
-    private allocatedBytes: { current: number }
-  ) {
-    this.broadcast = new BroadcastOps(deviceMgr, tensors, nextId, allocatedBytes);
+  constructor(private deviceMgr: DeviceManager) {
+    this.broadcastOps = new BroadcastOps(deviceMgr);
   }
 
   async add(aId: number, bId: number): Promise<TensorHandle> {
@@ -46,96 +42,78 @@ export class ArithmeticOps {
 
   async where(conditionId: number, xId: number, yId: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
-    const condition = this.getMeta(conditionId);
-    const x = this.getMeta(xId);
-    const y = this.getMeta(yId);
-    if (condition.length !== x.length || x.length !== y.length) {
-      throw new Error("where requires condition, x and y with same number of elements.");
+    const c = this.deviceMgr.getTensorMeta(conditionId);
+    const x = this.deviceMgr.getTensorMeta(xId);
+    const y = this.deviceMgr.getTensorMeta(yId);
+    if (c.shape.join(",") !== x.shape.join(",") || c.shape.join(",") !== y.shape.join(",")) {
+      throw new Error("where requires all tensors to have the same shape.");
     }
-    if (condition.shape.join(",") !== x.shape.join(",") || x.shape.join(",") !== y.shape.join(",")) {
-      throw new Error("where requires condition, x and y with same shape.");
-    }
-    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, x.length * 4));
+    const length = product(c.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
     const pipeline = getOrCreatePipeline(WHERE_SHADER, "main");
-    dispatchCompute(pipeline, [condition.buffer, x.buffer, y.buffer, out], calculateWorkgroups(x.length));
+    dispatchCompute(pipeline, [c.buffer, x.buffer, y.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    const meta = registerTensor(this.tensors, this.nextId, this.allocatedBytes, out, x.shape, x.dtype, x.length);
+    const meta = this.deviceMgr.registerTensor(out, x.shape, x.dtype, length);
     return cloneHandle(meta);
   }
 
   async clamp(tensorId: number, minVal: number, maxVal: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
-    const source = this.getMeta(tensorId);
-    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, source.length * 4));
-    const params = new ArrayBuffer(16);
-    const view = new DataView(params);
-    view.setFloat32(0, minVal, true);
-    view.setFloat32(4, maxVal, true);
-    view.setUint32(8, source.length, true);
-    view.setUint32(12, 0, true);
-    const paramsBuffer = this.deviceMgr.device!.createBuffer({
-      size: 16,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const params = new Float32Array([minVal, maxVal, length]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
-    this.deviceMgr.device!.queue.writeBuffer(paramsBuffer, 0, params);
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(CLAMP_SHADER, "main");
-    dispatchCompute(pipeline, [source.buffer, out, paramsBuffer], calculateWorkgroups(source.length));
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
-    paramsBuffer.destroy();
-    const meta = registerTensor(this.tensors, this.nextId, this.allocatedBytes, out, source.shape, source.dtype, source.length);
-    return cloneHandle(meta);
+    paramBuffer.destroy();
+    const result = this.deviceMgr.registerTensor(out, meta.shape, meta.dtype, length);
+    return cloneHandle(result);
   }
 
   async matmul(aId: number, bId: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
-    const a = this.getMeta(aId);
-    const b = this.getMeta(bId);
+    const a = this.deviceMgr.getTensorMeta(aId);
+    const b = this.deviceMgr.getTensorMeta(bId);
     if (a.shape.length !== 2 || b.shape.length !== 2) {
-      throw new Error("matmul currently supports only 2D tensors.");
+      throw new Error(`matmul currently supports only 2D tensors, got shapes [${a.shape}] and [${b.shape}].`);
     }
-    const [m, kA] = a.shape;
-    const [kB, n] = b.shape;
-    if (kA !== kB) {
-      throw new Error(`matmul dimension mismatch: ${kA} != ${kB}.`);
-    }
-    const outLength = m * n;
-    const outBuffer = createStorageBuffer(this.deviceMgr.device!, outLength * 4);
-    const dimsData = new Uint32Array([m, kA, n, 1]);
-    const dimsBuffer = this.deviceMgr.device!.createBuffer({
-      size: dimsData.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    const [m, k] = a.shape;
+    const [k2, n] = b.shape;
+    if (k !== k2) throw new Error(`matmul dimension mismatch: [${m},${k}] x [${k2},${n}].`);
+    const out = createStorageBuffer(this.deviceMgr.device!, m * n * 4);
+    const params = new Uint32Array([m, k, n]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
-    this.deviceMgr.device!.queue.writeBuffer(dimsBuffer, 0, dimsData);
-    const pipeline = getOrCreatePipeline(MATMUL_SHADER, "matmul_2d");
-    dispatchCompute(pipeline, [a.buffer, b.buffer, outBuffer, dimsBuffer], calculateWorkgroups(outLength));
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(MATMUL_SHADER, "matmul");
+    dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(m * n));
     await syncDevice();
-    dimsBuffer.destroy();
-    const out = registerTensor(this.tensors, this.nextId, this.allocatedBytes, outBuffer, [m, n], "float32", outLength);
-    return cloneHandle(out);
+    paramBuffer.destroy();
+    const result = this.deviceMgr.registerTensor(out, [m, n], a.dtype, m * n);
+    return cloneHandle(result);
   }
 
   private async elementwise(aId: number, bId: number, op: "add" | "mul" | "sub" | "div_op"): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
-    const a = this.getMeta(aId);
-    const b = this.getMeta(bId);
-    // Try broadcasting if shapes differ
+    const a = this.deviceMgr.getTensorMeta(aId);
+    const b = this.deviceMgr.getTensorMeta(bId     );
     if (a.shape.join(",") !== b.shape.join(",")) {
-      return this.broadcast.elementwiseWithBroadcast(a, b, op);
+      return this.broadcastOps.elementwiseWithBroadcast(a, b, op);
     }
-    if (a.length !== b.length) {
-      throw new Error(`Shape mismatch for ${op}: ${a.length} != ${b.length}.`);
-    }
-    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, a.length * 4));
+    const length = product(a.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
     const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, op);
-    dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(a.length));
+    dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    const meta = registerTensor(this.tensors, this.nextId, this.allocatedBytes, out, a.shape, a.dtype, a.length);
+    const meta = this.deviceMgr.registerTensor(out, a.shape, a.dtype, length);
     return cloneHandle(meta);
-  }
-
-  private getMeta(id: number): TensorMeta {
-    const meta = this.tensors.get(id);
-    if (!meta) throw new Error(`Unknown tensor id: ${id}.`);
-    return meta;
   }
 }

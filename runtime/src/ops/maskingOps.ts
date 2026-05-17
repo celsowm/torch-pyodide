@@ -1,5 +1,5 @@
-import { TensorHandle, TensorMeta } from "./types.js";
-import { cloneHandle } from "./types.js";
+import { TensorHandle, TensorMeta, SupportedDType } from "./types.js";
+import { cloneHandle, product } from "./types.js";
 import {
   getOrCreatePipeline,
   dispatchCompute,
@@ -9,92 +9,59 @@ import {
   MASKED_SELECT_SHADER,
   MASKED_FILL_SHADER,
   createStorageBuffer,
-  registerTensor,
   coerceScalarByDType,
-  readFromGPU,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 
 export class MaskingOps {
-  constructor(
-    private deviceMgr: DeviceManager,
-    private tensors: Map<number, TensorMeta>,
-    private nextId: { current: number },
-    private allocatedBytes: { current: number }
-  ) {}
+  constructor(private deviceMgr: DeviceManager) {}
 
   async maskedSelect(tensorId: number, maskId: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
-    const source = this.getMeta(tensorId);
-    const mask = this.getMeta(maskId);
-    if (source.length !== mask.length) {
-      throw new Error("maskedSelect requires tensor and mask with same number of elements.");
-    }
-    if (source.shape.join(",") !== mask.shape.join(",")) {
-      throw new Error("maskedSelect requires tensor and mask with same shape.");
-    }
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const mask = this.deviceMgr.getTensorMeta(maskId);
+    const length = product(meta.shape);
+    const maskData = await this.deviceMgr.readFromGPU(mask.buffer, length, "bool");
+    const trueCount = maskData.filter(v => v !== 0).length;
 
-    // First pass: count true values on CPU (simplified approach)
-    // For a full GPU approach we'd need a prefix sum.
-    // Here we use CPU counting + output sizing.
-    const maskValues = await this.readTensorValues(maskId, "float32");
-    const trueCount = maskValues.filter((v) => v !== 0).length;
-    const outLength = trueCount;
-
-    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const paramsData = new Uint32Array([source.length, outLength]);
-    const paramsBuffer = this.deviceMgr.device!.createBuffer({
-      size: paramsData.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, trueCount * 4));
+    const params = new Uint32Array([length, trueCount]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
-    this.deviceMgr.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(MASKED_SELECT_SHADER, "main");
-    dispatchCompute(pipeline, [source.buffer, mask.buffer, out, paramsBuffer], calculateWorkgroups(source.length));
+    dispatchCompute(pipeline, [meta.buffer, mask.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
-    paramsBuffer.destroy();
-    const meta = registerTensor(this.tensors, this.nextId, this.allocatedBytes, out, [outLength], source.dtype, outLength);
-    return cloneHandle(meta);
+    paramBuffer.destroy();
+    const result = this.deviceMgr.registerTensor(out, [trueCount], meta.dtype, trueCount);
+    return cloneHandle(result);
   }
 
   async maskedFill(tensorId: number, maskId: number, value: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
-    const source = this.getMeta(tensorId);
-    const mask = this.getMeta(maskId);
-    if (source.length !== mask.length) {
-      throw new Error("maskedFill requires tensor and mask with same number of elements.");
-    }
-    if (source.shape.join(",") !== mask.shape.join(",")) {
-      throw new Error("maskedFill requires tensor and mask with same shape.");
-    }
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const mask = this.deviceMgr.getTensorMeta(maskId);
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, meta.bytes);
 
-    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, source.length * 4));
-    const fillValue = coerceScalarByDType(value, source.dtype as any);
-    const params = new ArrayBuffer(12);
-    const view = new DataView(params);
-    view.setFloat32(0, fillValue, true);
-    view.setUint32(4, source.length, true);
-    view.setUint32(8, 0, true);
-    const paramsBuffer = this.deviceMgr.device!.createBuffer({
-      size: 12,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
+    const encoder = this.deviceMgr.device!.createCommandEncoder();
+    encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, meta.bytes);
+    this.deviceMgr.device!.queue.submit([encoder.finish()]);
+
+    const fillValue = coerceScalarByDType(value, meta.dtype as SupportedDType);
+    const params = new Float32Array([fillValue, length]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
-    this.deviceMgr.device!.queue.writeBuffer(paramsBuffer, 0, params);
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(MASKED_FILL_SHADER, "main");
-    dispatchCompute(pipeline, [source.buffer, mask.buffer, out, paramsBuffer], calculateWorkgroups(source.length));
+    dispatchCompute(pipeline, [out, mask.buffer, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
-    paramsBuffer.destroy();
-    const meta = registerTensor(this.tensors, this.nextId, this.allocatedBytes, out, source.shape, source.dtype, source.length);
-    return cloneHandle(meta);
-  }
-
-  private async readTensorValues(tensorId: number, _dtype: string): Promise<number[]> {
-    const meta = this.getMeta(tensorId);
-    return readFromGPU(this.deviceMgr.device!, meta.buffer, meta.length, meta.dtype as any);
-  }
-
-  private getMeta(id: number): TensorMeta {
-    const meta = this.tensors.get(id);
-    if (!meta) throw new Error(`Unknown tensor id: ${id}.`);
-    return meta;
+    paramBuffer.destroy();
+    const result = this.deviceMgr.registerTensor(out, meta.shape, meta.dtype, length);
+    return cloneHandle(result);
   }
 }

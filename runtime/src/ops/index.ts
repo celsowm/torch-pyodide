@@ -1,2 +1,1 @@
-export { TorchPyodideRuntime } from "./runtime.js";
-export { installTorchRuntime } from "./runtime.js";
+// Barrel removed — import directly from runtime.ts
