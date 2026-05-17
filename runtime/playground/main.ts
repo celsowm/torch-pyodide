@@ -74,10 +74,16 @@ function setEditorCode(code: string): void {
   });
 }
 
+function examplesBaseUrl(): string {
+  const path = location.pathname;
+  const base = path.substring(0, path.lastIndexOf("/") + 1);
+  return base + "examples/";
+}
+
 async function fetchCode(file: string): Promise<string> {
   const cached = codeCache.get(file);
   if (cached !== undefined) return cached;
-  const url = new URL(file, import.meta.url);
+  const url = examplesBaseUrl() + file.substring(file.lastIndexOf("/") + 1);
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Failed to fetch example "${file}": HTTP ${response.status}.`);
@@ -117,8 +123,9 @@ function assertValidCatalog(raw: unknown): { default?: string; metaList: Example
 }
 
 async function loadCatalog(): Promise<string | undefined> {
-  const examplesUrl = new URL("./examples.json", import.meta.url);
-  const response = await fetch(examplesUrl, { cache: "no-store" });
+  const path = location.pathname;
+  const base = path.substring(0, path.lastIndexOf("/") + 1);
+  const response = await fetch(base + "examples.json", { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Failed to load examples catalog: HTTP ${response.status}.`);
   }
