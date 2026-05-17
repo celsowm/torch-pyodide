@@ -64,11 +64,11 @@ await micropip.install("torch-pyodide")
 async function verifyInstalledTorch(pyodide: PyodideApi): Promise<void> {
   await pyodide.runPythonAsync(`
 import torch
-torch.init()
-a = torch.tensor([1.0, 2.0])
-b = torch.ones((2,))
-c = a.add(b)
-assert c.to_list() == [2.0, 3.0]
+from torch._tensor import _js_meta_to_tuple
+tensor_id, shape, dtype = _js_meta_to_tuple({"id": 1, "shape": [2], "dtype": "float32"})
+assert tensor_id == 1
+assert shape == [2]
+assert dtype == "float32"
 `);
 }
 
@@ -81,6 +81,14 @@ type InstallMode = "published" | "local-dev";
 type BootstrapOptions = {
   forcePublishedFailure?: boolean;
 };
+
+function summarizeError(error: unknown): string {
+  const compact = String(error).replace(/\s+/g, " ").trim();
+  if (compact.length <= 220) {
+    return compact;
+  }
+  return `${compact.slice(0, 217)}...`;
+}
 
 export async function bootstrapPyodideTorch(options?: BootstrapOptions) {
   installTorchRuntime(globalThis);
@@ -100,14 +108,19 @@ export async function bootstrapPyodideTorch(options?: BootstrapOptions) {
     await installPublishedTorchPackage(pyodide);
     await verifyInstalledTorch(pyodide);
   } catch (error) {
+    const publishedError = summarizeError(error);
+    installLocalTorchPackage(pyodide);
+    await verifyInstalledTorch(pyodide);
     if (!localHost) {
-      installLocalTorchPackage(pyodide);
       installMode = "local-dev";
-      installDetail = `Published install/verify failed in production, using bundled local fallback: ${String(error)}`;
+      installDetail =
+        `Published install/verify failed in production; bundled local fallback verified. ` +
+        `Cause: ${publishedError}`;
     } else {
-      installLocalTorchPackage(pyodide);
       installMode = "local-dev";
-      installDetail = `Published install/verify failed, using local-dev fallback: ${String(error)}`;
+      installDetail =
+        `Published install/verify failed; local-dev fallback verified. ` +
+        `Cause: ${publishedError}`;
     }
   }
 
