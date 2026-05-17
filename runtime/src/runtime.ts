@@ -187,6 +187,26 @@ export class TorchPyodideRuntime {
     return this.reductionOps.mean(tensorId);
   }
 
+  async sumDim(tensorId: number, dim: number, keepdim: boolean): Promise<TensorHandle> {
+    return this.reductionOps.sumDim(tensorId, dim, keepdim);
+  }
+
+  async meanDim(tensorId: number, dim: number, keepdim: boolean): Promise<TensorHandle> {
+    return this.reductionOps.meanDim(tensorId, dim, keepdim);
+  }
+
+  async prod(tensorId: number): Promise<TensorHandle> {
+    return this.reductionOps.prod(tensorId);
+  }
+
+  async min(tensorId: number): Promise<TensorHandle> {
+    return this.reductionOps.min(tensorId);
+  }
+
+  async max(tensorId: number): Promise<TensorHandle> {
+    return this.reductionOps.max(tensorId);
+  }
+
   async argmax(tensorId: number): Promise<TensorHandle> {
     return this.reductionOps.argmax(tensorId);
   }

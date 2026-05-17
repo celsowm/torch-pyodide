@@ -40,6 +40,9 @@ jobs:
       - name: Validate WGSL shader entrypoints
         run: npm --workspace runtime run validate:shaders
 
+      - name: Validate runtime API against Python layer
+        run: npm --workspace runtime run validate:api
+
       - name: Setup Pyodide dist
         run: npm run setup:pyodide:dist
 
