@@ -7,7 +7,7 @@ import {
   syncDevice,
   BufferUsage,
   ELEMENTWISE_SHADER,
-  BROADCAST_SHADER,
+  EXPAND_BROADCAST_SHADER,
   createStorageBuffer,
   registerTensor,
   padShapeTo4,
@@ -85,7 +85,7 @@ export class BroadcastOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST
     });
     this.deviceMgr.device!.queue.writeBuffer(paramsBuffer, 0, paramsData);
-    const pipeline = getOrCreatePipeline(BROADCAST_SHADER, "main");
+    const pipeline = getOrCreatePipeline(EXPAND_BROADCAST_SHADER, "main");
     dispatchCompute(pipeline, [tensor.buffer, out, paramsBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramsBuffer.destroy();

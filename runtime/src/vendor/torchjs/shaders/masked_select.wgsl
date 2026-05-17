@@ -22,6 +22,17 @@ struct Params {
 @group(0) @binding(4) var<storage, read> prefix_sum: array<u32>;
 
 @compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+  // Forward to masked_select logic
+  let idx = global_id.x;
+  if (idx >= params.input_size) { return; }
+  if (mask[idx] > 0.0) {
+    let out_idx = prefix_sum[idx];
+    output[out_idx] = input[idx];
+  }
+}
+
+@compute @workgroup_size(256)
 fn masked_select(@builtin(global_invocation_id) global_id: vec3<u32>) {
   let idx = global_id.x;
   if (idx >= params.input_size) {
