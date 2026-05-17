@@ -8,6 +8,7 @@ import { oneDark } from "@codemirror/theme-one-dark";
 type PlaygroundExample = {
   id: string;
   label: string;
+  file: string;
   code: string;
 };
 
@@ -15,6 +16,10 @@ type ExamplesCatalog = {
   default?: string;
   examples: PlaygroundExample[];
 };
+
+function exampleFromJson(raw: { id: string; label: string; file: string }, code: string): PlaygroundExample {
+  return { id: raw.id, label: raw.label, file: raw.file, code };
+}
 
 const runButton = document.getElementById("run") as HTMLButtonElement;
 const resetButton = document.getElementById("reset") as HTMLButtonElement;
@@ -75,7 +80,7 @@ function setEditorCode(code: string): void {
   });
 }
 
-function assertValidCatalog(raw: unknown): ExamplesCatalog {
+function assertValidCatalog(raw: unknown): { default?: string; metaList: { id: string; label: string; file: string }[] } {
   if (!raw || typeof raw !== "object") {
     throw new Error("Invalid examples catalog: expected object.");
   }
@@ -83,28 +88,37 @@ function assertValidCatalog(raw: unknown): ExamplesCatalog {
   if (!Array.isArray(value.examples)) {
     throw new Error("Invalid examples catalog: 'examples' must be an array.");
   }
-  const parsed: PlaygroundExample[] = value.examples.map((item, index) => {
-    const candidate = item as { id?: unknown; label?: unknown; code?: unknown };
+  const metaList: { id: string; label: string; file: string }[] = value.examples.map((item, index) => {
+    const candidate = item as { id?: unknown; label?: unknown; file?: unknown };
     if (
       !candidate ||
       typeof candidate.id !== "string" ||
       typeof candidate.label !== "string" ||
-      typeof candidate.code !== "string"
+      typeof candidate.file !== "string"
     ) {
-      throw new Error(`Invalid examples catalog: item at index ${index} must include string id/label/code.`);
+      throw new Error(`Invalid examples catalog: item at index ${index} must include string id/label/file.`);
     }
-    return { id: candidate.id, label: candidate.label, code: candidate.code };
+    return { id: candidate.id, label: candidate.label, file: candidate.file };
   });
-  if (parsed.length === 0) {
+  if (metaList.length === 0) {
     throw new Error("Invalid examples catalog: 'examples' cannot be empty.");
   }
   return {
     default: typeof value.default === "string" ? value.default : undefined,
-    examples: parsed
+    metaList
   };
 }
 
-async function loadExamplesCatalog(): Promise<ExamplesCatalog> {
+async function fetchExampleCode(file: string): Promise<string> {
+  const url = new URL(file, import.meta.url);
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch example "${file}": HTTP ${response.status}.`);
+  }
+  return await response.text();
+}
+
+async function loadExamplesCatalog(): Promise<{ metaList: { id: string; label: string; file: string }[]; default: string | undefined }> {
   const examplesUrl = new URL("./examples.json", import.meta.url);
   const response = await fetch(examplesUrl, { cache: "no-store" });
   if (!response.ok) {
@@ -114,18 +128,28 @@ async function loadExamplesCatalog(): Promise<ExamplesCatalog> {
   return assertValidCatalog(data);
 }
 
-function initializeExampleSelection(catalog: ExamplesCatalog): void {
-  examplesById = new Map(catalog.examples.map((example) => [example.id, example]));
+async function loadExample(meta: { id: string; label: string; file: string }): Promise<PlaygroundExample> {
+  const code = await fetchExampleCode(meta.file);
+  return exampleFromJson(meta, code);
+}
+
+async function initializeExampleSelection(catalog: { metaList: { id: string; label: string; file: string }[]; default: string | undefined }): Promise<void> {
+  const defaultMeta = catalog.default && catalog.metaList.find((m) => m.id === catalog.default) ? catalog.default : catalog.metaList[0].id;
   exampleSelect.innerHTML = "";
-  for (const example of catalog.examples) {
+  for (const meta of catalog.metaList) {
     const option = document.createElement("option");
-    option.value = example.id;
-    option.textContent = example.label;
+    option.value = meta.id;
+    option.textContent = meta.label;
     exampleSelect.appendChild(option);
   }
 
-  const preferred = catalog.default && examplesById.has(catalog.default) ? catalog.default : catalog.examples[0].id;
-  selectedExample = examplesById.get(preferred) ?? catalog.examples[0];
+  for (const meta of catalog.metaList) {
+    const code = await loadExample(meta);
+    examplesById.set(meta.id, code);
+  }
+
+  const firstMeta = catalog.metaList.find((m) => m.id === defaultMeta) ?? catalog.metaList[0];
+  selectedExample = examplesById.get(firstMeta.id)!;
   exampleSelect.value = selectedExample.id;
   setEditorCode(selectedExample.code);
 }
@@ -138,7 +162,7 @@ async function main() {
     meta.textContent = "Loading Pyodide + runtime...";
     const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch();
     const catalog = await loadExamplesCatalog();
-    initializeExampleSelection(catalog);
+    await initializeExampleSelection(catalog);
     const shortInstallDetail =
       installMode === "published" ? "Published package active." : "Using bundled local fallback.";
     meta.textContent = `Ready. Pyodide: ${indexURL} | mode: ${installMode} | ${shortInstallDetail}`;

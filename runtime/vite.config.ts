@@ -24,6 +24,7 @@ export default defineConfig({
       allow: [path.resolve(__dirname, "..")]
     }
   },
+  publicDir: "playground/public",
   build: {
     outDir: "dist",
     sourcemap: true,

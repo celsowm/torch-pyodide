@@ -1,125 +1,29 @@
 {
   "default": "tensor_basics",
   "examples": [
-    {
-      "id": "tensor_basics",
-      "label": "Tensor Basics + CUDA Info",
-      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nb = torch.ones((2, 2))\nc = a.add(b).mul(torch.tensor([[2.0, 2.0], [2.0, 2.0]]))\nout = {\n  \"shape\": list(c.shape),\n  \"values\": c.tolist(),\n  \"sum\": c.sum().tolist(),\n  \"mean\": c.mean().tolist(),\n  \"cuda_available\": torch.cuda.is_available(),\n  \"cuda_device_count\": torch.cuda.device_count(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "matmul_relu",
-      "label": "Matmul + ReLU",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, -2.0], [3.0, -4.0]])\nw = torch.tensor([[0.5, 1.0], [1.5, -1.0]])\ny = x.matmul(w).relu()\nout = {\n  \"shape\": list(y.shape),\n  \"values\": y.tolist(),\n  \"sum\": y.sum().tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "reshape_transpose",
-      "label": "Reshape + Transpose",
-      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nt = a.T\nr = t.reshape((4,))\nout = {\n  \"transpose\": t.tolist(),\n  \"reshape\": r.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "rand_tensor",
-      "label": "Random Tensor (rand)",
-      "code": "import json\nimport torch\n\nx = torch.rand((2, 3))\nout = {\n  \"shape\": list(x.shape),\n  \"values\": x.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "clamp_values",
-      "label": "Clamp Values",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[-1.0, 0.2, 0.8], [1.5, 2.0, -0.3]])\ny = torch.clamp(x, 0.0, 1.0)\nout = {\n  \"input\": x.tolist(),\n  \"clamped\": y.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "where_select",
-      "label": "Where Selection",
-      "code": "import json\nimport torch\n\ncond = torch.tensor([[1.0, 0.0], [0.0, 1.0]])\nx = torch.tensor([[10.0, 20.0], [30.0, 40.0]])\ny = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nout_tensor = torch.where(cond, x, y)\nout = {\n  \"condition\": cond.tolist(),\n  \"x\": x.tolist(),\n  \"y\": y.tolist(),\n  \"where\": out_tensor.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "argmax_argmin",
-      "label": "Argmax + Argmin",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 3.0, 2.0], [9.0, 0.5, 7.0]])\nmax_idx = torch.argmax(x)\nmin_idx = torch.argmin(x)\nout = {\n  \"input\": x.tolist(),\n  \"argmax\": max_idx.tolist(),\n  \"argmin\": min_idx.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "randn_tensor",
-      "label": "Random Normal (randn)",
-      "code": "import json\nimport torch\n\nx = torch.randn((2, 4))\nout = {\n  \"shape\": list(x.shape),\n  \"values\": x.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "arange_int32",
-      "label": "Arange Int32",
-      "code": "import json\nimport torch\n\nx = torch.arange(1, 10, 2, dtype=\"int32\")\nout = {\n  \"dtype\": x.dtype,\n  \"values\": x.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "full_and_full_like",
-      "label": "Full + Full Like",
-      "code": "import json\nimport torch\n\nbase = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\na = torch.full((2, 2), 7.0, dtype=\"int32\")\nb = torch.full_like(base, 9.0)\nout = {\n  \"full\": a.tolist(),\n  \"full_dtype\": a.dtype,\n  \"full_like\": b.tolist(),\n  \"full_like_dtype\": b.dtype,\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "unary_abs_neg",
-      "label": "Unary Abs + Neg",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[-1.0, 2.0], [-3.0, 4.0]])\nout = {\n  \"input\": x.tolist(),\n  \"abs\": torch.abs(x).tolist(),\n  \"neg\": torch.neg(x).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "unary_sqrt_exp_log",
-      "label": "Unary Sqrt + Exp + Log",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 4.0], [9.0, 16.0]])\ny = torch.tensor([[0.0, 1.0], [2.0, 0.0]])\nz = torch.tensor([[1.0, 2.718281828], [7.389056099, 1.0]])\nout = {\n  \"sqrt\": torch.sqrt(x).tolist(),\n  \"exp\": torch.exp(y).tolist(),\n  \"log\": torch.log(z).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "shape_flatten_squeeze",
-      "label": "Shape Flatten + Squeeze",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[[1.0], [2.0]], [[3.0], [4.0]]])\nout = {\n  \"input_shape\": list(x.shape),\n  \"flatten_1_2\": torch.flatten(x, 1, 2).tolist(),\n  \"squeeze_all_shape\": list(torch.squeeze(x).shape),\n  \"unsqueeze_dim0_shape\": list(torch.unsqueeze(torch.tensor([1.0, 2.0]), 0).shape),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "shape_transpose_permute",
-      "label": "Shape Transpose + Permute",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[[1.0, 2.0]], [[3.0, 4.0]]])\nt = torch.transpose(torch.tensor([[1.0, 2.0], [3.0, 4.0]]), 0, 1)\np = torch.permute(x, (2, 0, 1))\nout = {\n  \"transpose\": t.tolist(),\n  \"permute_shape\": list(p.shape),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "index_select_slice",
-      "label": "Index Select + Slice",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nout = {\n  \"select_row_1\": torch.select(x, 0, 1).tolist(),\n  \"slice_rows_0_3_step2\": torch.slice(x, 0, 0, 3, 2).tolist(),\n  \"getitem_row_1\": x[1].tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "cat_stack",
-      "label": "Cat + Stack",
-      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nb = torch.tensor([[5.0, 6.0], [7.0, 8.0]])\ncat_rows = torch.cat([a, b], dim=0)\ncat_cols = torch.cat([a, b], dim=1)\nstacked = torch.stack([a, b], dim=0)\nout = {\n  \"cat_dim0\": cat_rows.tolist(),\n  \"cat_dim0_shape\": list(cat_rows.shape),\n  \"cat_dim1\": cat_cols.tolist(),\n  \"cat_dim1_shape\": list(cat_cols.shape),\n  \"stack_dim0\": stacked.tolist(),\n  \"stack_dim0_shape\": list(stacked.shape),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "expand_index_select",
-      "label": "Expand + Index Select",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\ne = x.expand(3, 2, 2)\nindices = torch.tensor([0, 1], dtype=\"int32\")\ns = torch.index_select(x, 0, indices)\nout = {\n  \"input\": x.tolist(),\n  \"expand_shape\": list(e.shape),\n  \"expand\": e.tolist(),\n  \"index_select\": s.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "broadcasting",
-      "label": "Broadcasting",
-      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nb = torch.tensor([10.0, 20.0, 30.0])\nc = torch.tensor([[1.0], [2.0]])\nout = {\n  \"a + b (broadcast)\": a.add(b).tolist(),\n  \"a * c (broadcast)\": a.mul(c).tolist(),\n  \"b - a (broadcast)\": b.sub(a).tolist(),\n  \"shape_a\": list(a.shape),\n  \"shape_b\": list(b.shape),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "compare_ops",
-      "label": "Compare Ops",
-      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 5.0], [3.0, 2.0]])\nb = torch.tensor([[1.0, 3.0], [3.0, 4.0]])\nout = {\n  \"a\": a.tolist(),\n  \"b\": b.tolist(),\n  \"eq\": torch.eq(a, b).tolist(),\n  \"ne\": torch.ne(a, b).tolist(),\n  \"lt\": torch.lt(a, b).tolist(),\n  \"le\": torch.le(a, b).tolist(),\n  \"gt\": torch.gt(a, b).tolist(),\n  \"ge\": torch.ge(a, b).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "unary_advanced",
-      "label": "Unary Advanced (sigmoid, tanh, gelu...)",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[-1.0, 0.0, 1.0], [2.0, -2.0, 0.5]])\nout = {\n  \"input\": x.tolist(),\n  \"sigmoid\": torch.sigmoid(x).tolist(),\n  \"tanh\": torch.tanh(x).tolist(),\n  \"sin\": torch.sin(x).tolist(),\n  \"cos\": torch.cos(x).tolist(),\n  \"gelu\": torch.gelu(x).tolist(),\n  \"silu\": torch.silu(x).tolist(),\n  \"leaky_relu\": torch.leaky_relu(x, 0.01).tolist(),\n  \"floor\": torch.floor(x).tolist(),\n  \"ceil\": torch.ceil(x).tolist(),\n  \"round\": torch.round(x).tolist(),\n  \"reciprocal\": torch.reciprocal(x).tolist(),\n  \"square\": torch.square(x).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "reduce_dim",
-      "label": "Reduction by dim",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nout = {\n  \"input\": x.tolist(),\n  \"sum(0)\": torch.sum(x, 0).tolist(),\n  \"sum(1)\": torch.sum(x, 1).tolist(),\n  \"mean(0)\": torch.mean(x, 0).tolist(),\n  \"mean(1)\": torch.mean(x, 1).tolist(),\n  \"prod\": torch.prod(x).tolist(),\n  \"min\": torch.min(x).tolist(),\n  \"max\": torch.max(x).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "masked_select_fill",
-      "label": "Masked Select + Fill",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nmask = torch.tensor([[1.0, 0.0, 1.0], [0.0, 1.0, 0.0]])\nfilled = torch.masked_fill(x, mask, 99.0)\nselected = torch.masked_select(x, mask)\nout = {\n  \"input\": x.tolist(),\n  \"mask\": mask.tolist(),\n  \"masked_fill\": filled.tolist(),\n  \"masked_select\": selected.tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "broadcast_compare",
-      "label": "Broadcast + Compare",
-      "code": "import json\nimport torch\n\na = torch.tensor([[1.0, 5.0, 3.0], [4.0, 2.0, 6.0]])\nthreshold = torch.tensor([3.0, 3.0, 3.0])\nout = {\n  \"a\": a.tolist(),\n  \"threshold\": threshold.tolist(),\n  \"a > threshold\": torch.gt(a, threshold).tolist(),\n  \"a <= threshold\": torch.le(a, threshold).tolist(),\n  \"where(a > 3, a, 0)\": torch.where(torch.gt(a, torch.tensor(3.0)), a, torch.zeros_like(a)).tolist(),\n}\nprint(json.dumps(out, indent=2))\n"
-    },
-    {
-      "id": "reduce_dim_keepdim",
-      "label": "Reduction keepdim",
-      "code": "import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nout = {\n  \"input_shape\": list(x.shape),\n  \"sum(0, keepdim)\": torch.sum(x, 0, True).tolist(),\n  \"sum(0, keepdim)_shape\": list(torch.sum(x, 0, True).shape),\n  \"mean(1, keepdim)\": torch.mean(x, 1, True).tolist(),\n  \"mean(1, keepdim)_shape\": list(torch.mean(x, 1, True).shape),\n}\nprint(json.dumps(out, indent=2))\n"
-    }
+    { "id": "tensor_basics", "label": "Tensor Basics + CUDA Info", "file": "examples/tensor_basics.py" },
+    { "id": "matmul_relu", "label": "Matmul + ReLU", "file": "examples/matmul_relu.py" },
+    { "id": "reshape_transpose", "label": "Reshape + Transpose", "file": "examples/reshape_transpose.py" },
+    { "id": "rand_tensor", "label": "Random Tensor (rand)", "file": "examples/rand_tensor.py" },
+    { "id": "clamp_values", "label": "Clamp Values", "file": "examples/clamp_values.py" },
+    { "id": "where_select", "label": "Where Selection", "file": "examples/where_select.py" },
+    { "id": "argmax_argmin", "label": "Argmax + Argmin", "file": "examples/argmax_argmin.py" },
+    { "id": "randn_tensor", "label": "Random Normal (randn)", "file": "examples/randn_tensor.py" },
+    { "id": "arange_int32", "label": "Arange Int32", "file": "examples/arange_int32.py" },
+    { "id": "full_and_full_like", "label": "Full + Full Like", "file": "examples/full_and_full_like.py" },
+    { "id": "unary_abs_neg", "label": "Unary Abs + Neg", "file": "examples/unary_abs_neg.py" },
+    { "id": "unary_sqrt_exp_log", "label": "Unary Sqrt + Exp + Log", "file": "examples/unary_sqrt_exp_log.py" },
+    { "id": "shape_flatten_squeeze", "label": "Shape Flatten + Squeeze", "file": "examples/shape_flatten_squeeze.py" },
+    { "id": "shape_transpose_permute", "label": "Shape Transpose + Permute", "file": "examples/shape_transpose_permute.py" },
+    { "id": "index_select_slice", "label": "Index Select + Slice", "file": "examples/index_select_slice.py" },
+    { "id": "cat_stack", "label": "Cat + Stack", "file": "examples/cat_stack.py" },
+    { "id": "expand_index_select", "label": "Expand + Index Select", "file": "examples/expand_index_select.py" },
+    { "id": "broadcasting", "label": "Broadcasting", "file": "examples/broadcasting.py" },
+    { "id": "compare_ops", "label": "Compare Ops", "file": "examples/compare_ops.py" },
+    { "id": "unary_advanced", "label": "Unary Advanced (sigmoid, tanh, gelu...)", "file": "examples/unary_advanced.py" },
+    { "id": "reduce_dim", "label": "Reduction by dim", "file": "examples/reduce_dim.py" },
+    { "id": "masked_select_fill", "label": "Masked Select + Fill", "file": "examples/masked_select_fill.py" },
+    { "id": "broadcast_compare", "label": "Broadcast + Compare", "file": "examples/broadcast_compare.py" },
+    { "id": "reduce_dim_keepdim", "label": "Reduction keepdim", "file": "examples/reduce_dim_keepdim.py" }
   ]
 }
