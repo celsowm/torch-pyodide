@@ -10,6 +10,8 @@ from ._tensor import (
     expand_from_tensor,
     full_from_shape,
     full_like_from_tensor,
+    zeros_like_from_tensor,
+    ones_like_from_tensor,
     index_select_from_tensor,
     ones_from_shape,
     rand_from_shape,
@@ -56,6 +58,8 @@ __all__ = [
     "arange",
     "full",
     "full_like",
+    "zeros_like",
+    "ones_like",
     "add",
     "sub",
     "mul",
@@ -146,6 +150,14 @@ def full(shape: int | Sequence[int], fill_value: float, dtype: str = "float32") 
 
 def full_like(input: Tensor, fill_value: float, dtype: str | None = None) -> Tensor:
     return full_like_from_tensor(input, fill_value=fill_value, dtype=dtype)
+
+
+def zeros_like(input: Tensor, dtype: str | None = None) -> Tensor:
+    return zeros_like_from_tensor(input, dtype=dtype)
+
+
+def ones_like(input: Tensor, dtype: str | None = None) -> Tensor:
+    return ones_like_from_tensor(input, dtype=dtype)
 
 
 def add(a: Tensor, b: Tensor) -> Tensor:

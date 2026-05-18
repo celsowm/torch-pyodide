@@ -98,6 +98,24 @@ export class CreationOps {
     return this.fill(source.shape, dtype ?? source.dtype, fillValue);
   }
 
+  async zerosLike(tensorId: number, dtype?: string): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const source = this.deviceMgr.getTensorMeta(tensorId);
+    return this.fill(source.shape, dtype ?? source.dtype, 0.0);
+  }
+
+  async onesLike(tensorId: number, dtype?: string): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const source = this.deviceMgr.getTensorMeta(tensorId);
+    return this.fill(source.shape, dtype ?? source.dtype, 1.0);
+  }
+
+  async emptyLike(tensorId: number, dtype?: string): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const source = this.deviceMgr.getTensorMeta(tensorId);
+    return this.fill(source.shape, dtype ?? source.dtype, 0.0);
+  }
+
   private async fill(shape: number[], dtype: string, value: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     assertDType(dtype);

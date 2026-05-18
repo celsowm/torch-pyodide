@@ -15,6 +15,8 @@
     { "id": "torch.arange", "kind": "module_func", "params": ["start", "end", "step", "dtype"] },
     { "id": "torch.full", "kind": "module_func", "params": ["shape", "fill_value", "dtype"] },
     { "id": "torch.full_like", "kind": "module_func", "params": ["input", "fill_value", "dtype"] },
+    { "id": "torch.zeros_like", "kind": "module_func", "params": ["input", "dtype"] },
+    { "id": "torch.ones_like", "kind": "module_func", "params": ["input", "dtype"] },
     { "id": "torch.abs", "kind": "module_func", "params": ["x"] },
     { "id": "torch.sqrt", "kind": "module_func", "params": ["x"] },
     { "id": "torch.exp", "kind": "module_func", "params": ["x"] },

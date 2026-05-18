@@ -134,6 +134,20 @@ class FakeRuntime:
         size = _numel(list(t["shape"]))
         return self._new(list(t["shape"]), [float(fill_value)] * size, out_dtype)
 
+    def zerosLike(self, tensor_id: int, dtype: str | None = None) -> dict[str, object]:
+        self._ensure_ready()
+        t = self.store[tensor_id]
+        out_dtype = str(t["dtype"]) if dtype is None else str(dtype)
+        size = _numel(list(t["shape"]))
+        return self._new(list(t["shape"]), [0.0] * size, out_dtype)
+
+    def onesLike(self, tensor_id: int, dtype: str | None = None) -> dict[str, object]:
+        self._ensure_ready()
+        t = self.store[tensor_id]
+        out_dtype = str(t["dtype"]) if dtype is None else str(dtype)
+        size = _numel(list(t["shape"]))
+        return self._new(list(t["shape"]), [1.0] * size, out_dtype)
+
     def add(self, a_id: int, b_id: int) -> dict[str, object]:
         return self._binary(a_id, b_id, lambda a, b: a + b)
 
@@ -451,6 +465,8 @@ def test_torch_public_contract(monkeypatch):
     seq = torch_mod.arange(1, 6, 2, dtype="int32")
     filled = torch_mod.full((2, 2), 7.0, dtype="int32")
     filled_like = torch_mod.full_like(a, 9.0)
+    zeros_like = torch_mod.zeros_like(a)
+    ones_like = torch_mod.ones_like(a)
     abs_v = torch_mod.abs(torch_mod.tensor([[-1.0, 2.0], [-3.0, 4.0]]))
     sqrt_v = torch_mod.sqrt(torch_mod.tensor([[1.0, 4.0], [9.0, 16.0]]))
     exp_v = torch_mod.exp(torch_mod.tensor([[0.0, 1.0], [2.0, 0.0]]))
@@ -475,6 +491,8 @@ def test_torch_public_contract(monkeypatch):
     assert seq.dtype == "int32"
     assert filled.tolist() == [[7, 7], [7, 7]]
     assert filled_like.tolist() == [[9.0, 9.0], [9.0, 9.0]]
+    assert zeros_like.tolist() == [[0.0, 0.0], [0.0, 0.0]]
+    assert ones_like.tolist() == [[1.0, 1.0], [1.0, 1.0]]
     assert abs_v.tolist() == [[1.0, 2.0], [3.0, 4.0]]
     assert sqrt_v.tolist() == [[1.0, 2.0], [3.0, 4.0]]
     assert neg_v.tolist() == [[-1.0, 2.0], [-3.0, 4.0]]

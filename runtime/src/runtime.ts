@@ -67,6 +67,18 @@ export class TorchPyodideRuntime {
     return this.creationOps.fullLike(tensorId, fillValue, dtype);
   }
 
+  async zerosLike(tensorId: number, dtype?: string): Promise<TensorHandle> {
+    return this.creationOps.zerosLike(tensorId, dtype);
+  }
+
+  async onesLike(tensorId: number, dtype?: string): Promise<TensorHandle> {
+    return this.creationOps.onesLike(tensorId, dtype);
+  }
+
+  async emptyLike(tensorId: number, dtype?: string): Promise<TensorHandle> {
+    return this.creationOps.emptyLike(tensorId, dtype);
+  }
+
   async add(aId: number, bId: number): Promise<TensorHandle> {
     return this.arithmeticOps.add(aId, bId);
   }

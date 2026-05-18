@@ -434,6 +434,26 @@ def full_like_from_tensor(tensor: Tensor, fill_value: float, dtype: str | None =
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
+def zeros_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
+    runtime = _get_runtime()
+    if dtype is None:
+        meta = _run_js_awaitable(runtime.zerosLike(tensor._id))
+    else:
+        meta = _run_js_awaitable(runtime.zerosLike(tensor._id, dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def ones_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
+    runtime = _get_runtime()
+    if dtype is None:
+        meta = _run_js_awaitable(runtime.onesLike(tensor._id))
+    else:
+        meta = _run_js_awaitable(runtime.onesLike(tensor._id, dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
 def where_from_tensors(condition: Tensor, x: Tensor, y: Tensor) -> Tensor:
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.where(condition._id, x._id, y._id))
