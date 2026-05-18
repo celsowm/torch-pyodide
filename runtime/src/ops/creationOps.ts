@@ -116,6 +116,10 @@ export class CreationOps {
     return this.fill(source.shape, dtype ?? source.dtype, 0.0);
   }
 
+  async empty(shape: number[], dtype: string): Promise<TensorHandle> {
+    return this.fill(shape, dtype, 0.0);
+  }
+
   private async fill(shape: number[], dtype: string, value: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     assertDType(dtype);

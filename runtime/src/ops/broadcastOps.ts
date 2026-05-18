@@ -21,7 +21,7 @@ export class BroadcastOps {
   async elementwiseWithBroadcast(
     a: TensorMeta,
     b: TensorMeta,
-    op: "add" | "mul" | "sub" | "div_op"
+    op: string
   ): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     const outShape = this.broadcastShapes(a.shape, b.shape);
@@ -45,7 +45,7 @@ export class BroadcastOps {
   async compareWithBroadcast(
     a: TensorMeta,
     b: TensorMeta,
-    op: "eq" | "ne" | "lt" | "le" | "gt" | "ge"
+    op: string
   ): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     const outShape = this.broadcastShapes(a.shape, b.shape);
@@ -63,7 +63,8 @@ export class BroadcastOps {
     dispatchCompute(pipeline, [aExpanded.buffer, bExpanded.buffer, out], calculateWorkgroups(outLength));
     await syncDevice();
 
-    return this.deviceMgr.registerTensorAsHandle(out, outShape, "bool", outLength);
+    const outDtype = (op === "maximum_op" || op === "minimum_op") ? a.dtype : "bool";
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, outDtype, outLength);
   }
 
   broadcastShapes(a: number[], b: number[]): number[] {

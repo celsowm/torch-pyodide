@@ -74,6 +74,29 @@ export class ArithmeticOps {
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
   }
 
+  async pow(aId: number, bId: number): Promise<TensorHandle> {
+    if (aId !== bId) {
+      return this.elementwise(aId, bId, "pow_op");
+    }
+    // Same tensor — pre-compute? just use elementwise anyway
+    return this.elementwise(aId, bId, "pow_op");
+  }
+
+  async heaviside(inputId: number, valuesId: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const a = this.deviceMgr.getTensorMeta(inputId);
+    const b = this.deviceMgr.getTensorMeta(valuesId);
+    if (a.shape.join(",") !== b.shape.join(",")) {
+      throw new Error("heaviside requires same shape for both inputs.");
+    }
+    const length = product(a.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, "heaviside");
+    dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(length));
+    await syncDevice();
+    return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, length);
+  }
+
   async matmul(aId: number, bId: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     const a = this.deviceMgr.getTensorMeta(aId);
@@ -98,7 +121,7 @@ export class ArithmeticOps {
     return this.deviceMgr.registerTensorAsHandle(out, [m, n], a.dtype, m * n);
   }
 
-  private async elementwise(aId: number, bId: number, op: "add" | "mul" | "sub" | "div_op"): Promise<TensorHandle> {
+  private async elementwise(aId: number, bId: number, op: string): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     const a = this.deviceMgr.getTensorMeta(aId);
     const b = this.deviceMgr.getTensorMeta(bId     );

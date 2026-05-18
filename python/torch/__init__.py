@@ -12,6 +12,7 @@ from ._tensor import (
     full_like_from_tensor,
     zeros_like_from_tensor,
     ones_like_from_tensor,
+    empty_like_from_tensor,
     index_select_from_tensor,
     ones_from_shape,
     rand_from_shape,
@@ -45,6 +46,57 @@ from ._tensor import (
     max_from_tensor,
     masked_select_from_tensor,
     masked_fill_from_tensor,
+    # New in this session
+    empty_from_shape,
+    tan_from_tensor,
+    asin_from_tensor,
+    acos_from_tensor,
+    atan_from_tensor,
+    sinh_from_tensor,
+    cosh_from_tensor,
+    asinh_from_tensor,
+    acosh_from_tensor,
+    atanh_from_tensor,
+    exp2_from_tensor,
+    log2_from_tensor,
+    log10_from_tensor,
+    log1p_from_tensor,
+    expm1_from_tensor,
+    trunc_from_tensor,
+    frac_from_tensor,
+    softplus_from_tensor,
+    mish_from_tensor,
+    hardsigmoid_from_tensor,
+    hardswish_from_tensor,
+    softsign_from_tensor,
+    tanhshrink_from_tensor,
+    rsqrt_from_tensor,
+    sign_from_tensor,
+    sgn_from_tensor,
+    isnan_from_tensor,
+    isinf_from_tensor,
+    isfinite_from_tensor,
+    isposinf_from_tensor,
+    isneginf_from_tensor,
+    logical_not_from_tensor,
+    erf_from_tensor,
+    erfc_from_tensor,
+    lgamma_from_tensor,
+    digamma_from_tensor,
+    i0_from_tensor,
+    deg2rad_from_tensor,
+    rad2deg_from_tensor,
+    pow_from_tensors,
+    heaviside_from_tensors,
+    maximum_from_tensors,
+    minimum_from_tensors,
+    any_from_tensor,
+    all_from_tensor,
+    cumsum_from_tensor,
+    cumprod_from_tensor,
+    tril_from_tensor,
+    triu_from_tensor,
+    flip_from_tensor,
 )
 
 __all__ = [
@@ -60,10 +112,13 @@ __all__ = [
     "full_like",
     "zeros_like",
     "ones_like",
+    "empty",
+    "empty_like",
     "add",
     "sub",
     "mul",
     "div",
+    "pow",
     "matmul",
     "relu",
     "abs",
@@ -99,19 +154,67 @@ __all__ = [
     "round",
     "reciprocal",
     "square",
+    "tan",
+    "asin",
+    "acos",
+    "atan",
+    "sinh",
+    "cosh",
+    "asinh",
+    "acosh",
+    "atanh",
+    "exp2",
+    "log2",
+    "log10",
+    "log1p",
+    "expm1",
+    "trunc",
+    "frac",
+    "softplus",
+    "mish",
+    "hardsigmoid",
+    "hardswish",
+    "softsign",
+    "tanhshrink",
+    "rsqrt",
+    "sign",
+    "sgn",
+    "isnan",
+    "isinf",
+    "isfinite",
+    "isposinf",
+    "isneginf",
+    "logical_not",
+    "erf",
+    "erfc",
+    "lgamma",
+    "digamma",
+    "i0",
+    "deg2rad",
+    "rad2deg",
     "eq",
     "ne",
     "lt",
     "le",
     "gt",
     "ge",
+    "maximum",
+    "minimum",
+    "heaviside",
     "sum",
     "mean",
     "prod",
     "min",
     "max",
+    "any",
+    "all",
+    "cumsum",
+    "cumprod",
     "masked_select",
     "masked_fill",
+    "tril",
+    "triu",
+    "flip",
 ]
 
 
@@ -158,6 +261,14 @@ def zeros_like(input: Tensor, dtype: str | None = None) -> Tensor:
 
 def ones_like(input: Tensor, dtype: str | None = None) -> Tensor:
     return ones_like_from_tensor(input, dtype=dtype)
+
+
+def empty(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
+    return empty_from_shape(shape, dtype=dtype)
+
+
+def empty_like(input: Tensor, dtype: str | None = None) -> Tensor:
+    return empty_like_from_tensor(input, dtype=dtype)
 
 
 def add(a: Tensor, b: Tensor) -> Tensor:
@@ -314,6 +425,202 @@ def reciprocal(x: Tensor) -> Tensor:
 
 def square(x: Tensor) -> Tensor:
     return x.square()
+
+
+def tan(x: Tensor) -> Tensor:
+    return x.tan()
+
+
+def asin(x: Tensor) -> Tensor:
+    return x.asin()
+
+
+def acos(x: Tensor) -> Tensor:
+    return x.acos()
+
+
+def atan(x: Tensor) -> Tensor:
+    return x.atan()
+
+
+def sinh(x: Tensor) -> Tensor:
+    return x.sinh()
+
+
+def cosh(x: Tensor) -> Tensor:
+    return x.cosh()
+
+
+def asinh(x: Tensor) -> Tensor:
+    return x.asinh()
+
+
+def acosh(x: Tensor) -> Tensor:
+    return x.acosh()
+
+
+def atanh(x: Tensor) -> Tensor:
+    return x.atanh()
+
+
+def exp2(x: Tensor) -> Tensor:
+    return x.exp2()
+
+
+def log2(x: Tensor) -> Tensor:
+    return x.log2()
+
+
+def log10(x: Tensor) -> Tensor:
+    return x.log10()
+
+
+def log1p(x: Tensor) -> Tensor:
+    return x.log1p()
+
+
+def expm1(x: Tensor) -> Tensor:
+    return x.expm1()
+
+
+def trunc(x: Tensor) -> Tensor:
+    return x.trunc()
+
+
+def frac(x: Tensor) -> Tensor:
+    return x.frac()
+
+
+def softplus(x: Tensor) -> Tensor:
+    return x.softplus()
+
+
+def mish(x: Tensor) -> Tensor:
+    return x.mish()
+
+
+def hardsigmoid(x: Tensor) -> Tensor:
+    return x.hardsigmoid()
+
+
+def hardswish(x: Tensor) -> Tensor:
+    return x.hardswish()
+
+
+def softsign(x: Tensor) -> Tensor:
+    return x.softsign()
+
+
+def tanhshrink(x: Tensor) -> Tensor:
+    return x.tanhshrink()
+
+
+def rsqrt(x: Tensor) -> Tensor:
+    return x.rsqrt()
+
+
+def sign(x: Tensor) -> Tensor:
+    return x.sign()
+
+
+def sgn(x: Tensor) -> Tensor:
+    return x.sgn()
+
+
+def isnan(x: Tensor) -> Tensor:
+    return x.isnan()
+
+
+def isinf(x: Tensor) -> Tensor:
+    return x.isinf()
+
+
+def isfinite(x: Tensor) -> Tensor:
+    return x.isfinite()
+
+
+def isposinf(x: Tensor) -> Tensor:
+    return x.isposinf()
+
+
+def isneginf(x: Tensor) -> Tensor:
+    return x.isneginf()
+
+
+def logical_not(x: Tensor) -> Tensor:
+    return x.logical_not()
+
+
+def erf(x: Tensor) -> Tensor:
+    return x.erf()
+
+
+def erfc(x: Tensor) -> Tensor:
+    return x.erfc()
+
+
+def lgamma(x: Tensor) -> Tensor:
+    return x.lgamma()
+
+
+def digamma(x: Tensor) -> Tensor:
+    return x.digamma()
+
+
+def i0(x: Tensor) -> Tensor:
+    return x.i0()
+
+
+def deg2rad(x: Tensor) -> Tensor:
+    return x.deg2rad()
+
+
+def rad2deg(x: Tensor) -> Tensor:
+    return x.rad2deg()
+
+
+def pow(a: Tensor, b: Tensor) -> Tensor:
+    return pow_from_tensors(a, b)
+
+
+def heaviside(input: Tensor, values: Tensor) -> Tensor:
+    return heaviside_from_tensors(input, values)
+
+
+def maximum(a: Tensor, b: Tensor) -> Tensor:
+    return maximum_from_tensors(a, b)
+
+
+def minimum(a: Tensor, b: Tensor) -> Tensor:
+    return minimum_from_tensors(a, b)
+
+
+def any(input: Tensor) -> Tensor:
+    return any_from_tensor(input)
+
+
+def all(input: Tensor) -> Tensor:
+    return all_from_tensor(input)
+
+
+def cumsum(input: Tensor) -> Tensor:
+    return cumsum_from_tensor(input)
+
+
+def cumprod(input: Tensor) -> Tensor:
+    return cumprod_from_tensor(input)
+
+
+def tril(input: Tensor, diagonal: int = 0) -> Tensor:
+    return tril_from_tensor(input, diagonal)
+
+
+def triu(input: Tensor, diagonal: int = 0) -> Tensor:
+    return triu_from_tensor(input, diagonal)
+
+
+def flip(input: Tensor, dims: Sequence[int]) -> Tensor:
+    return flip_from_tensor(input, dims)
 
 
 def eq(a: Tensor, b: Tensor) -> Tensor:

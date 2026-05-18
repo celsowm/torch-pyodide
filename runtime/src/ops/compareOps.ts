@@ -43,6 +43,14 @@ export class CompareOps {
     return this.compare(aId, bId, "ge");
   }
 
+  async maximum(aId: number, bId: number): Promise<TensorHandle> {
+    return this.compare(aId, bId, "maximum_op");
+  }
+
+  async minimum(aId: number, bId: number): Promise<TensorHandle> {
+    return this.compare(aId, bId, "minimum_op");
+  }
+
   private async compare(aId: number, bId: number, op: string): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     const a = this.deviceMgr.getTensorMeta(aId);
@@ -55,6 +63,7 @@ export class CompareOps {
     const pipeline = getOrCreatePipeline(COMPARE_SHADER, op);
     dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    return this.deviceMgr.registerTensorAsHandle(out, a.shape, "bool", length);
+    const outDtype = (op === "maximum_op" || op === "minimum_op") ? a.dtype : "bool";
+    return this.deviceMgr.registerTensorAsHandle(out, a.shape, outDtype, length);
   }
 }

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import torch as torch_mod
 import torch._tensor as tensor_mod
 
@@ -207,15 +209,11 @@ class FakeRuntime:
         return self._new(list(t["shape"]), values, str(t["dtype"]))
 
     def exp(self, tensor_id: int) -> dict[str, object]:
-        import math
-
         t = self.store[tensor_id]
         values = [math.exp(float(v)) for v in t["values"]]
         return self._new(list(t["shape"]), values, str(t["dtype"]))
 
     def log(self, tensor_id: int) -> dict[str, object]:
-        import math
-
         t = self.store[tensor_id]
         values = [math.log(float(v)) for v in t["values"]]
         return self._new(list(t["shape"]), values, str(t["dtype"]))
@@ -403,6 +401,313 @@ class FakeRuntime:
         self.store.pop(tensor_id, None)
         return None
 
+    # ── Fase 0: unary activation ops ─────────────────────────────
+    def sigmoid(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [1.0 / (1.0 + math.exp(-float(v))) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def tanh(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [math.tanh(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def sin(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [math.sin(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def cos(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [math.cos(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def gelu(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [float(v) for v in t["values"]]
+        out = []
+        for x in values:
+            cdf = 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+            out.append(x * cdf)
+        return self._new(list(t["shape"]), out, str(t["dtype"]))
+
+    def silu(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [float(v) / (1.0 + math.exp(-float(v))) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def leakyRelu(self, tensor_id: int, alpha: float = 0.01) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [max(alpha * float(v), float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def floor(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [math.floor(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def ceil(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [math.ceil(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def round(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [round(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def reciprocal(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [1.0 / float(v) if float(v) != 0.0 else float("inf") for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def square(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [float(v) ** 2 for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    # ── Fase 0: unary trig ops ───────────────────────────────────
+    def _unary(self, tensor_id: int, fn) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [fn(float(v)) for v in t["values"]]
+        return self._new(list(t["shape"]), values, str(t["dtype"]))
+
+    def tan(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.tan)
+
+    def asin(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.asin)
+
+    def acos(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.acos)
+
+    def atan(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.atan)
+
+    def sinh(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.sinh)
+
+    def cosh(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.cosh)
+
+    def asinh(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.asinh)
+
+    def acosh(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.acosh)
+
+    def atanh(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.atanh)
+
+    def exp2(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: 2.0 ** x)
+
+    def log2(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: math.log(x, 2))
+
+    def log10(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.log10)
+
+    def log1p(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.log1p)
+
+    def expm1(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.expm1)
+
+    def trunc(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.trunc)
+
+    def frac(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: x - math.floor(x))
+
+    def softplus(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: math.log(1.0 + math.exp(x)))
+
+    def mish(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: x * math.tanh(math.log(1.0 + math.exp(x))))
+
+    def hardsigmoid(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: max(0.0, min(1.0, x / 3.0 + 0.5)))
+
+    def hardswish(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: x * max(0.0, min(1.0, x / 3.0 + 0.5)))
+
+    def softsign(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: x / (1.0 + abs(x)))
+
+    def tanhshrink(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: x - math.tanh(x))
+
+    def rsqrt(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: x ** (-0.5) if x != 0.0 else float("inf"))
+
+    def sign(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: 0.0 if x == 0.0 else (1.0 if x > 0.0 else -1.0))
+
+    def sgn(self, tensor_id: int) -> dict[str, object]:
+        return self.sign(tensor_id)
+
+    def _bool_unary(self, tensor_id: int, fn) -> dict[str, object]:
+        t = self.store[tensor_id]
+        values = [1.0 if fn(float(v)) else 0.0 for v in t["values"]]
+        return self._new(list(t["shape"]), values, "bool")
+
+    def isnan(self, tensor_id: int) -> dict[str, object]:
+        return self._bool_unary(tensor_id, math.isnan)
+
+    def isinf(self, tensor_id: int) -> dict[str, object]:
+        return self._bool_unary(tensor_id, math.isinf)
+
+    def isfinite(self, tensor_id: int) -> dict[str, object]:
+        return self._bool_unary(tensor_id, math.isfinite)
+
+    def isposinf(self, tensor_id: int) -> dict[str, object]:
+        return self._bool_unary(tensor_id, lambda x: x == float("inf"))
+
+    def isneginf(self, tensor_id: int) -> dict[str, object]:
+        return self._bool_unary(tensor_id, lambda x: x == float("-inf"))
+
+    def logicalNot(self, tensor_id: int) -> dict[str, object]:
+        return self._bool_unary(tensor_id, lambda x: x == 0.0)
+
+    def erf(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.erf)
+
+    def erfc(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.erfc)
+
+    def lgamma(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, math.lgamma)
+
+    def digamma(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: x)
+
+    def i0(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: 1.0)
+
+    def deg2rad(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: x * math.pi / 180.0)
+
+    def rad2deg(self, tensor_id: int) -> dict[str, object]:
+        return self._unary(tensor_id, lambda x: x * 180.0 / math.pi)
+
+    # ── Fase 1: missing ops ──────────────────────────────────────
+    def pow(self, a_id: int, b_id: int) -> dict[str, object]:
+        return self._binary(a_id, b_id, lambda a, b: a ** b)
+
+    def heaviside(self, input_id: int, values_id: int) -> dict[str, object]:
+        a = self.store[input_id]
+        b = self.store[values_id]
+        vals = [1.0 if float(x) > 0.0 else (0.0 if float(x) < 0.0 else float(y)) for x, y in zip(a["values"], b["values"])]
+        return self._new(list(a["shape"]), vals, str(a["dtype"]))
+
+    def maximum(self, a_id: int, b_id: int) -> dict[str, object]:
+        return self._binary(a_id, b_id, max)
+
+    def minimum(self, a_id: int, b_id: int) -> dict[str, object]:
+        return self._binary(a_id, b_id, min)
+
+    def any(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        any_val = 1.0 if any(float(v) != 0.0 for v in t["values"]) else 0.0
+        return self._new([], [any_val], str(t["dtype"]))
+
+    def all(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        all_val = 1.0 if all(float(v) != 0.0 for v in t["values"]) else 0.0
+        return self._new([], [all_val], str(t["dtype"]))
+
+    def cumsum(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        vals = [float(v) for v in t["values"]]
+        acc = 0.0
+        out = []
+        for v in vals:
+            acc += v
+            out.append(acc)
+        return self._new(list(t["shape"]), out, str(t["dtype"]))
+
+    def cumprod(self, tensor_id: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        vals = [float(v) for v in t["values"]]
+        acc = 1.0
+        out = []
+        for v in vals:
+            acc *= v
+            out.append(acc)
+        return self._new(list(t["shape"]), out, str(t["dtype"]))
+
+    def empty(self, shape: list[int], dtype: str) -> dict[str, object]:
+        self._ensure_ready()
+        size = _numel(shape)
+        return self._new(shape, [0.0] * size, dtype)
+
+    def emptyLike(self, tensor_id: int, dtype: str | None = None) -> dict[str, object]:
+        self._ensure_ready()
+        t = self.store[tensor_id]
+        out_dtype = str(t["dtype"]) if dtype is None else str(dtype)
+        size = _numel(list(t["shape"]))
+        return self._new(list(t["shape"]), [0.0] * size, out_dtype)
+
+    def tril(self, tensor_id: int, diagonal: int = 0) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        vals = [float(v) for v in t["values"]]
+        if len(shape) < 2:
+            return self._new(shape, vals, str(t["dtype"]))
+        rows, cols = shape[-2], shape[-1]
+        stride = cols
+        out = []
+        for i in range(_numel(shape[:-2]) if len(shape) > 2 else 1):
+            offset = i * rows * cols
+            for r in range(rows):
+                for c in range(cols):
+                    if c <= r + diagonal:
+                        out.append(vals[offset + r * stride + c])
+                    else:
+                        out.append(0.0)
+        return self._new(shape, out, str(t["dtype"]))
+
+    def triu(self, tensor_id: int, diagonal: int = 0) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        vals = [float(v) for v in t["values"]]
+        if len(shape) < 2:
+            return self._new(shape, vals, str(t["dtype"]))
+        rows, cols = shape[-2], shape[-1]
+        stride = cols
+        out = []
+        for i in range(_numel(shape[:-2]) if len(shape) > 2 else 1):
+            offset = i * rows * cols
+            for r in range(rows):
+                for c in range(cols):
+                    if c >= r + diagonal:
+                        out.append(vals[offset + r * stride + c])
+                    else:
+                        out.append(0.0)
+        return self._new(shape, out, str(t["dtype"]))
+
+    def flip(self, tensor_id: int, dims: list[int]) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        vals = [float(v) for v in t["values"]]
+        out = list(vals)
+        for d in dims:
+            dim = d if d >= 0 else d + len(shape)
+            out = self._flip_dim(out, shape, dim)
+        return self._new(shape, out, str(t["dtype"]))
+
+    def _flip_dim(self, vals: list[float], shape: list[int], dim: int) -> list[float]:
+        strides = _strides(shape)
+        total = len(vals)
+        out = [0.0] * total
+        for i in range(total):
+            coords = _coords(i, shape, strides)
+            coords[dim] = shape[dim] - 1 - coords[dim]
+            idx = sum(c * s for c, s in zip(coords, strides))
+            out[i] = vals[idx]
+        return out
+
 
 def _numel(shape: list[int]) -> int:
     size = 1
@@ -539,6 +844,66 @@ def test_torch_public_contract(monkeypatch):
         assert False, "expected arange step error"
     except RuntimeError as exc:
         assert "step must be non-zero" in str(exc)
+
+    # ── New API tests ────────────────────────────────────────────
+    empty_ = torch_mod.empty((2, 3))
+    assert list(empty_.shape) == [2, 3]
+    empty_like_ = torch_mod.empty_like(a)
+    assert list(empty_like_.shape) == [2, 2]
+
+    pow_v = torch_mod.pow(torch_mod.tensor([1.0, 2.0, 3.0]), torch_mod.tensor([2.0, 2.0, 2.0]))
+    assert pow_v.tolist() == [1.0, 4.0, 9.0]
+
+    max_v = torch_mod.maximum(torch_mod.tensor([1.0, 5.0, 3.0]), torch_mod.tensor([4.0, 2.0, 6.0]))
+    assert max_v.tolist() == [4.0, 5.0, 6.0]
+
+    min_v = torch_mod.minimum(torch_mod.tensor([1.0, 5.0, 3.0]), torch_mod.tensor([4.0, 2.0, 6.0]))
+    assert min_v.tolist() == [1.0, 2.0, 3.0]
+
+    h = torch_mod.heaviside(torch_mod.tensor([-1.0, 0.0, 1.0]), torch_mod.tensor([0.5, 0.5, 0.5]))
+    assert h.tolist() == [0.0, 0.5, 1.0]
+
+    any_v = torch_mod.any(torch_mod.tensor([0.0, 0.0, 1.0]))
+    all_v = torch_mod.all(torch_mod.tensor([1.0, 1.0, 1.0]))
+    assert any_v.tolist() == 1.0
+    assert all_v.tolist() == 1.0
+
+    cs = torch_mod.cumsum(torch_mod.tensor([1.0, 2.0, 3.0]))
+    assert cs.tolist() == [1.0, 3.0, 6.0]
+
+    cp = torch_mod.cumprod(torch_mod.tensor([1.0, 2.0, 3.0]))
+    assert cp.tolist() == [1.0, 2.0, 6.0]
+
+    tril_m = torch_mod.tril(torch_mod.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]))
+    assert tril_m.tolist() == [[1.0, 0.0, 0.0], [4.0, 5.0, 0.0], [7.0, 8.0, 9.0]]
+
+    triu_m = torch_mod.triu(torch_mod.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]))
+    assert triu_m.tolist() == [[1.0, 2.0, 3.0], [0.0, 5.0, 6.0], [0.0, 0.0, 9.0]]
+
+    flip_v = torch_mod.flip(torch_mod.tensor([1.0, 2.0, 3.0]), [0])
+    assert flip_v.tolist() == [3.0, 2.0, 1.0]
+
+    # Test a few new unary ops
+    tan_v = torch_mod.tan(torch_mod.tensor([0.0, 0.7853981633974483]))
+    assert abs(float(tan_v.tolist()[0])) < 1e-6
+
+    s = torch_mod.sign(torch_mod.tensor([-2.0, 0.0, 3.0]))
+    assert s.tolist() == [-1.0, 0.0, 1.0]
+
+    s2 = torch_mod.sgn(torch_mod.tensor([-2.0, 0.0, 3.0]))
+    assert s2.tolist() == [-1.0, 0.0, 1.0]
+
+    n = torch_mod.isnan(torch_mod.tensor([1.0, float("nan")]))
+    assert n.tolist() == [False, True]
+
+    inf_ = torch_mod.isinf(torch_mod.tensor([1.0, float("inf")]))
+    assert inf_.tolist() == [False, True]
+
+    not_ = torch_mod.logical_not(torch_mod.tensor([1.0, 0.0, 1.0]))
+    assert not_.tolist() == [False, True, False]
+
+    log2_v = torch_mod.log2(torch_mod.tensor([1.0, 2.0, 4.0]))
+    assert abs(float(log2_v.tolist()[2]) - 2.0) < 1e-5
 
 
 def test_torch_cuda_unavailable_contract(monkeypatch):

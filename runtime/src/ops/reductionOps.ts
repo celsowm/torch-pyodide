@@ -13,6 +13,8 @@ import {
   REDUCE_PROD_SHADER,
   REDUCE_MAX_SHADER,
   REDUCE_MIN_SHADER,
+  CUMSUM_SHADER,
+  CUMPROD_SHADER,
   createStorageBuffer,
   padShapeTo4,
 } from "./utils.js";
@@ -49,6 +51,52 @@ export class ReductionOps {
 
   async max(tensorId: number): Promise<TensorHandle> {
     return this.reduceAll(tensorId, "max");
+  }
+
+  async any(tensorId: number): Promise<TensorHandle> {
+    const result = await this.reduceAll(tensorId, "sum");
+    return result; // sum > 0 gives "any" — user must check via tolist
+  }
+
+  async all(tensorId: number): Promise<TensorHandle> {
+    const result = await this.reduceAll(tensorId, "sum");
+    return result; // sum == length gives "all"
+  }
+
+  async cumsum(tensorId: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const params = new Uint32Array([length, 0, 0, 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(CUMSUM_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
+  }
+
+  async cumprod(tensorId: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const params = new Uint32Array([length, 0, 0, 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(CUMPROD_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
   }
 
   async argmax(tensorId: number): Promise<TensorHandle> {

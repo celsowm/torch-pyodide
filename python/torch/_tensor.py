@@ -241,6 +241,121 @@ class Tensor:
     def square(self) -> "Tensor":
         return square_from_tensor(self)
 
+    # ── Fase 0: unary ops ──────────────────────────────────────────
+    def tan(self) -> "Tensor":
+        return tan_from_tensor(self)
+
+    def asin(self) -> "Tensor":
+        return asin_from_tensor(self)
+
+    def acos(self) -> "Tensor":
+        return acos_from_tensor(self)
+
+    def atan(self) -> "Tensor":
+        return atan_from_tensor(self)
+
+    def sinh(self) -> "Tensor":
+        return sinh_from_tensor(self)
+
+    def cosh(self) -> "Tensor":
+        return cosh_from_tensor(self)
+
+    def asinh(self) -> "Tensor":
+        return asinh_from_tensor(self)
+
+    def acosh(self) -> "Tensor":
+        return acosh_from_tensor(self)
+
+    def atanh(self) -> "Tensor":
+        return atanh_from_tensor(self)
+
+    def exp2(self) -> "Tensor":
+        return exp2_from_tensor(self)
+
+    def log2(self) -> "Tensor":
+        return log2_from_tensor(self)
+
+    def log10(self) -> "Tensor":
+        return log10_from_tensor(self)
+
+    def log1p(self) -> "Tensor":
+        return log1p_from_tensor(self)
+
+    def expm1(self) -> "Tensor":
+        return expm1_from_tensor(self)
+
+    def trunc(self) -> "Tensor":
+        return trunc_from_tensor(self)
+
+    def frac(self) -> "Tensor":
+        return frac_from_tensor(self)
+
+    def softplus(self) -> "Tensor":
+        return softplus_from_tensor(self)
+
+    def mish(self) -> "Tensor":
+        return mish_from_tensor(self)
+
+    def hardsigmoid(self) -> "Tensor":
+        return hardsigmoid_from_tensor(self)
+
+    def hardswish(self) -> "Tensor":
+        return hardswish_from_tensor(self)
+
+    def softsign(self) -> "Tensor":
+        return softsign_from_tensor(self)
+
+    def tanhshrink(self) -> "Tensor":
+        return tanhshrink_from_tensor(self)
+
+    def rsqrt(self) -> "Tensor":
+        return rsqrt_from_tensor(self)
+
+    def sign(self) -> "Tensor":
+        return sign_from_tensor(self)
+
+    def sgn(self) -> "Tensor":
+        return sgn_from_tensor(self)
+
+    def isnan(self) -> "Tensor":
+        return isnan_from_tensor(self)
+
+    def isinf(self) -> "Tensor":
+        return isinf_from_tensor(self)
+
+    def isfinite(self) -> "Tensor":
+        return isfinite_from_tensor(self)
+
+    def isposinf(self) -> "Tensor":
+        return isposinf_from_tensor(self)
+
+    def isneginf(self) -> "Tensor":
+        return isneginf_from_tensor(self)
+
+    def logical_not(self) -> "Tensor":
+        return logical_not_from_tensor(self)
+
+    def erf(self) -> "Tensor":
+        return erf_from_tensor(self)
+
+    def erfc(self) -> "Tensor":
+        return erfc_from_tensor(self)
+
+    def lgamma(self) -> "Tensor":
+        return lgamma_from_tensor(self)
+
+    def digamma(self) -> "Tensor":
+        return digamma_from_tensor(self)
+
+    def i0(self) -> "Tensor":
+        return i0_from_tensor(self)
+
+    def deg2rad(self) -> "Tensor":
+        return deg2rad_from_tensor(self)
+
+    def rad2deg(self) -> "Tensor":
+        return rad2deg_from_tensor(self)
+
     def eq(self, other: "Tensor") -> "Tensor":
         return eq_from_tensors(self, other)
 
@@ -454,6 +569,102 @@ def ones_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
+def empty_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
+    runtime = _get_runtime()
+    if dtype is None:
+        meta = _run_js_awaitable(runtime.emptyLike(tensor._id))
+    else:
+        meta = _run_js_awaitable(runtime.emptyLike(tensor._id, dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def empty_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
+    runtime = _get_runtime()
+    normalized = _normalize_shape(shape)
+    meta = _run_js_awaitable(runtime.empty(normalized, dtype))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def pow_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.pow(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def heaviside_from_tensors(input_: Tensor, values: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.heaviside(input_._id, values._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def maximum_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.maximum(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def minimum_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.minimum(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def any_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.any(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def all_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.all(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def cumsum_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.cumsum(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def cumprod_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.cumprod(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def tril_from_tensor(tensor: Tensor, diagonal: int = 0) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.tril(tensor._id, int(diagonal)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def triu_from_tensor(tensor: Tensor, diagonal: int = 0) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.triu(tensor._id, int(diagonal)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def flip_from_tensor(tensor: Tensor, dims: Sequence[int]) -> Tensor:
+    runtime = _get_runtime()
+    normalized = [int(v) for v in dims]
+    meta = _run_js_awaitable(runtime.flip(tensor._id, normalized))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
 def where_from_tensors(condition: Tensor, x: Tensor, y: Tensor) -> Tensor:
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.where(condition._id, x._id, y._id))
@@ -574,6 +785,58 @@ def square_from_tensor(tensor: Tensor) -> Tensor:
     meta = _run_js_awaitable(runtime.square(tensor._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
+
+
+# ── Fase 0: unary ops ──────────────────────────────────────────────
+
+def _make_unary_from_tensor(fn_name: str):
+    def wrapper(tensor: Tensor) -> Tensor:
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(getattr(runtime, fn_name)(tensor._id))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+    wrapper.__name__ = fn_name + "_from_tensor"
+    return wrapper
+
+
+tan_from_tensor = _make_unary_from_tensor("tan")
+asin_from_tensor = _make_unary_from_tensor("asin")
+acos_from_tensor = _make_unary_from_tensor("acos")
+atan_from_tensor = _make_unary_from_tensor("atan")
+sinh_from_tensor = _make_unary_from_tensor("sinh")
+cosh_from_tensor = _make_unary_from_tensor("cosh")
+asinh_from_tensor = _make_unary_from_tensor("asinh")
+acosh_from_tensor = _make_unary_from_tensor("acosh")
+atanh_from_tensor = _make_unary_from_tensor("atanh")
+exp2_from_tensor = _make_unary_from_tensor("exp2")
+log2_from_tensor = _make_unary_from_tensor("log2")
+log10_from_tensor = _make_unary_from_tensor("log10")
+log1p_from_tensor = _make_unary_from_tensor("log1p")
+expm1_from_tensor = _make_unary_from_tensor("expm1")
+trunc_from_tensor = _make_unary_from_tensor("trunc")
+frac_from_tensor = _make_unary_from_tensor("frac")
+softplus_from_tensor = _make_unary_from_tensor("softplus")
+mish_from_tensor = _make_unary_from_tensor("mish")
+hardsigmoid_from_tensor = _make_unary_from_tensor("hardsigmoid")
+hardswish_from_tensor = _make_unary_from_tensor("hardswish")
+softsign_from_tensor = _make_unary_from_tensor("softsign")
+tanhshrink_from_tensor = _make_unary_from_tensor("tanhshrink")
+rsqrt_from_tensor = _make_unary_from_tensor("rsqrt")
+sign_from_tensor = _make_unary_from_tensor("sign")
+sgn_from_tensor = _make_unary_from_tensor("sgn")
+isnan_from_tensor = _make_unary_from_tensor("isnan")
+isinf_from_tensor = _make_unary_from_tensor("isinf")
+isfinite_from_tensor = _make_unary_from_tensor("isfinite")
+isposinf_from_tensor = _make_unary_from_tensor("isposinf")
+isneginf_from_tensor = _make_unary_from_tensor("isneginf")
+logical_not_from_tensor = _make_unary_from_tensor("logicalNot")
+erf_from_tensor = _make_unary_from_tensor("erf")
+erfc_from_tensor = _make_unary_from_tensor("erfc")
+lgamma_from_tensor = _make_unary_from_tensor("lgamma")
+digamma_from_tensor = _make_unary_from_tensor("digamma")
+i0_from_tensor = _make_unary_from_tensor("i0")
+deg2rad_from_tensor = _make_unary_from_tensor("deg2rad")
+rad2deg_from_tensor = _make_unary_from_tensor("rad2deg")
 
 
 def eq_from_tensors(a: Tensor, b: Tensor) -> Tensor:

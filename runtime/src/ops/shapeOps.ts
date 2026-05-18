@@ -14,6 +14,9 @@ import {
   SLICE_SHADER,
   EXPAND_SHADER,
   INDEX_SELECT_SHADER,
+  TRIL_SHADER,
+  TRIU_SHADER,
+  FLIP_SHADER,
   normalizeDim,
   computeStrides,
   normalizeSliceStart,
@@ -261,6 +264,73 @@ export class ShapeOps {
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, shape, meta.dtype, outLength);
+  }
+
+  async tril(tensorId: number, diagonal = 0): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+
+    const encoder = this.deviceMgr.device!.createCommandEncoder();
+    encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, meta.bytes);
+    this.deviceMgr.device!.queue.submit([encoder.finish()]);
+
+    const params = new Int32Array([diagonal, length, meta.shape[meta.shape.length - 2] ?? 0, meta.shape[meta.shape.length - 1] ?? 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(TRIL_SHADER, "main");
+    dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
+  }
+
+  async triu(tensorId: number, diagonal = 0): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+
+    const encoder = this.deviceMgr.device!.createCommandEncoder();
+    encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, meta.bytes);
+    this.deviceMgr.device!.queue.submit([encoder.finish()]);
+
+    const params = new Int32Array([diagonal, length, meta.shape[meta.shape.length - 2] ?? 0, meta.shape[meta.shape.length - 1] ?? 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(TRIU_SHADER, "main");
+    dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
+  }
+
+  async flip(tensorId: number, dims: number[]): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const params = new Int32Array([
+      dims.length, length, 0, 0,
+      ...dims.slice(0, 4).map(d => d < 0 ? d + meta.shape.length : d),
+    ]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: Math.max(16, Math.ceil(params.byteLength / 16) * 16),
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(FLIP_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
   }
 
   async indexSelect(tensorId: number, dim: number, indicesId: number): Promise<TensorHandle> {

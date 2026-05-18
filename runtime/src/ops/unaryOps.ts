@@ -13,7 +13,16 @@ import {
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 
-const FLOAT32_ONLY_OPS = new Set(["relu", "sqrt", "exp", "log", "sigmoid", "tanh", "sin", "cos", "gelu", "silu"]);
+const FLOAT32_ONLY_OPS = new Set([
+  "relu", "sqrt", "exp", "log", "sigmoid", "tanh", "sin", "cos", "gelu", "silu",
+  "sinh", "cosh", "tan", "asin", "acos", "atan",
+  "asinh", "acosh", "atanh",
+  "exp2", "log2", "log10", "log1p", "expm1",
+  "softplus", "mish", "hardsigmoid", "hardswish", "softsign", "tanhshrink",
+  "trunc", "frac", "rsqrt",
+  "erf", "erfc", "lgamma", "digamma", "i0",
+  "deg2rad", "rad2deg",
+]);
 
 const ENTRYPOINT_MAP: Record<string, string> = {
   abs: "abs_op",
@@ -31,6 +40,52 @@ const ENTRYPOINT_MAP: Record<string, string> = {
   round: "round_op",
   reciprocal: "reciprocal_op",
   square: "square_op",
+  // Trig
+  tan: "tan_op",
+  asin: "asin_op",
+  acos: "acos_op",
+  atan: "atan_op",
+  sinh: "sinh_op",
+  cosh: "cosh_op",
+  asinh: "asinh_op",
+  acosh: "acosh_op",
+  atanh: "atanh_op",
+  // Exp/Log
+  exp2: "exp2_op",
+  log2: "log2_op",
+  log10: "log10",
+  log1p: "log1p",
+  expm1: "expm1_op",
+  // Rounding
+  trunc: "trunc_op",
+  frac: "frac_op",
+  // Activations
+  softplus: "softplus_op",
+  mish: "mish_op",
+  hardsigmoid: "hardsigmoid_op",
+  hardswish: "hardswish_op",
+  softsign: "softsign_op",
+  tanhshrink: "tanhshrink_op",
+  // Arithmetic
+  rsqrt: "rsqrt_op",
+  sign: "sign_op",
+  sgn: "sgn_op",
+  // Boolean
+  isnan: "isnan_op",
+  isinf: "isinf_op",
+  isfinite: "isfinite_op",
+  isposinf: "isposinf_op",
+  isneginf: "isneginf_op",
+  logical_not: "logical_not_op",
+  // Special
+  erf: "erf_op",
+  erfc: "erfc_op",
+  lgamma: "lgamma_op",
+  digamma: "digamma_op",
+  i0: "i0_op",
+  // Conversion
+  deg2rad: "deg2rad_op",
+  rad2deg: "rad2deg_op",
 };
 
 export class UnaryOps {
@@ -136,6 +191,168 @@ export class UnaryOps {
     return this.unary(tensorId, "square");
   }
 
+  // Trig
+  async tan(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "tan");
+  }
+
+  async asin(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "asin");
+  }
+
+  async acos(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "acos");
+  }
+
+  async atan(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "atan");
+  }
+
+  async sinh(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "sinh");
+  }
+
+  async cosh(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "cosh");
+  }
+
+  async asinh(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "asinh");
+  }
+
+  async acosh(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "acosh");
+  }
+
+  async atanh(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "atanh");
+  }
+
+  // Exp/Log
+  async exp2(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "exp2");
+  }
+
+  async log2(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "log2");
+  }
+
+  async log10(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "log10");
+  }
+
+  async log1p(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "log1p");
+  }
+
+  async expm1(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "expm1");
+  }
+
+  // Rounding
+  async trunc(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "trunc");
+  }
+
+  async frac(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "frac");
+  }
+
+  // Activations
+  async softplus(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "softplus");
+  }
+
+  async mish(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "mish");
+  }
+
+  async hardsigmoid(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "hardsigmoid");
+  }
+
+  async hardswish(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "hardswish");
+  }
+
+  async softsign(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "softsign");
+  }
+
+  async tanhshrink(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "tanhshrink");
+  }
+
+  // Arithmetic
+  async rsqrt(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "rsqrt");
+  }
+
+  async sign(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "sign");
+  }
+
+  async sgn(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "sgn");
+  }
+
+  // Boolean
+  async isnan(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "isnan");
+  }
+
+  async isinf(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "isinf");
+  }
+
+  async isfinite(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "isfinite");
+  }
+
+  async isposinf(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "isposinf");
+  }
+
+  async isneginf(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "isneginf");
+  }
+
+  async logicalNot(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "logical_not");
+  }
+
+  // Special
+  async erf(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "erf");
+  }
+
+  async erfc(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "erfc");
+  }
+
+  async lgamma(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "lgamma");
+  }
+
+  async digamma(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "digamma");
+  }
+
+  async i0(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "i0");
+  }
+
+  // Conversion
+  async deg2rad(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "deg2rad");
+  }
+
+  async rad2deg(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "rad2deg");
+  }
+
+  private BOOL_OPS = new Set(["isnan", "isinf", "isfinite", "isposinf", "isneginf", "logical_not"]);
+
   private async unary(tensorId: number, entrypoint: string): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     const meta = this.deviceMgr.getTensorMeta(tensorId);
@@ -147,6 +364,7 @@ export class UnaryOps {
     const pipeline = getOrCreatePipeline(UNARY_SHADER, ENTRYPOINT_MAP[entrypoint] || entrypoint);
     dispatchCompute(pipeline, [meta.buffer, out], calculateWorkgroups(length));
     await syncDevice();
-    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
+    const outDtype = this.BOOL_OPS.has(entrypoint) ? "bool" : meta.dtype;
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, outDtype, length);
   }
 }

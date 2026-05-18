@@ -79,6 +79,10 @@ export class TorchPyodideRuntime {
     return this.creationOps.emptyLike(tensorId, dtype);
   }
 
+  async empty(shape: number[], dtype: string): Promise<TensorHandle> {
+    return this.creationOps.empty(shape, dtype);
+  }
+
   async add(aId: number, bId: number): Promise<TensorHandle> {
     return this.arithmeticOps.add(aId, bId);
   }
@@ -105,6 +109,14 @@ export class TorchPyodideRuntime {
 
   async matmul(aId: number, bId: number): Promise<TensorHandle> {
     return this.arithmeticOps.matmul(aId, bId);
+  }
+
+  async pow(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.pow(aId, bId);
+  }
+
+  async heaviside(inputId: number, valuesId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.heaviside(inputId, valuesId);
   }
 
   async relu(tensorId: number): Promise<TensorHandle> {
@@ -179,6 +191,166 @@ export class TorchPyodideRuntime {
     return this.unaryOps.square(tensorId);
   }
 
+  // Trig
+  async tan(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.tan(tensorId);
+  }
+
+  async asin(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.asin(tensorId);
+  }
+
+  async acos(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.acos(tensorId);
+  }
+
+  async atan(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.atan(tensorId);
+  }
+
+  async sinh(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.sinh(tensorId);
+  }
+
+  async cosh(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.cosh(tensorId);
+  }
+
+  async asinh(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.asinh(tensorId);
+  }
+
+  async acosh(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.acosh(tensorId);
+  }
+
+  async atanh(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.atanh(tensorId);
+  }
+
+  // Exp/Log
+  async exp2(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.exp2(tensorId);
+  }
+
+  async log2(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.log2(tensorId);
+  }
+
+  async log10(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.log10(tensorId);
+  }
+
+  async log1p(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.log1p(tensorId);
+  }
+
+  async expm1(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.expm1(tensorId);
+  }
+
+  // Rounding
+  async trunc(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.trunc(tensorId);
+  }
+
+  async frac(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.frac(tensorId);
+  }
+
+  // Activations
+  async softplus(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.softplus(tensorId);
+  }
+
+  async mish(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.mish(tensorId);
+  }
+
+  async hardsigmoid(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.hardsigmoid(tensorId);
+  }
+
+  async hardswish(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.hardswish(tensorId);
+  }
+
+  async softsign(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.softsign(tensorId);
+  }
+
+  async tanhshrink(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.tanhshrink(tensorId);
+  }
+
+  // Arithmetic
+  async rsqrt(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.rsqrt(tensorId);
+  }
+
+  async sign(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.sign(tensorId);
+  }
+
+  async sgn(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.sgn(tensorId);
+  }
+
+  // Boolean
+  async isnan(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.isnan(tensorId);
+  }
+
+  async isinf(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.isinf(tensorId);
+  }
+
+  async isfinite(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.isfinite(tensorId);
+  }
+
+  async isposinf(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.isposinf(tensorId);
+  }
+
+  async isneginf(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.isneginf(tensorId);
+  }
+
+  async logicalNot(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.logicalNot(tensorId);
+  }
+
+  // Special
+  async erf(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.erf(tensorId);
+  }
+
+  async erfc(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.erfc(tensorId);
+  }
+
+  async lgamma(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.lgamma(tensorId);
+  }
+
+  async digamma(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.digamma(tensorId);
+  }
+
+  async i0(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.i0(tensorId);
+  }
+
+  // Conversion
+  async deg2rad(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.deg2rad(tensorId);
+  }
+
+  async rad2deg(tensorId: number): Promise<TensorHandle> {
+    return this.unaryOps.rad2deg(tensorId);
+  }
+
   async sum(tensorId: number): Promise<TensorHandle> {
     return this.reductionOps.sum(tensorId);
   }
@@ -215,6 +387,22 @@ export class TorchPyodideRuntime {
     return this.reductionOps.argmin(tensorId);
   }
 
+  async any(tensorId: number): Promise<TensorHandle> {
+    return this.reductionOps.any(tensorId);
+  }
+
+  async all(tensorId: number): Promise<TensorHandle> {
+    return this.reductionOps.all(tensorId);
+  }
+
+  async cumsum(tensorId: number): Promise<TensorHandle> {
+    return this.reductionOps.cumsum(tensorId);
+  }
+
+  async cumprod(tensorId: number): Promise<TensorHandle> {
+    return this.reductionOps.cumprod(tensorId);
+  }
+
   async eq(aId: number, bId: number): Promise<TensorHandle> {
     return this.compareOps.eq(aId, bId);
   }
@@ -237,6 +425,14 @@ export class TorchPyodideRuntime {
 
   async ge(aId: number, bId: number): Promise<TensorHandle> {
     return this.compareOps.ge(aId, bId);
+  }
+
+  async maximum(aId: number, bId: number): Promise<TensorHandle> {
+    return this.compareOps.maximum(aId, bId);
+  }
+
+  async minimum(aId: number, bId: number): Promise<TensorHandle> {
+    return this.compareOps.minimum(aId, bId);
   }
 
   async maskedSelect(tensorId: number, maskId: number): Promise<TensorHandle> {
@@ -297,6 +493,18 @@ export class TorchPyodideRuntime {
 
   async indexSelect(tensorId: number, dim: number, indicesId: number): Promise<TensorHandle> {
     return this.shapeOps.indexSelect(tensorId, dim, indicesId);
+  }
+
+  async tril(tensorId: number, diagonal = 0): Promise<TensorHandle> {
+    return this.shapeOps.tril(tensorId, diagonal);
+  }
+
+  async triu(tensorId: number, diagonal = 0): Promise<TensorHandle> {
+    return this.shapeOps.triu(tensorId, diagonal);
+  }
+
+  async flip(tensorId: number, dims: number[]): Promise<TensorHandle> {
+    return this.shapeOps.flip(tensorId, dims);
   }
 
   /** Execute a batch of operations — all compute work is accumulated and submitted once. */
