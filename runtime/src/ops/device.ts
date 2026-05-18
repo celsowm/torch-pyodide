@@ -67,6 +67,9 @@ export class DeviceManager {
   private _nextTensorId = 1;
   private _allocatedBytes = 0;
 
+  // Generation counter — increments on each recovery so readers know device changed
+  private _deviceGeneration = 0;
+
   // Mapping GPUBuffer -> shadowId for fast lookup
   private _bufferToShadow = new Map<GPUBuffer, number>();
 
@@ -139,6 +142,7 @@ export class DeviceManager {
 
     this._lostHandler = async (_ev: GPUDeviceLostInfo) => {
       console.warn("[DeviceManager] Device lost — recovering...");
+      this._deviceGeneration++;
       this._device = null;
       this._adapter = null;
       this._initialized = false;
@@ -316,6 +320,15 @@ export class DeviceManager {
             console.warn(`[DeviceManager] readFromGPU attempt ${attempt + 1}/${maxRetries}: ${msg}`);
             this._initialized = false;
             this._device = null;
+            this._initPromise = null;
+            this._pipelines.clear();
+            this._shaderModules.clear();
+            if (this._adapter) {
+              await initWebGPU();
+              this._device = getDevice() as GPUDevice;
+              this._initialized = isWebGPUInitialized();
+              if (this._device?.lost) this._device.lost.then(this._lostHandler!);
+            }
             await sleep(BACKOFF_BASE_MS * Math.pow(2, attempt));
             continue;
           }
@@ -328,17 +341,20 @@ export class DeviceManager {
 
   async readFromGPU(source: GPUBuffer, length: number, dtype: SupportedDType): Promise<number[]> {
     const byteSize = length * 4;
+    const shadowId = this._bufferToShadow.get(source);
+    const shadow = shadowId !== undefined ? this._shadowBuffers.get(shadowId) : undefined;
+    // If device was recovered, shadow is more reliable than GPU read
+    if (shadow && this._deviceGeneration > 0) {
+      console.warn("[DeviceManager] Using shadow copy (device recovered)");
+      return Array.from(shadow.data).slice(0, length) as number[];
+    }
     try {
       const data = await this.readFromGPUBuffer(source, byteSize);
       return decodeValuesByDType(data, dtype);
     } catch (err) {
-      const shadowId = this._bufferToShadow.get(source);
-      if (shadowId !== undefined) {
-        const shadow = this._shadowBuffers.get(shadowId);
-        if (shadow) {
-          console.warn("[DeviceManager] Falling back to shadow copy");
-          return Array.from(shadow.data).slice(0, length) as number[];
-        }
+      if (shadow) {
+        console.warn("[DeviceManager] Falling back to shadow copy");
+        return Array.from(shadow.data).slice(0, length) as number[];
       }
       throw err;
     }
@@ -360,6 +376,30 @@ export class DeviceManager {
     this._device.queue.writeBuffer(buffer, 0, shadow.data as AllowSharedBufferSource);
     this._bufferToShadow.set(buffer, shadowId);
     return buffer;
+  }
+
+  /** Force device recovery (used for testing). Destroys current device and reinitializes. */
+  async forceDeviceRecovery(): Promise<void> {
+    if (this._device) {
+      try { this._device.destroy(); } catch { /* ignore */ }
+    }
+    this._deviceGeneration++;
+    this._device = null;
+    this._adapter = null;
+    this._initialized = false;
+    this._initPromise = null;
+    this._pipelines.clear();
+    this._shaderModules.clear();
+    await withRetry("forced recovery", async () => {
+      await initWebGPU();
+      this._device = getDevice() as GPUDevice;
+      this._adapter = getAdapter() as GPUAdapter;
+      this._initialized = isWebGPUInitialized();
+      if (!this._device) throw new Error("Forced recovery: failed to reinitialize WebGPU");
+      if (this._device.lost) this._device.lost.then(this._lostHandler!);
+      for (const cb of this._recoveryCallbacks) await cb();
+      console.warn("[DeviceManager] Forced recovery complete");
+    }, LOST_RECOVERY_RETRIES);
   }
 
   onRecovery(cb: () => Promise<void>): void {

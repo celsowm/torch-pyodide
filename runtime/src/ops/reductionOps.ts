@@ -196,7 +196,7 @@ export class ReductionOps {
     const scalarBuf = createStorageBuffer(this.deviceMgr.device!, 4);
     this.deviceMgr.writeBuffer(scalarBuf, 0, new Float32Array([scalarValue]));
 
-    return this.deviceMgr.registerTensorAsHandle(scalarBuf, [1], meta.dtype, 1);
+    return this.deviceMgr.registerTensorAsHandle(scalarBuf, [], meta.dtype, 1);
   }
 
   private async reduceDim(tensorId: number, dim: number, keepdim: boolean, mode: string): Promise<TensorHandle> {

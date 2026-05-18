@@ -71,13 +71,14 @@ async function installPublishedTorchPackage(pyodide: PyodideApi): Promise<void> 
   await pyodide.loadPackage("micropip");
   await pyodide.runPythonAsync(`
 import micropip
-await micropip.install("torch-pyodide")
+await micropip.install("torch-pyodide==0.0.10")
 `);
 }
 
 async function verifyInstalledTorch(pyodide: PyodideApi): Promise<void> {
-  await pyodide.runPythonAsync(`
+  const versionInfo = await pyodide.runPythonAsync(`
 import torch
+print("TORCH VERSION:", getattr(torch, "__version__", "no-version"))
 from torch._tensor import _js_meta_to_tuple
 tensor_id, shape, dtype = _js_meta_to_tuple({"id": 1, "shape": [2], "dtype": "float32"})
 assert tensor_id == 1
@@ -85,7 +86,9 @@ assert shape == [2]
 assert dtype == "float32"
 assert hasattr(torch, "cuda")
 assert callable(torch.cuda.is_available)
+getattr(torch, "__version__", "no-version")
 `);
+  console.log("torch version installed:", versionInfo);
 }
 
 function isLocalhostHost(hostname: string): boolean {

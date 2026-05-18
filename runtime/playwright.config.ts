@@ -34,6 +34,20 @@ export default defineConfig({
           ]
         }
       }
+    },
+    {
+      name: "chrome-webgpu",
+      grep: /@webgpu/,
+      use: {
+        channel: "chromium",
+        headless: false,
+        launchOptions: {
+          args: [
+            "--enable-unsafe-webgpu",
+            "--enable-features=Vulkan,UseSkiaRenderer"
+          ]
+        }
+      }
     }
   ]
 });
