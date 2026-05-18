@@ -87,6 +87,25 @@ class Linear(Module):
         return linear(x, self.weight, self.bias)
 
 
+# ── Bilinear ──────────────────────────────────────────────────────
+
+class Bilinear(Module):
+    def __init__(self, in1_features: int, in2_features: int, out_features: int, bias: bool = True) -> None:
+        super().__init__()
+        self.in1_features = in1_features
+        self.in2_features = in2_features
+        self.out_features = out_features
+        self.weight = torch.randn((out_features, in1_features, in2_features)) * 0.01
+        if bias:
+            self.bias = torch.zeros((out_features,))
+        else:
+            self.bias = None
+
+    def forward(self, x1: Tensor, x2: Tensor) -> Tensor:
+        from .functional import bilinear
+        return bilinear(x1, x2, self.weight, self.bias)
+
+
 # ── Dropout ───────────────────────────────────────────────────────
 
 class Dropout(Module):

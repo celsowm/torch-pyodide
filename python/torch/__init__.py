@@ -215,6 +215,12 @@ __all__ = [
     "tril",
     "triu",
     "flip",
+    "mm",
+    "bmm",
+    "mv",
+    "dot",
+    "outer",
+    "norm",
 ]
 
 
@@ -289,6 +295,30 @@ def div(a: Tensor, b: Tensor) -> Tensor:
 
 def matmul(a: Tensor, b: Tensor) -> Tensor:
     return a.matmul(b)
+
+
+def mm(a: Tensor, b: Tensor) -> Tensor:
+    return a.mm(b)
+
+
+def bmm(a: Tensor, b: Tensor) -> Tensor:
+    return a.bmm(b)
+
+
+def mv(a: Tensor, b: Tensor) -> Tensor:
+    return a.mv(b)
+
+
+def dot(a: Tensor, b: Tensor) -> Tensor:
+    return a.dot(b)
+
+
+def outer(a: Tensor, b: Tensor) -> Tensor:
+    return a.outer(b)
+
+
+def norm(x: Tensor, p: float | str = "fro") -> Tensor:
+    return x.norm(p)
 
 
 def relu(x: Tensor) -> Tensor:

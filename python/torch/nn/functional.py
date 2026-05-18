@@ -93,6 +93,25 @@ def linear(x: Tensor, weight: Tensor, bias: Tensor | None = None) -> Tensor:
     return result
 
 
+def bilinear(
+    x1: Tensor, x2: Tensor, weight: Tensor, bias: Tensor | None = None
+) -> Tensor:
+    out_features, in1_features, in2_features = weight.shape
+    x1_flat = x1.reshape(-1, in1_features)
+    x2_flat = x2.reshape(-1, in2_features)
+    out = []
+    for i in range(out_features):
+        w = weight[i]  # (in1, in2)
+        wx2 = x2_flat @ w.T  # (batch, in1)
+        out_i = (x1_flat * wx2).sum(dim=1, keepdim=True)  # (batch, 1)
+        out.append(out_i)
+    result = torch.cat(out, dim=1)  # (batch, out_features)
+    if bias is not None:
+        result = result + bias
+    orig_shape = list(x1.shape[:-1]) + [out_features]
+    return result.reshape(*orig_shape)
+
+
 # ── Normalization ─────────────────────────────────────────────────
 
 def batch_norm(

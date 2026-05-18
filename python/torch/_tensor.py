@@ -109,6 +109,31 @@ class Tensor:
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
+    def mm(self, other: "Tensor") -> "Tensor":
+        return self.matmul(other)
+
+    def bmm(self, other: "Tensor") -> "Tensor":
+        return self.matmul(other)
+
+    def mv(self, other: "Tensor") -> "Tensor":
+        return self.matmul(other)
+
+    def dot(self, other: "Tensor") -> "Tensor":
+        return (self * other).sum()
+
+    def outer(self, other: "Tensor") -> "Tensor":
+        return self.reshape(-1, 1) * other.reshape(1, -1)
+
+    def norm(self, p: float | str = "fro") -> "Tensor":
+        if p == "fro" or p == 2:
+            return (self * self).sum().sqrt()
+        elif p == 1:
+            return self.abs().sum()
+        elif p == float("inf") or p == "inf":
+            return self.abs().max()
+        else:
+            return (self.abs() ** p).sum() ** (1.0 / p)
+
     def sum(self) -> "Tensor":
         return sum_from_tensor(self)
 

@@ -111,6 +111,18 @@ export class TorchPyodideRuntime {
     return this.arithmeticOps.matmul(aId, bId);
   }
 
+  async mm(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.matmul(aId, bId);
+  }
+
+  async bmm(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.matmul(aId, bId);
+  }
+
+  async mv(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.matmul(aId, bId);
+  }
+
   async pow(aId: number, bId: number): Promise<TensorHandle> {
     return this.arithmeticOps.pow(aId, bId);
   }

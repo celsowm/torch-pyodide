@@ -274,6 +274,19 @@
     { "id": "Tensor.gt", "kind": "tensor_method" },
     { "id": "Tensor.lt", "kind": "tensor_method" },
     { "id": "Tensor.ge", "kind": "tensor_method" },
-    { "id": "Tensor.le", "kind": "tensor_method" }
+    { "id": "torch.mm", "kind": "module_func" },
+    { "id": "torch.bmm", "kind": "module_func" },
+    { "id": "torch.mv", "kind": "module_func" },
+    { "id": "torch.dot", "kind": "module_func" },
+    { "id": "torch.outer", "kind": "module_func" },
+    { "id": "Tensor.mm", "kind": "tensor_method" },
+    { "id": "Tensor.bmm", "kind": "tensor_method" },
+    { "id": "Tensor.mv", "kind": "tensor_method" },
+    { "id": "Tensor.dot", "kind": "tensor_method" },
+    { "id": "Tensor.outer", "kind": "tensor_method" },
+    { "id": "torch.norm", "kind": "module_func", "params": ["x", "p"] },
+    { "id": "Tensor.norm", "kind": "tensor_method" },
+    { "id": "nn.functional.bilinear", "kind": "nn_func" },
+    { "id": "nn.Bilinear", "kind": "nn_class" }
   ]
 }
