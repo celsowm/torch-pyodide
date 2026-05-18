@@ -285,3 +285,84 @@ test("runBatch accumulates compute ops into a single submit @webgpu", async ({ p
   // (1+10)*10 = 110, (2+20)*20 = 440, (3+30)*30 = 990, (4+40)*40 = 1760
   expect(result).toEqual([110, 440, 990, 1760]);
 });
+
+test.describe("playground example scripts", () => {
+  const examples: { id: string; file: string }[] = [
+    { id: "tensor_basics", file: "tensor_basics.py" },
+    { id: "matmul_relu", file: "matmul_relu.py" },
+    { id: "reshape_transpose", file: "reshape_transpose.py" },
+    { id: "rand_tensor", file: "rand_tensor.py" },
+    { id: "clamp_values", file: "clamp_values.py" },
+    { id: "where_select", file: "where_select.py" },
+    { id: "argmax_argmin", file: "argmax_argmin.py" },
+    { id: "randn_tensor", file: "randn_tensor.py" },
+    { id: "arange_int32", file: "arange_int32.py" },
+    { id: "full_and_full_like", file: "full_and_full_like.py" },
+    { id: "unary_abs_neg", file: "unary_abs_neg.py" },
+    { id: "unary_sqrt_exp_log", file: "unary_sqrt_exp_log.py" },
+    { id: "shape_flatten_squeeze", file: "shape_flatten_squeeze.py" },
+    { id: "shape_transpose_permute", file: "shape_transpose_permute.py" },
+    { id: "index_select_slice", file: "index_select_slice.py" },
+    { id: "cat_stack", file: "cat_stack.py" },
+    { id: "expand_index_select", file: "expand_index_select.py" },
+    { id: "broadcasting", file: "broadcasting.py" },
+    { id: "compare_ops", file: "compare_ops.py" },
+    { id: "unary_advanced", file: "unary_advanced.py" },
+    { id: "reduce_dim", file: "reduce_dim.py" },
+    { id: "masked_select_fill", file: "masked_select_fill.py" },
+    { id: "broadcast_compare", file: "broadcast_compare.py" },
+    { id: "reduce_dim_keepdim", file: "reduce_dim_keepdim.py" },
+    { id: "nn_linear_relu", file: "nn_linear_relu.py" },
+    { id: "nn_conv2d", file: "nn_conv2d.py" },
+    { id: "nn_batchnorm", file: "nn_batchnorm.py" },
+    { id: "nn_pooling", file: "nn_pooling.py" },
+    { id: "nn_losses", file: "nn_losses.py" },
+    { id: "nn_nll_loss", file: "nn_nll_loss.py" },
+    { id: "nn_batchnorm_training", file: "nn_batchnorm_training.py" },
+  ];
+
+  for (const ex of examples) {
+    test(`${ex.id} runs without error`, async ({ page }) => {
+      await page.goto("/playground/index.html");
+      await page.waitForSelector("#run:not([disabled])", { timeout: 120000 });
+
+      await page.selectOption("#example-select", ex.id, { timeout: 10000 });
+
+      await page.waitForTimeout(500);
+      await page.click("#run");
+
+      // Wait until output appears or an error is shown
+      await page.waitForFunction(
+        () => {
+          const output = document.querySelector("#output");
+          if (!output || !output.textContent) return false;
+          return output.textContent.length > 0;
+        },
+        { timeout: 60000 }
+      );
+
+      const outputText = await page.locator("#output").innerText();
+
+      // If WebGPU is unavailable, skip — this is an env limitation, not a code bug
+      if (outputText.includes("Failed to get WebGPU adapter")) {
+        test.skip();
+        return;
+      }
+
+      // Must not contain Python or runtime errors
+      expect(outputText).not.toContain("Traceback (most recent call last)");
+      expect(outputText).not.toContain("Error:");
+      expect(outputText).not.toContain("PythonError");
+      expect(outputText).not.toContain("object has no attribute");
+      expect(outputText).not.toContain("is not subscriptable");
+
+      // Must contain valid JSON output
+      expect(outputText).toMatch(/^\{/);
+      try {
+        JSON.parse(outputText);
+      } catch {
+        expect(outputText).toBe("valid JSON output");
+      }
+    });
+  }
+});

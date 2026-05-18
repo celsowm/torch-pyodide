@@ -18,8 +18,8 @@ nll_none = F.nll_loss(log_probs, target, reduction="none")
 
 out = {
     "log_probs": [[round(v, 4) for v in row] for row in log_probs.tolist()],
-    "nll_loss_mean": round(nll.tolist()[0], 4),
-    "cross_entropy_mean": round(ce.tolist()[0], 4),
+    "nll_loss_mean": round(nll.item(), 4),
+    "cross_entropy_mean": round(ce.item(), 4),
     "nll_loss_none": [round(v, 4) for v in nll_none.tolist()],
 }
 print(json.dumps(out, indent=2))
