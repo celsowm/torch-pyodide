@@ -158,7 +158,8 @@ class Tensor:
         return self.sub(other)
 
     def __rsub__(self, other: "Tensor | float") -> "Tensor":
-        return self.neg().add(other) if isinstance(other, Tensor) else Tensor(0, [1], self._dtype).sub(self)
+        from ._tensor import _scalar_to_tensor
+        return self.neg().add(other) if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype).sub(self)
 
     def __truediv__(self, other: "Tensor | float") -> "Tensor":
         return self.div(other)
@@ -203,6 +204,38 @@ class Tensor:
     def cholesky(self) -> "Tensor":
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.cholesky(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def add(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
+        runtime = _get_runtime()
+        b = other._id if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)._id
+        meta = _run_js_awaitable(runtime.add(self._id, b))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def sub(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
+        runtime = _get_runtime()
+        b = other._id if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)._id
+        meta = _run_js_awaitable(runtime.sub(self._id, b))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def mul(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
+        runtime = _get_runtime()
+        b = other._id if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)._id
+        meta = _run_js_awaitable(runtime.mul(self._id, b))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def div(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
+        runtime = _get_runtime()
+        b = other._id if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)._id
+        meta = _run_js_awaitable(runtime.div(self._id, b))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
