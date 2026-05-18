@@ -96,20 +96,37 @@ def linear(x: Tensor, weight: Tensor, bias: Tensor | None = None) -> Tensor:
 def bilinear(
     x1: Tensor, x2: Tensor, weight: Tensor, bias: Tensor | None = None
 ) -> Tensor:
+    """Bilinear transformation: output = x1 @ weight @ x2^T + bias
+
+    weight: (out_features, in1_features, in2_features)
+    x1: (*, in1_features)
+    x2: (*, in2_features)
+
+    Uses the identity: output[o] = sum_i x1[i] * (weight[o,i,:] @ x2)
+    which avoids materializing the full (..., O, I1, I2) tensor.
+    """
     out_features, in1_features, in2_features = weight.shape
+    orig_shape = list(x1.shape[:-1]) + [out_features]
     x1_flat = x1.reshape(-1, in1_features)
     x2_flat = x2.reshape(-1, in2_features)
-    out = []
-    for i in range(out_features):
-        w = weight[i]  # (in1, in2)
-        wx2 = x2_flat @ w.T  # (batch, in1)
-        out_i = (x1_flat * wx2).sum(dim=1, keepdim=True)  # (batch, 1)
-        out.append(out_i)
-    result = torch.cat(out, dim=1)  # (batch, out_features)
+    batch = x1_flat.shape[0]
+
+    # For each i in in1_features, compute: x1[b,i] * (weight[:,i,:] @ x2[b,:])
+    # weight[:,i,:] is (out_features, in2)
+    # weight[:,i,:] @ x2[b,:] is (out_features,)
+    # x1[b,i] * that is (out_features,)
+    # Sum over i gives final (batch, out_features)
+
+    accum = torch.zeros((batch, out_features))
+    for i in range(in1_features):
+        w_i = weight[:, i, :]  # (out_features, in2)
+        wx2 = x2_flat @ w_i.T  # (batch, out_features)
+        accum = accum + x1_flat[:, i:i+1] * wx2
+
     if bias is not None:
-        result = result + bias
-    orig_shape = list(x1.shape[:-1]) + [out_features]
-    return result.reshape(*orig_shape)
+        accum = accum + bias
+
+    return accum.reshape(*orig_shape)
 
 
 # ── Normalization ─────────────────────────────────────────────────
