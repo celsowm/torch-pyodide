@@ -41,84 +41,188 @@ jobs:
       - name: Build runtime
         run: npm run build:runtime
 
-      - name: Install Playwright browsers (chromium full, not headless-shell)
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Test WebGPU detection with chromium full (not headless-shell)
+      - name: Test WebGPU detection in headless Chrome
         run: |
-          cat > /tmp/test-webgpu.mjs << 'EOF'
-          import { chromium } from 'playwright';
-
-          const configs = [
-            {
-              name: 'chromium headless=new with Mesa Vulkan',
-              channel: undefined,
+          node -e "
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({
+              headless: true,
               args: [
                 '--headless=new',
                 '--enable-unsafe-webgpu',
                 '--enable-features=Vulkan,UseSkiaRenderer',
                 '--use-gl=egl',
                 '--no-sandbox',
-                '--disable-gpu-sandbox',
               ]
-            },
-            {
-              name: 'chromium headless=new ANGLE SwiftShader',
-              channel: undefined,
-              args: [
-                '--headless=new',
-                '--enable-unsafe-webgpu',
-                '--enable-features=Vulkan,UseSkiaRenderer',
-                '--use-gl=angle',
-                '--use-angle=swiftshader',
-                '--no-sandbox',
-              ]
-            },
-          ];
-
-          for (const cfg of configs) {
-            console.log(`\n=== ${cfg.name} ===`);
-            try {
-              const browser = await chromium.launch({
-                headless: true,
-                args: cfg.args,
-              });
-              const page = await browser.newPage();
-              await page.goto('about:blank');
-              const result = await page.evaluate(async () => {
-                if (!navigator.gpu) return { gpu: false, error: 'navigator.gpu is undefined' };
-                try {
-                  const adapter = await navigator.gpu.requestAdapter();
-                  if (!adapter) return { gpu: true, adapter: false, error: 'requestAdapter returned null' };
-                  // Try creating device
-                  const device = await adapter.requestDevice();
-                  const info = {
-                    name: adapter.name,
-                    features: Array.from(adapter.features).join(', '),
-                    deviceCreated: !!device,
-                  };
-                  return { gpu: true, adapter: true, info };
-                } catch (e) {
-                  return { gpu: true, adapter: false, error: e.message };
-                }
-              });
-              console.log(JSON.stringify(result, null, 2));
-              await browser.close();
-              if (result.gpu && result.adapter) {
-                console.log('✓ SUCCESS: WebGPU is available!');
-                process.exit(0);
+            });
+            const page = await browser.newPage();
+            await page.goto('about:blank');
+            const result = await page.evaluate(async () => {
+              if (!navigator.gpu) return { gpu: false, error: 'navigator.gpu is undefined' };
+              try {
+                const adapter = await navigator.gpu.requestAdapter();
+                if (!adapter) return { gpu: true, adapter: false, error: 'requestAdapter returned null' };
+                const info = {
+                  name: adapter.name,
+                  features: Array.from(adapter.features).join(', '),
+                  limits: JSON.stringify(Object.fromEntries(
+                    Object.entries(adapter.limits).map(([k, v]) => [k, String(v)])
+                  )),
+                };
+                return { gpu: true, adapter: true, info };
+              } catch (e) {
+                return { gpu: true, adapter: false, error: e.message };
               }
-            } catch (e) {
-              console.log(`Launch error: ${e.message}`);
+            });
+            console.log(JSON.stringify(result, null, 2));
+            await browser.close();
+            if (!result.gpu || !result.adapter) {
+              process.exit(1);
             }
-          }
+          })();
+          "
+          # Convert to ESM for .mjs or use dynamic import
+          # Actually let's just use a .mjs file
 
-          console.log('\n✗ All approaches failed. WebGPU not available in headless mode.');
-          process.exit(1);
+      - name: Test WebGPU detection (mjs version)
+        run: |
+          cat > /tmp/test-webgpu.mjs << 'EOF'
+          import { chromium } from 'playwright';
+
+          const browser = await chromium.launch({
+            headless: true,
+            args: [
+              '--headless=new',
+              '--enable-unsafe-webgpu',
+              '--enable-features=Vulkan,UseSkiaRenderer',
+              '--use-gl=egl',
+              '--no-sandbox',
+            ]
+          });
+          const page = await browser.newPage();
+          await page.goto('about:blank');
+          const result = await page.evaluate(async () => {
+            if (!navigator.gpu) return { gpu: false, error: 'navigator.gpu is undefined' };
+            try {
+              const adapter = await navigator.gpu.requestAdapter();
+              if (!adapter) return { gpu: true, adapter: false, error: 'requestAdapter returned null' };
+              const info = {
+                name: adapter.name,
+                features: Array.from(adapter.features).join(', '),
+                limits: JSON.stringify(Object.fromEntries(
+                  Object.entries(adapter.limits).map(([k, v]) => [k, String(v)])
+                )),
+              };
+              return { gpu: true, adapter: true, info };
+            } catch (e) {
+              return { gpu: true, adapter: false, error: e.message };
+            }
+          });
+          console.log(JSON.stringify(result, null, 2));
+          await browser.close();
+          if (!result.gpu || !result.adapter) {
+            process.exit(1);
+          }
           EOF
           node /tmp/test-webgpu.mjs
+
+      - name: Try with SwiftShader flags
+        run: |
+          cat > /tmp/test-webgpu-swiftshader.mjs << 'EOF'
+          import { chromium } from 'playwright';
+
+          const browser = await chromium.launch({
+            headless: true,
+            args: [
+              '--headless=new',
+              '--enable-unsafe-webgpu',
+              '--enable-features=Vulkan,UseSkiaRenderer',
+              '--use-gl=angle --use-angle=swiftshader',
+              '--no-sandbox',
+            ]
+          });
+          const page = await browser.newPage();
+          await page.goto('about:blank');
+          const result = await page.evaluate(async () => {
+            if (!navigator.gpu) return { gpu: false, error: 'navigator.gpu is undefined' };
+            try {
+              const adapter = await navigator.gpu.requestAdapter();
+              if (!adapter) return { gpu: true, adapter: false, error: 'requestAdapter returned null' };
+              const info = {
+                name: adapter.name,
+                features: Array.from(adapter.features).join(', '),
+                limits: JSON.stringify(Object.fromEntries(
+                  Object.entries(adapter.limits).map(([k, v]) => [k, String(v)])
+                )),
+              };
+              return { gpu: true, adapter: true, info };
+            } catch (e) {
+              return { gpu: true, adapter: false, error: e.message };
+            }
+          });
+          console.log(JSON.stringify(result, null, 2));
+          await browser.close();
+          if (!result.gpu || !result.adapter) {
+            process.exit(1);
+          }
+          EOF
+          node /tmp/test-webgpu-swiftshader.mjs || echo "SwiftShader approach failed (expected to fail)"
+
+      - name: Try with Mesa lavapipe override
+        run: |
+          cat > /tmp/test-webgpu-lavapipe.mjs << 'EOF'
+          import { chromium } from 'playwright';
+
+          const browser = await chromium.launch({
+            headless: true,
+            args: [
+              '--headless=new',
+              '--enable-unsafe-webgpu',
+              '--enable-features=Vulkan,UseSkiaRenderer',
+              '--use-gl=egl',
+              '--no-sandbox',
+            ]
+          });
+          const page = await browser.newPage();
+          await page.goto('about:blank');
+          const result = await page.evaluate(async () => {
+            if (!navigator.gpu) return { gpu: false, error: 'navigator.gpu is undefined' };
+            try {
+              const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'low-power' });
+              if (!adapter) return { gpu: true, adapter: false, error: 'requestAdapter returned null' };
+              const info = {
+                name: adapter.name,
+                features: Array.from(adapter.features).join(', '),
+                limits: JSON.stringify(Object.fromEntries(
+                  Object.entries(adapter.limits).map(([k, v]) => [k, String(v)])
+                )),
+              };
+              // Try creating device to confirm it works
+              const device = await adapter.requestDevice();
+              const deviceInfo = {
+                label: device.label,
+                features: Array.from(device.features).join(', '),
+              };
+              return { gpu: true, adapter: true, info, device: deviceInfo };
+            } catch (e) {
+              return { gpu: true, adapter: false, error: e.message };
+            }
+          });
+          console.log(JSON.stringify(result, null, 2));
+          await browser.close();
+          if (!result.gpu || !result.adapter) {
+            process.exit(1);
+          }
+          EOF
+          VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json node /tmp/test-webgpu-lavapipe.mjs || echo "Lavapipe override failed too"
 
       - name: Summary
         run: |
           echo "## WebGPU Headless Test Results" >> $GITHUB_STEP_SUMMARY
           echo "See step logs above for detailed results." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All approaches tested. Check which one works." >> $GITHUB_STEP_SUMMARY
