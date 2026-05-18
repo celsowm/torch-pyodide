@@ -7,6 +7,7 @@ import {
   syncDevice,
   BufferUsage,
   ELEMENTWISE_SHADER,
+  COMPARE_SHADER,
   EXPAND_BROADCAST_SHADER,
   createStorageBuffer,
   padShapeTo4,
@@ -41,6 +42,30 @@ export class BroadcastOps {
     return this.deviceMgr.registerTensorAsHandle(out, outShape, a.dtype, outLength);
   }
 
+  async compareWithBroadcast(
+    a: TensorMeta,
+    b: TensorMeta,
+    op: "eq" | "ne" | "lt" | "le" | "gt" | "ge"
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const outShape = this.broadcastShapes(a.shape, b.shape);
+    const outLength = product(outShape);
+
+    const aExpanded = a.shape.join(",") !== outShape.join(",")
+      ? await this.broadcastTensor(a, outShape)
+      : a;
+    const bExpanded = b.shape.join(",") !== outShape.join(",")
+      ? await this.broadcastTensor(b, outShape)
+      : b;
+
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
+    const pipeline = getOrCreatePipeline(COMPARE_SHADER, op);
+    dispatchCompute(pipeline, [aExpanded.buffer, bExpanded.buffer, out], calculateWorkgroups(outLength));
+    await syncDevice();
+
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, "bool", outLength);
+  }
+
   broadcastShapes(a: number[], b: number[]): number[] {
     const maxRank = Math.max(a.length, b.length);
     const result: number[] = new Array(maxRank);
@@ -63,12 +88,13 @@ export class BroadcastOps {
 
     const strides = computeStrides(paddedShape);
     const broadcastStrides = paddedShape.map((s, i) => (s === 1 ? 0 : strides[i]!));
-    const inPadded = padShapeTo4(paddedShape);
+    const outShapePadded = padShapeTo4(targetShape);
     const bsPadded = padShapeTo4(broadcastStrides);
 
     const paramsData = new Uint32Array([
-      inPadded[0], inPadded[1], inPadded[2], inPadded[3],
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
       bsPadded[0], bsPadded[1], bsPadded[2], bsPadded[3],
+      targetShape.length, outLength, 0, 0,
     ]);
     const paramsBuffer = this.deviceMgr.device!.createBuffer({
       size: paramsData.byteLength,

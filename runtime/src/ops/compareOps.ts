@@ -48,7 +48,7 @@ export class CompareOps {
     const a = this.deviceMgr.getTensorMeta(aId);
     const b = this.deviceMgr.getTensorMeta(bId);
     if (a.shape.join(",") !== b.shape.join(",")) {
-      return this.broadcastOps.elementwiseWithBroadcast(a, b, op as any);
+      return this.broadcastOps.compareWithBroadcast(a, b, op as any);
     }
     const length = product(a.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));

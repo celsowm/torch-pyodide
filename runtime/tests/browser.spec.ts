@@ -210,6 +210,50 @@ test("shape transpose and permute match the playground example plus an extra ND 
   expect(result.extraPermuteShape).toEqual([2, 2, 2, 1]);
 });
 
+test("broadcasted comparisons and where match the matrix threshold example @webgpu", async ({ page }) => {
+  await page.goto("/demo/index.html");
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const result = await page.evaluate(async () => {
+    const mod = await import("/src/runtime.ts");
+    const rt = new mod.TorchPyodideRuntime();
+    await rt.init();
+
+    const a = await rt.tensorFromData([1, 5, 3, 4, 2, 6], [2, 3], "float32");
+    const threshold = await rt.tensorFromData([3, 3, 3], [3], "float32");
+    const scalar = await rt.full([], 3.0, "float32");
+
+    const gt = await rt.gt(a.id, threshold.id);
+    const le = await rt.le(a.id, threshold.id);
+    const zeros = await rt.fullLike(a.id, 0.0, "float32");
+    const cond = await rt.gt(a.id, scalar.id);
+    const where = await rt.where(cond.id, a.id, zeros.id);
+
+    const out = {
+      gt: await rt.toList(gt.id),
+      le: await rt.toList(le.id),
+      where: await rt.toList(where.id),
+    };
+
+    await rt.destroy(a.id);
+    await rt.destroy(threshold.id);
+    await rt.destroy(scalar.id);
+    await rt.destroy(gt.id);
+    await rt.destroy(le.id);
+    await rt.destroy(zeros.id);
+    await rt.destroy(cond.id);
+    await rt.destroy(where.id);
+
+    return out;
+  });
+
+  expect(result.gt).toEqual([0, 1, 0, 1, 0, 1]);
+  expect(result.le).toEqual([1, 0, 1, 0, 1, 0]);
+  expect(result.where).toEqual([0, 5, 0, 4, 0, 6]);
+});
+
 test("runBatch accumulates compute ops into a single submit @webgpu", async ({ page }) => {
   await page.goto("/demo/index.html");
   await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
