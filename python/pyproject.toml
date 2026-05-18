@@ -14,4 +14,4 @@ Homepage = "https://github.com/celsowm/torch-pyodide"
 Repository = "https://github.com/celsowm/torch-pyodide"
 
 [tool.setuptools]
-packages = ["torch"]
+packages = { find = { include = ["torch", "torch.*"] } }
