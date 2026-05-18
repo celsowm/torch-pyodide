@@ -95,6 +95,7 @@ export {
   TRIL_SHADER,
   TRIU_SHADER,
   FLIP_SHADER,
+  LOG_SOFTMAX_SHADER,
   getOrCreatePipeline,
   dispatchCompute,
   calculateWorkgroups,

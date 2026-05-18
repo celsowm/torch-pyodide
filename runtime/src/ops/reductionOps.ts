@@ -15,6 +15,9 @@ import {
   REDUCE_MIN_SHADER,
   CUMSUM_SHADER,
   CUMPROD_SHADER,
+  ELEMENTWISE_SHADER,
+  UNARY_SHADER,
+  LOG_SOFTMAX_SHADER,
   createStorageBuffer,
   padShapeTo4,
 } from "./utils.js";
@@ -234,5 +237,78 @@ export class ReductionOps {
       : outShape;
     return this.deviceMgr.registerTensorAsHandle(out, finalShape, meta.dtype, outLength);
   }
+
+  async softmax(tensorId: number, dim: number): Promise<TensorHandle> {
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const resolvedDim = dim < 0 ? dim + meta.shape.length : dim;
+    const maxReduce = await this.reduceDim(tensorId, resolvedDim, true, "max");
+    const shifted = await this.elementwiseOp(meta, maxReduce.id, "sub_op");
+    const expTensor = await this.elementwiseOp(shifted.id, -1, "exp_op");
+    const sumReduce = await this.reduceDim(expTensor.id, resolvedDim, true, "sum");
+    const result = await this.elementwiseOp(expTensor.id, sumReduce.id, "div_op");
+    maxReduce.destroy?.(); shifted.destroy?.(); expTensor.destroy?.(); sumReduce.destroy?.();
+    return result;
+  }
+
+  async logSoftmax(tensorId: number, dim: number): Promise<TensorHandle> {
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const resolvedDim = dim < 0 ? dim + meta.shape.length : dim;
+    const length = product(meta.shape);
+
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const encoder = this.deviceMgr.device!.createCommandEncoder();
+    encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, meta.bytes);
+    this.deviceMgr.device!.queue.submit([encoder.finish()]);
+
+    const params = new Int32Array([resolvedDim, meta.shape.length, length, 0,
+      ...meta.shape.slice(0, 4).map(s => Math.max(1, s)),
+    ]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: Math.max(16, Math.ceil(params.byteLength / 16) * 16),
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(LOG_SOFTMAX_SHADER, "main");
+    dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
+  }
+
+  private async elementwiseOp(aId: number, bIdOrScalar: number, op: string): Promise<TensorHandle> {
+    const a = this.deviceMgr.getTensorMeta(aId);
+    const aLength = product(a.shape);
+    const bIsId = bIdOrScalar >= 100;
+    if (bIsId) {
+      const b = this.deviceMgr.getTensorMeta(bIdOrScalar);
+      const bLength = product(b.shape);
+      const outLength = Math.max(aLength, bLength);
+      const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
+      const params = new Int32Array([aLength, bLength, outLength, 0]);
+      const paramBuffer = this.deviceMgr.device!.createBuffer({
+        size: 16, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+      });
+      this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+      const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, op);
+      dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(outLength));
+      await syncDevice();
+      paramBuffer.destroy();
+      return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, outLength);
+    } else {
+      const scalar = bIdOrScalar;
+      const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, aLength * 4));
+      const params = new Float32Array([scalar, aLength, 0, 0]);
+      const paramBuffer = this.deviceMgr.device!.createBuffer({
+        size: 16, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+      });
+      this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+      const pipeline = getOrCreatePipeline(UNARY_SHADER, op);
+      dispatchCompute(pipeline, [a.buffer, out, paramBuffer], calculateWorkgroups(aLength));
+      await syncDevice();
+      paramBuffer.destroy();
+      return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, aLength);
+    }
+  }
+}
 
 }

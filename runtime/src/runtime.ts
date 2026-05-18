@@ -403,6 +403,14 @@ export class TorchPyodideRuntime {
     return this.reductionOps.cumprod(tensorId);
   }
 
+  async softmax(tensorId: number, dim: number): Promise<TensorHandle> {
+    return this.reductionOps.softmax(tensorId, dim);
+  }
+
+  async logSoftmax(tensorId: number, dim: number): Promise<TensorHandle> {
+    return this.reductionOps.logSoftmax(tensorId, dim);
+  }
+
   async eq(aId: number, bId: number): Promise<TensorHandle> {
     return this.compareOps.eq(aId, bId);
   }

@@ -13,7 +13,6 @@ def _js_meta_to_tuple(meta: object) -> tuple[int, list[int], str]:
         shape = list(shape_raw.to_py() if hasattr(shape_raw, "to_py") else shape_raw)
         dtype = str(meta["dtype"])
         return tensor_id, shape, dtype
-
     tensor_id = int(getattr(meta, "id"))
     shape_raw = getattr(meta, "shape")
     shape = list(shape_raw.to_py() if hasattr(shape_raw, "to_py") else shape_raw)
@@ -35,29 +34,74 @@ class Tensor:
     def dtype(self) -> str:
         return self._dtype
 
-    def add(self, other: "Tensor") -> "Tensor":
+    @property
+    def ndim(self) -> int:
+        return len(self._shape)
+
+    def to(self, dtype: str) -> "Tensor":
+        # copy to new dtype via emptyLike + add
+        from ._tensor import zeros_like_from_tensor, add_from_tensors
+        empty = zeros_like_from_tensor(self, dtype)
+        return empty.add(self)
+
+    def add(self, other: "Tensor | float") -> "Tensor":
+        if not isinstance(other, Tensor):
+            other = _scalar_to_tensor(float(other), self._dtype)
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.add(self._id, other._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
-    def mul(self, other: "Tensor") -> "Tensor":
+    def mul(self, other: "Tensor | float") -> "Tensor":
+        if not isinstance(other, Tensor):
+            other = _scalar_to_tensor(float(other), self._dtype)
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.mul(self._id, other._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
-    def sub(self, other: "Tensor") -> "Tensor":
+    def sub(self, other: "Tensor | float") -> "Tensor":
+        if not isinstance(other, Tensor):
+            other = _scalar_to_tensor(float(other), self._dtype)
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.sub(self._id, other._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
-    def div(self, other: "Tensor") -> "Tensor":
+    def div(self, other: "Tensor | float") -> "Tensor":
+        if not isinstance(other, Tensor):
+            other = _scalar_to_tensor(float(other), self._dtype)
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.div(self._id, other._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
+
+    def __add__(self, other: "Tensor | float") -> "Tensor":
+        return self.add(other)
+
+    def __radd__(self, other: "Tensor | float") -> "Tensor":
+        return self.add(other) if isinstance(other, Tensor) else Tensor(0, [1], self._dtype).add(self)
+
+    def __mul__(self, other: "Tensor | float") -> "Tensor":
+        return self.mul(other)
+
+    def __rmul__(self, other: "Tensor | float") -> "Tensor":
+        return self.mul(other)
+
+    def __sub__(self, other: "Tensor | float") -> "Tensor":
+        return self.sub(other)
+
+    def __rsub__(self, other: "Tensor | float") -> "Tensor":
+        return self.neg().add(other) if isinstance(other, Tensor) else Tensor(0, [1], self._dtype).sub(self)
+
+    def __truediv__(self, other: "Tensor | float") -> "Tensor":
+        return self.div(other)
+
+    def __neg__(self) -> "Tensor":
+        return self.neg()
+
+    def __pow__(self, other: "Tensor | float") -> "Tensor":
+        return pow_from_tensors(self, other) if isinstance(other, Tensor) else pow_from_tensors(self, _scalar_to_tensor(float(other), self._dtype))
 
     def matmul(self, other: "Tensor") -> "Tensor":
         runtime = _get_runtime()
@@ -222,6 +266,12 @@ class Tensor:
 
     def silu(self) -> "Tensor":
         return silu_from_tensor(self)
+
+    def softmax(self, dim: int = -1) -> "Tensor":
+        return softmax_from_tensor(self, dim)
+
+    def log_softmax(self, dim: int = -1) -> "Tensor":
+        return log_softmax_from_tensor(self, dim)
 
     def leaky_relu(self, alpha: float = 0.01) -> "Tensor":
         return leaky_relu_from_tensor(self, alpha)
@@ -405,12 +455,41 @@ class Tensor:
     def masked_fill(self, mask: "Tensor", value: float) -> "Tensor":
         return masked_fill_from_tensor(self, mask, value)
 
+    # ── Internal helpers for nn module ─────────────────────────────
+    def _set(self, other: "Tensor") -> None:
+        self._id = other._id
+        self._shape = list(other._shape)
+        self._dtype = other._dtype
+
     def __getitem__(self, key: object) -> object:
         if isinstance(key, int):
             return self.select(0, key)
         if isinstance(key, slice):
             return self.slice(0, key.start, key.stop, 1 if key.step is None else int(key.step))
         raise TypeError("Tensor indexing supports only int or slice in MVP.")
+
+
+def _flatten_out(data: object) -> list[float]:
+    if isinstance(data, list):
+        out: list[float] = []
+        for item in data:
+            out.extend(_flatten_out(item))
+        return out
+    return [float(data)]
+
+
+def _scalar_to_tensor(value: float, dtype: str = "float32") -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.zeros([1], dtype))
+    t_id, _, _ = _js_meta_to_tuple(meta)
+    # Put the value in
+    meta2 = _run_js_awaitable(runtime.fill(t_id, float(value)))
+    t_id2, _, _ = _js_meta_to_tuple(meta2)
+    t = Tensor.__new__(Tensor)
+    t._id = t_id2
+    t._shape = [1]
+    t._dtype = dtype
+    return t
 
 
 def _infer_shape(data: object) -> list[int]:
@@ -460,7 +539,7 @@ def _coerce_out_value(value: float, dtype: str) -> object:
     return float(value)
 
 
-def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str) -> object:
+def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str = "float32") -> object:
     if len(shape) == 0:
         return _coerce_out_value(float(flat[0]), dtype) if flat else _coerce_out_value(0.0, dtype)
     if len(shape) == 1:
@@ -926,5 +1005,19 @@ def masked_select_from_tensor(tensor: Tensor, mask: Tensor) -> Tensor:
 def masked_fill_from_tensor(tensor: Tensor, mask: Tensor, value: float) -> Tensor:
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.maskedFill(tensor._id, mask._id, float(value)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def softmax_from_tensor(tensor: Tensor, dim: int = -1) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.softmax(tensor._id, int(dim)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def log_softmax_from_tensor(tensor: Tensor, dim: int = -1) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.logSoftmax(tensor._id, int(dim)))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)

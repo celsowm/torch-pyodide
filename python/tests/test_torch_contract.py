@@ -165,8 +165,41 @@ class FakeRuntime:
     def _binary(self, a_id: int, b_id: int, fn) -> dict[str, object]:
         a = self.store[a_id]
         b = self.store[b_id]
-        values = [fn(float(x), float(y)) for x, y in zip(a["values"], b["values"])]
-        return self._new(list(a["shape"]), values, str(a["dtype"]))
+        a_vals = a["values"]
+        b_vals = b["values"]
+        a_len = _numel(list(a["shape"]))
+        b_len = _numel(list(b["shape"]))
+        if a_len == b_len:
+            values = [fn(float(x), float(y)) for x, y in zip(a_vals, b_vals)]
+            return self._new(list(a["shape"]), values, str(a["dtype"]))
+        elif a_len == 1 and b_len > 1:
+            values = [fn(float(a_vals[0]), float(y)) for y in b_vals]
+            return self._new(list(b["shape"]), values, str(b["dtype"]))
+        elif b_len == 1 and a_len > 1:
+            values = [fn(float(x), float(b_vals[0])) for x in a_vals]
+            return self._new(list(a["shape"]), values, str(a["dtype"]))
+        else:
+            # Simple broadcast: tile the smaller into the larger's shape
+            # Assume the larger shape contains the smaller (e.g. (2,8) and (8,))
+            max_len = max(a_len, b_len)
+            if a_len > b_len and max_len % a_len == 0:
+                # More correctly: try to brodcast b to a's shape
+                reps = a_len // b_len
+                b_broadcast = []
+                for _ in range(reps):
+                    b_broadcast.extend(b_vals)
+                values = [fn(float(x), float(y)) for x, y in zip(a_vals, b_broadcast)]
+                return self._new(list(a["shape"]), values, str(a["dtype"]))
+            elif b_len > a_len and max_len % b_len == 0:
+                reps = b_len // a_len
+                a_broadcast = []
+                for _ in range(reps):
+                    a_broadcast.extend(a_vals)
+                values = [fn(float(x), float(y)) for x, y in zip(a_broadcast, b_vals)]
+                return self._new(list(b["shape"]), values, str(b["dtype"]))
+            # fallback
+            values = [fn(float(x), float(y)) for x, y in zip(a_vals, b_vals)]
+            return self._new(list(a["shape"]), values, str(a["dtype"]))
 
     def matmul(self, a_id: int, b_id: int) -> dict[str, object]:
         a = self.store[a_id]
@@ -228,6 +261,54 @@ class FakeRuntime:
         values = [max(min(float(v), max_val), min_val) for v in t["values"]]
         return self._new(list(t["shape"]), values, str(t["dtype"]))
 
+    def softmax(self, tensor_id: int, dim: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        vals = [float(v) for v in t["values"]]
+        ndim = len(shape)
+        dim = dim if dim >= 0 else ndim + dim
+        # Compute softmax along dim
+        stride = 1
+        for d in range(dim + 1, ndim):
+            stride *= int(shape[d])
+        outer = 1
+        for d in range(0, dim):
+            outer *= int(shape[d])
+        inner = int(shape[dim])
+        out = [0.0] * len(vals)
+        for o in range(outer):
+            # find max for numerical stability
+            max_val = max(vals[o * inner * stride + i * stride] for i in range(inner))
+            exp_sum = sum(math.exp(vals[o * inner * stride + i * stride] - max_val) for i in range(inner))
+            for i in range(inner):
+                for s in range(stride):
+                    idx = o * inner * stride + i * stride + s
+                    out[idx] = math.exp(vals[idx] - max_val) / exp_sum
+        return self._new(shape, out, str(t["dtype"]))
+
+    def logSoftmax(self, tensor_id: int, dim: int) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        vals = [float(v) for v in t["values"]]
+        ndim = len(shape)
+        dim = dim if dim >= 0 else ndim + dim
+        stride = 1
+        for d in range(dim + 1, ndim):
+            stride *= int(shape[d])
+        outer = 1
+        for d in range(0, dim):
+            outer *= int(shape[d])
+        inner = int(shape[dim])
+        out = [0.0] * len(vals)
+        for o in range(outer):
+            max_val = max(vals[o * inner * stride + i * stride] for i in range(inner))
+            log_sum = math.log(sum(math.exp(vals[o * inner * stride + i * stride] - max_val) for i in range(inner)))
+            for i in range(inner):
+                for s in range(stride):
+                    idx = o * inner * stride + i * stride + s
+                    out[idx] = vals[idx] - max_val - log_sum
+        return self._new(shape, out, str(t["dtype"]))
+
     def where(self, cond_id: int, x_id: int, y_id: int) -> dict[str, object]:
         cond = self.store[cond_id]
         x = self.store[x_id]
@@ -236,6 +317,41 @@ class FakeRuntime:
         for c, xv, yv in zip(cond["values"], x["values"], y["values"]):
             out.append(float(xv) if float(c) > 0.0 else float(yv))
         return self._new(list(x["shape"]), out, str(x["dtype"]))
+
+    def sumDim(self, tensor_id: int, dim: int, keepdim: bool = False) -> dict[str, object]:
+        return self._reduce_dim(tensor_id, dim, keepdim, sum)
+
+    def meanDim(self, tensor_id: int, dim: int, keepdim: bool = False) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        vals = [float(v) for v in t["values"]]
+        ndim = len(shape)
+        dim = dim if dim >= 0 else ndim + dim
+        return self._reduce_dim(tensor_id, dim, keepdim, lambda xs: sum(xs) / len(xs))
+
+    def _reduce_dim(self, tensor_id: int, dim: int, keepdim: bool, fn) -> dict[str, object]:
+        t = self.store[tensor_id]
+        shape = list(t["shape"])
+        vals = [float(v) for v in t["values"]]
+        ndim = len(shape)
+        dim = dim if dim >= 0 else ndim + dim
+        stride = 1
+        for d in range(dim + 1, ndim):
+            stride *= int(shape[d])
+        outer = 1
+        for d in range(0, dim):
+            outer *= int(shape[d])
+        inner = int(shape[dim])
+        out_vals = []
+        for o in range(outer):
+            for s in range(stride):
+                group = [vals[o * inner * stride + i * stride + s] for i in range(inner)]
+                out_vals.append(fn(group))
+        out_shape = [int(shape[d]) for d in range(ndim) if d != dim]
+        if keepdim:
+            out_shape = list(shape)
+            out_shape[dim] = 1
+        return self._new(out_shape, out_vals, str(t["dtype"]))
 
     def argmax(self, tensor_id: int) -> dict[str, object]:
         t = self.store[tensor_id]
@@ -400,6 +516,12 @@ class FakeRuntime:
     def destroy(self, tensor_id: int) -> None:
         self.store.pop(tensor_id, None)
         return None
+
+    def fill(self, tensor_id: int, value: float) -> dict[str, object]:
+        t = self.store[tensor_id]
+        size = _numel(list(t["shape"]))
+        t["values"] = [float(value)] * size
+        return {"id": tensor_id, "shape": list(t["shape"]), "dtype": str(t["dtype"])}
 
     # ── Fase 0: unary activation ops ─────────────────────────────
     def sigmoid(self, tensor_id: int) -> dict[str, object]:
