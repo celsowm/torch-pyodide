@@ -32,6 +32,14 @@ jobs:
           sudo apt-get install -y -qq libvulkan1 mesa-vulkan-drivers vulkan-tools
           vulkaninfo --summary
 
+      - name: Install Google Chrome stable
+        run: |
+          curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq google-chrome-stable
+          google-chrome-stable --version
+
       - name: Install deps
         run: npm ci
 
@@ -41,88 +49,12 @@ jobs:
       - name: Build runtime
         run: npm run build:runtime
 
-      - name: Install Playwright browsers (chromium full, not headless-shell)
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Test WebGPU detection with chromium full (not headless-shell)
+      - name: Test WebGPU with Google Chrome (channel: chrome)
         run: |
-          cat > runtime/test-webgpu.mjs << 'EOF'
-          import { chromium } from 'playwright';
-
-          const configs = [
-            {
-              name: 'chromium headless=new with Mesa Vulkan',
-              args: [
-                '--headless=new',
-                '--enable-unsafe-webgpu',
-                '--enable-features=Vulkan,UseSkiaRenderer',
-                '--use-gl=egl',
-                '--no-sandbox',
-                '--disable-gpu-sandbox',
-              ]
-            },
-            {
-              name: 'chromium headless=new ANGLE SwiftShader',
-              args: [
-                '--headless=new',
-                '--enable-unsafe-webgpu',
-                '--enable-features=Vulkan,UseSkiaRenderer',
-                '--use-gl=angle',
-                '--use-angle=swiftshader',
-                '--no-sandbox',
-              ]
-            },
-            {
-              name: 'chromium headless=new no GL override',
-              args: [
-                '--headless=new',
-                '--enable-unsafe-webgpu',
-                '--enable-features=Vulkan,UseSkiaRenderer',
-                '--no-sandbox',
-              ]
-            },
-          ];
-
-          for (const cfg of configs) {
-            console.log(`\n=== ${cfg.name} ===`);
-            try {
-              const browser = await chromium.launch({
-                headless: true,
-                args: cfg.args,
-              });
-              const page = await browser.newPage();
-              await page.goto('about:blank');
-              const result = await page.evaluate(async () => {
-                if (!navigator.gpu) return { gpu: false, error: 'navigator.gpu is undefined' };
-                try {
-                  const adapter = await navigator.gpu.requestAdapter();
-                  if (!adapter) return { gpu: true, adapter: false, error: 'requestAdapter returned null' };
-                  const device = await adapter.requestDevice();
-                  const info = {
-                    name: adapter.name,
-                    features: Array.from(adapter.features).join(', '),
-                    deviceCreated: !!device,
-                  };
-                  return { gpu: true, adapter: true, info };
-                } catch (e) {
-                  return { gpu: true, adapter: false, error: e.message };
-                }
-              });
-              console.log(JSON.stringify(result, null, 2));
-              await browser.close();
-              if (result.gpu && result.adapter) {
-                console.log('✓ SUCCESS: WebGPU is available!');
-                process.exit(0);
-              }
-            } catch (e) {
-              console.log(`Launch error: ${e.message}`);
-            }
-          }
-
-          console.log('\n✗ All approaches failed. WebGPU not available in headless mode.');
-          process.exit(1);
-          EOF
-          node runtime/test-webgpu.mjs
+          node runtime/test-webgpu-gh.mjs
 
       - name: Summary
         run: |
