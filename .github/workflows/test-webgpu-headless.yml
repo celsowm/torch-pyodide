@@ -46,12 +46,13 @@ jobs:
 
       - name: Test WebGPU detection with chromium full (not headless-shell)
         run: |
-          cat > runtime/test-webgpu.mjs << 'EOF'
+          cat > /tmp/test-webgpu.mjs << 'EOF'
           import { chromium } from 'playwright';
 
           const configs = [
             {
               name: 'chromium headless=new with Mesa Vulkan',
+              channel: undefined,
               args: [
                 '--headless=new',
                 '--enable-unsafe-webgpu',
@@ -63,21 +64,13 @@ jobs:
             },
             {
               name: 'chromium headless=new ANGLE SwiftShader',
+              channel: undefined,
               args: [
                 '--headless=new',
                 '--enable-unsafe-webgpu',
                 '--enable-features=Vulkan,UseSkiaRenderer',
                 '--use-gl=angle',
                 '--use-angle=swiftshader',
-                '--no-sandbox',
-              ]
-            },
-            {
-              name: 'chromium headless=new no GL override',
-              args: [
-                '--headless=new',
-                '--enable-unsafe-webgpu',
-                '--enable-features=Vulkan,UseSkiaRenderer',
                 '--no-sandbox',
               ]
             },
@@ -97,6 +90,7 @@ jobs:
                 try {
                   const adapter = await navigator.gpu.requestAdapter();
                   if (!adapter) return { gpu: true, adapter: false, error: 'requestAdapter returned null' };
+                  // Try creating device
                   const device = await adapter.requestDevice();
                   const info = {
                     name: adapter.name,
@@ -122,7 +116,7 @@ jobs:
           console.log('\n✗ All approaches failed. WebGPU not available in headless mode.');
           process.exit(1);
           EOF
-          node runtime/test-webgpu.mjs
+          node /tmp/test-webgpu.mjs
 
       - name: Summary
         run: |
