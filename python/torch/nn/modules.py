@@ -76,11 +76,20 @@ class Linear(Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = torch.randn((out_features, in_features)) * 0.01
+        self.weight = torch.empty((out_features, in_features))
         if bias:
-            self.bias = torch.zeros((out_features,))
+            self.bias = torch.empty((out_features,))
         else:
-            self.bias = None  # type: ignore
+            self.bias = None
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        import math
+        torch.nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = torch.nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 1
+            torch.nn.init.uniform_(self.bias, -bound, bound)
 
     def forward(self, x: Tensor) -> Tensor:
         from .functional import linear

@@ -9,6 +9,9 @@ import { ShapeOps } from "./ops/shapeOps.js";
 import { CompareOps } from "./ops/compareOps.js";
 import { MaskingOps } from "./ops/maskingOps.js";
 import { LinalgOps } from "./ops/linalgOps.js";
+import { ConvOps } from "./ops/convOps.js";
+import { PoolingOps } from "./ops/poolingOps.js";
+import { NormalizationOps } from "./ops/normalizationOps.js";
 
 export class TorchPyodideRuntime {
   private deviceMgr = new DeviceManager();
@@ -20,6 +23,9 @@ export class TorchPyodideRuntime {
   private compareOps: CompareOps;
   private maskingOps: MaskingOps;
   private linalgOps: LinalgOps;
+  private convOps: ConvOps;
+  private poolingOps: PoolingOps;
+  private normalizationOps: NormalizationOps;
 
   constructor() {
     setDeviceManager(this.deviceMgr);
@@ -32,6 +38,9 @@ export class TorchPyodideRuntime {
     this.compareOps = new CompareOps(dm);
     this.maskingOps = new MaskingOps(dm);
     this.linalgOps = new LinalgOps(dm);
+    this.convOps = new ConvOps(dm);
+    this.poolingOps = new PoolingOps(dm);
+    this.normalizationOps = new NormalizationOps(dm);
   }
 
   async init(gpuProvider?: GPU | null): Promise<void> {
@@ -587,6 +596,59 @@ export class TorchPyodideRuntime {
 
   async memoryReserved(_deviceIndex?: number): Promise<number> {
     return this.deviceMgr.memoryReserved();
+  }
+
+  async conv2d(
+    inputId: number,
+    weightId: number,
+    bias: number[] | null,
+    stride: number[],
+    padding: number[],
+    dilation: number[],
+    groups: number,
+  ): Promise<TensorHandle> {
+    return this.convOps.conv2d(inputId, weightId, bias, stride, padding, dilation, groups);
+  }
+
+  async maxPool2d(
+    inputId: number,
+    kernelSize: number[],
+    stride: number[],
+    padding: number[],
+    dilation: number[],
+  ): Promise<TensorHandle> {
+    return this.poolingOps.maxPool2d(inputId, kernelSize, stride, padding, dilation);
+  }
+
+  async avgPool2d(
+    inputId: number,
+    kernelSize: number[],
+    stride: number[],
+    padding: number[],
+    countIncludePad: boolean,
+  ): Promise<TensorHandle> {
+    return this.poolingOps.avgPool2d(inputId, kernelSize, stride, padding, countIncludePad);
+  }
+
+  async batchNorm(
+    inputId: number,
+    weightId: number | null,
+    biasId: number | null,
+    runningMeanId: number | null,
+    runningVarId: number | null,
+    eps: number,
+  ): Promise<TensorHandle> {
+    return this.normalizationOps.batchNorm(inputId, weightId, biasId, runningMeanId, runningVarId, eps);
+  }
+
+  async layerNorm(
+    inputId: number,
+    normalizedShape: number[],
+    gammaId: number | null,
+    betaId: number | null,
+    eps: number,
+  ): Promise<TensorHandle> {
+    return this.normalizationOps.layerNorm(inputId, normalizedShape, gammaId, betaId, eps);
   }
 
   async cholesky(tensorId: number): Promise<TensorHandle> {

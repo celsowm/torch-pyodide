@@ -1,6 +1,6 @@
 {
-  "implemented": 297,
-  "total": 297,
+  "implemented": 300,
+  "total": 300,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
@@ -20,12 +20,16 @@
       "total": 4
     },
     "nn_func": {
-      "implemented": 22,
-      "total": 22
+      "implemented": 24,
+      "total": 24
     },
     "nn_class": {
       "implemented": 23,
       "total": 23
+    },
+    "nn_class_method": {
+      "implemented": 1,
+      "total": 1
     }
   },
   "targets": [
@@ -1808,6 +1812,24 @@
     {
       "id": "Tensor.item",
       "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Linear.reset_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.kaiming_uniform_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.uniform_",
+      "kind": "nn_func",
       "implemented": true,
       "note": "ok"
     }

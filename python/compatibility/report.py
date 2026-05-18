@@ -78,6 +78,19 @@ def _check_target(torch_mod: Any, tensor_cls: Any, target: dict[str, str]) -> Ta
         ok = isinstance(current, type)
         return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
 
+    if kind == "nn_class_method":
+        # e.g. "Linear.reset_parameters" -> torch.nn.Linear.reset_parameters
+        name = target_id  # e.g. "Linear.reset_parameters"
+        module_path = "nn"
+        class_and_method = name
+        class_name, method_name = class_and_method.split(".")
+        cls = getattr(getattr(torch_mod, module_path), class_name, None)
+        if cls is None:
+            return TargetResult(target_id, kind, False, "class missing")
+        method = getattr(cls, method_name, None)
+        ok = callable(method)
+        return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
+
     if kind == "cuda_func":
         parts = target_id.split(".")[1:]  # drop torch
         current = torch_mod

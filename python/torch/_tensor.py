@@ -1269,3 +1269,103 @@ def log_softmax_from_tensor(tensor: Tensor, dim: int = -1) -> Tensor:
     meta = _run_js_awaitable(runtime.logSoftmax(tensor._id, int(dim)))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def conv2d_from_tensors(
+    input: Tensor,
+    weight: Tensor,
+    bias: Tensor | None = None,
+    stride: Sequence[int] = (1,),
+    padding: Sequence[int] = (0,),
+    dilation: Sequence[int] = (1,),
+    groups: int = 1,
+) -> Tensor:
+    runtime = _get_runtime()
+    bias_list: list[float] | None = None
+    bias_id: int | None = None
+    if bias is not None:
+        bias_list = list(bias.numpy())
+    else:
+        bias_id = None
+    meta = _run_js_awaitable(runtime.conv2d(
+        input._id, weight._id, bias_list,
+        [int(s) for s in stride],
+        [int(p) for p in padding],
+        [int(d) for d in dilation],
+        int(groups),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def max_pool2d_from_tensor(
+    input: Tensor,
+    kernel_size: Sequence[int],
+    stride: Sequence[int] | None = None,
+    padding: Sequence[int] = (0,),
+    dilation: Sequence[int] = (1,),
+) -> Tensor:
+    runtime = _get_runtime()
+    ksize = [int(k) for k in kernel_size]
+    strd = [int(s) for s in (stride if stride is not None else kernel_size)]
+    pad = [int(p) for p in padding]
+    dil = [int(d) for d in dilation]
+    meta = _run_js_awaitable(runtime.maxPool2d(input._id, ksize, strd, pad, dil))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def avg_pool2d_from_tensor(
+    input: Tensor,
+    kernel_size: Sequence[int],
+    stride: Sequence[int] | None = None,
+    padding: Sequence[int] = (0,),
+    count_include_pad: bool = True,
+) -> Tensor:
+    runtime = _get_runtime()
+    ksize = [int(k) for k in kernel_size]
+    strd = [int(s) for s in (stride if stride is not None else kernel_size)]
+    pad = [int(p) for p in padding]
+    meta = _run_js_awaitable(runtime.avgPool2d(input._id, ksize, strd, pad, count_include_pad))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def batch_norm_from_tensor(
+    input: Tensor,
+    weight: Tensor | None = None,
+    bias: Tensor | None = None,
+    running_mean: Tensor | None = None,
+    running_var: Tensor | None = None,
+    eps: float = 1e-5,
+) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.batchNorm(
+        input._id,
+        weight._id if weight is not None else None,
+        bias._id if bias is not None else None,
+        running_mean._id if running_mean is not None else None,
+        running_var._id if running_var is not None else None,
+        float(eps),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def layer_norm_from_tensor(
+    input: Tensor,
+    normalized_shape: Sequence[int],
+    weight: Tensor | None = None,
+    bias: Tensor | None = None,
+    eps: float = 1e-5,
+) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.layerNorm(
+        input._id,
+        [int(s) for s in normalized_shape],
+        weight._id if weight is not None else None,
+        bias._id if bias is not None else None,
+        float(eps),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)

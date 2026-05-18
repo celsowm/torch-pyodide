@@ -298,6 +298,9 @@
     { "id": "Tensor.triangular_solve", "kind": "tensor_method" },
     { "id": "torch.det", "kind": "module_func" },
     { "id": "Tensor.det", "kind": "tensor_method" },
-    { "id": "Tensor.item", "kind": "tensor_method" }
+    { "id": "Tensor.item", "kind": "tensor_method" },
+    { "id": "Linear.reset_parameters", "kind": "nn_class_method" },
+    { "id": "nn.init.kaiming_uniform_", "kind": "nn_func" },
+    { "id": "nn.init.uniform_", "kind": "nn_func" }
   ]
 }

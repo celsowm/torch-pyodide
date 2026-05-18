@@ -141,19 +141,14 @@ def batch_norm(
     momentum: float = 0.1,
     eps: float = 1e-5,
 ) -> Tensor:
+    from torch._tensor import batch_norm_from_tensor
     if training:
         mean = x.mean(dim=0)
         var = ((x - mean) ** 2).mean(dim=0)
         if running_mean is not None:
-            flat_running = _flatten(running_mean.tolist())
-            flat_mean = _flatten(mean.tolist())
-            merged = [a * (1 - momentum) + b * momentum for a, b in zip(flat_running, flat_mean)]
-            running_mean._set(tensor_from_data(_reshape_flat_values(merged, list(running_mean.shape)), running_mean.dtype))
+            running_mean._set(running_mean * (1 - momentum) + mean * momentum)
         if running_var is not None:
-            flat_running = _flatten(running_var.tolist())
-            flat_var = _flatten(var.tolist())
-            merged = [a * (1 - momentum) + b * momentum for a, b in zip(flat_running, flat_var)]
-            running_var._set(tensor_from_data(_reshape_flat_values(merged, list(running_var.shape)), running_var.dtype))
+            running_var._set(running_var * (1 - momentum) + var * momentum)
     else:
         if running_mean is None or running_var is None:
             raise RuntimeError("running_mean and running_var required in eval mode")
@@ -168,22 +163,10 @@ def batch_norm(
 
 
 def layer_norm(x: Tensor, normalized_shape: int | Sequence[int], weight: Tensor | None = None, bias: Tensor | None = None, eps: float = 1e-5) -> Tensor:
+    from torch._tensor import layer_norm_from_tensor
     if isinstance(normalized_shape, int):
         normalized_shape = [normalized_shape]
-    dims = tuple(range(-len(normalized_shape), 0))
-    # Reduce over all dims one by one (mean dim does not support tuple)
-    mean = x
-    for d in dims:
-        mean = mean.mean(dim=d, keepdim=True)
-    var = ((x - mean) ** 2)
-    for d in dims:
-        var = var.mean(dim=d, keepdim=True)
-    x_norm = (x - mean) / (var + eps).sqrt()
-    if weight is not None:
-        x_norm = x_norm * weight
-    if bias is not None:
-        x_norm = x_norm + bias
-    return x_norm
+    return layer_norm_from_tensor(x, normalized_shape, weight, bias, eps)
 
 
 # ── Padding ───────────────────────────────────────────────────────
@@ -267,105 +250,33 @@ def binary_cross_entropy(input: Tensor, target: Tensor, reduction: str = "mean")
     return loss.mean()
 
 
-# ── Convolution (tolist-based) ────────────────────────────────────
+# ── Convolution ────────────────────────────────────
 
 def conv2d(x: Tensor, weight: Tensor, bias: Tensor | None = None, stride: int = 1, padding: int = 0) -> Tensor:
-    if padding > 0:
-        x = pad(x, [padding, padding, padding, padding])
-    shape = list(x.shape)
-    w_shape = list(weight.shape)
-    batch_size, in_channels, in_h, in_w = shape
-    out_channels, _, kernel_h, kernel_w = w_shape
-    out_h = (in_h - kernel_h) // stride + 1
-    out_w = (in_w - kernel_w) // stride + 1
-    x_flat = _flatten(x.tolist())
-    w_flat = _flatten(weight.tolist())
-    b_flat = _flatten(bias.tolist()) if bias is not None else None
-    out_flat = [0.0] * (batch_size * out_channels * out_h * out_w)
-    for b in range(batch_size):
-        for oc in range(out_channels):
-            for oh in range(out_h):
-                for ow in range(out_w):
-                    acc = 0.0
-                    for ic in range(in_channels):
-                        for kh in range(kernel_h):
-                            for kw in range(kernel_w):
-                                ih = oh * stride + kh
-                                iw = ow * stride + kw
-                                x_idx = ((b * in_channels + ic) * in_h + ih) * in_w + iw
-                                w_idx = ((oc * in_channels + ic) * kernel_h + kh) * kernel_w + kw
-                                acc += x_flat[x_idx] * w_flat[w_idx]
-                    if b_flat is not None:
-                        acc += b_flat[oc]
-                    out_idx = ((b * out_channels + oc) * out_h + oh) * out_w + ow
-                    out_flat[out_idx] = acc
-    return tensor_from_data(_reshape_flat_values(out_flat, [batch_size, out_channels, out_h, out_w]), x.dtype)
+    from torch._tensor import conv2d_from_tensors
+    return conv2d_from_tensors(x, weight, bias, [stride, stride], [padding, padding], [1, 1], 1)
 
 
 def max_pool2d(x: Tensor, kernel_size: int | tuple[int, int], stride: int | None = None, padding: int = 0) -> Tensor:
+    from torch._tensor import max_pool2d_from_tensor
     if isinstance(kernel_size, int):
         kernel_size = (kernel_size, kernel_size)
     if stride is None:
         stride = kernel_size[0]
     if isinstance(stride, int):
         stride = (stride, stride)
-    shape = list(x.shape)
-    batch_size, channels, in_h, in_w = shape
-    kernel_h, kernel_w = kernel_size
-    stride_h, stride_w = stride
-    out_h = (in_h + 2 * padding - kernel_h) // stride_h + 1
-    out_w = (in_w + 2 * padding - kernel_w) // stride_w + 1
-    x_flat = _flatten(x.tolist())
-    out_flat = [0.0] * (batch_size * channels * out_h * out_w)
-    for b in range(batch_size):
-        for c in range(channels):
-            for oh in range(out_h):
-                for ow in range(out_w):
-                    max_val = float("-inf")
-                    for kh in range(kernel_h):
-                        for kw in range(kernel_w):
-                            ih = oh * stride_h + kh - padding
-                            iw = ow * stride_w + kw - padding
-                            if 0 <= ih < in_h and 0 <= iw < in_w:
-                                val = x_flat[((b * channels + c) * in_h + ih) * in_w + iw]
-                                if val > max_val:
-                                    max_val = val
-                    out_idx = ((b * channels + c) * out_h + oh) * out_w + ow
-                    out_flat[out_idx] = max_val if max_val > float("-inf") else 0.0
-    return tensor_from_data(_reshape_flat_values(out_flat, [batch_size, channels, out_h, out_w]), x.dtype)
+    return max_pool2d_from_tensor(x, kernel_size, stride, [padding, padding], [1, 1])
 
 
 def avg_pool2d(x: Tensor, kernel_size: int | tuple[int, int], stride: int | None = None, padding: int = 0) -> Tensor:
+    from torch._tensor import avg_pool2d_from_tensor
     if isinstance(kernel_size, int):
         kernel_size = (kernel_size, kernel_size)
     if stride is None:
         stride = kernel_size[0]
     if isinstance(stride, int):
         stride = (stride, stride)
-    shape = list(x.shape)
-    batch_size, channels, in_h, in_w = shape
-    kernel_h, kernel_w = kernel_size
-    stride_h, stride_w = stride
-    out_h = (in_h + 2 * padding - kernel_h) // stride_h + 1
-    out_w = (in_w + 2 * padding - kernel_w) // stride_w + 1
-    x_flat = _flatten(x.tolist())
-    out_flat = [0.0] * (batch_size * channels * out_h * out_w)
-    for b in range(batch_size):
-        for c in range(channels):
-            for oh in range(out_h):
-                for ow in range(out_w):
-                    acc = 0.0
-                    count = 0
-                    for kh in range(kernel_h):
-                        for kw in range(kernel_w):
-                            ih = oh * stride_h + kh - padding
-                            iw = ow * stride_w + kw - padding
-                            if 0 <= ih < in_h and 0 <= iw < in_w:
-                                acc += x_flat[((b * channels + c) * in_h + ih) * in_w + iw]
-                                count += 1
-                    out_idx = ((b * channels + c) * out_h + oh) * out_w + ow
-                    out_flat[out_idx] = acc / count if count > 0 else 0.0
-    return tensor_from_data(_reshape_flat_values(out_flat, [batch_size, channels, out_h, out_w]), x.dtype)
+    return avg_pool2d_from_tensor(x, kernel_size, stride, [padding, padding], True)
 
 
 # ── Internal helpers ──────────────────────────────────────────────
