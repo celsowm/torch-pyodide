@@ -1,11 +1,11 @@
 {
-  "implemented": 76,
-  "total": 76,
+  "implemented": 78,
+  "total": 78,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
-      "implemented": 34,
-      "total": 34
+      "implemented": 36,
+      "total": 36
     },
     "cuda_func": {
       "implemented": 11,
@@ -95,6 +95,18 @@
     },
     {
       "id": "torch.full_like",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.zeros_like",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ones_like",
       "kind": "module_func",
       "implemented": true,
       "note": "ok"
