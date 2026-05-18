@@ -254,6 +254,51 @@ test("broadcasted comparisons and where match the matrix threshold example @webg
   expect(result.where).toEqual([0, 5, 0, 4, 0, 6]);
 });
 
+test("shape select slice and indexSelect match basic indexing semantics @webgpu", async ({ page }) => {
+  await page.goto("/demo/index.html");
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const result = await page.evaluate(async () => {
+    const mod = await import("/src/runtime.ts");
+    const rt = new mod.TorchPyodideRuntime();
+    await rt.init();
+
+    const x = await rt.tensorFromData([1, 2, 3, 4, 5, 6], [3, 2], "float32");
+    const select = await rt.select(x.id, 0, 1);
+    const sliced = await rt.slice(x.id, 0, 0, 3, 2);
+    const indices = await rt.tensorFromData([2, 0], [2], "int32");
+    const gathered = await rt.indexSelect(x.id, 0, indices.id);
+
+    const out = {
+      selectRow1: await rt.toList(select.id),
+      sliceRows0_3Step2: await rt.toList(sliced.id),
+      getitemRow1: await rt.toList(select.id),
+      gather: await rt.toList(gathered.id),
+      selectShape: select.shape,
+      sliceShape: sliced.shape,
+      gatherShape: gathered.shape,
+    };
+
+    await rt.destroy(x.id);
+    await rt.destroy(select.id);
+    await rt.destroy(sliced.id);
+    await rt.destroy(indices.id);
+    await rt.destroy(gathered.id);
+
+    return out;
+  });
+
+  expect(result.selectRow1).toEqual([3, 4]);
+  expect(result.sliceRows0_3Step2).toEqual([1, 2, 5, 6]);
+  expect(result.getitemRow1).toEqual([3, 4]);
+  expect(result.gather).toEqual([5, 6, 1, 2]);
+  expect(result.selectShape).toEqual([2]);
+  expect(result.sliceShape).toEqual([2, 2]);
+  expect(result.gatherShape).toEqual([2, 2]);
+});
+
 test("runBatch accumulates compute ops into a single submit @webgpu", async ({ page }) => {
   await page.goto("/demo/index.html");
   await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {

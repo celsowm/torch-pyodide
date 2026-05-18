@@ -22,7 +22,11 @@ export class CreationOps {
     assertDType(dtype);
     const length = product(shape);
     if (length !== data.length) throw new Error(`tensorFromData expected ${length} values, got ${data.length}.`);
-    const typed = new Float32Array(data.map((v) => coerceScalarByDType(v, dtype as SupportedDType)));
+    const coerced = data.map((v) => coerceScalarByDType(v, dtype as SupportedDType));
+    const typed =
+      dtype === "int32"
+        ? new Int32Array(coerced)
+        : new Float32Array(coerced);
     const buffer = createStorageBuffer(this.deviceMgr.device!, typed.byteLength);
     this.deviceMgr.writeBuffer(buffer, 0, typed);
     return this.deviceMgr.registerTensorAsHandle(buffer, shape, dtype, length);

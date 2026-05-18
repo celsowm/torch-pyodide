@@ -23,6 +23,30 @@ import {
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 
+const UNIFORM_ALIGNMENT = 16;
+
+function createUniformParamBuffer(
+  deviceMgr: DeviceManager,
+  params: ArrayBufferView,
+  minSize: number,
+): GPUBuffer {
+  const size = Math.max(minSize, Math.ceil(params.byteLength / UNIFORM_ALIGNMENT) * UNIFORM_ALIGNMENT);
+  const buffer = deviceMgr.device!.createBuffer({
+    size,
+    usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+  });
+  deviceMgr.writeBuffer(buffer, 0, params);
+  return buffer;
+}
+
+function padShapeTo4Left(shape: number[]): [number, number, number, number] {
+  if (shape.length === 0) return [1, 1, 1, 1];
+  if (shape.length === 1) return [shape[0]!, 1, 1, 1];
+  if (shape.length === 2) return [shape[0]!, shape[1]!, 1, 1];
+  if (shape.length === 3) return [shape[0]!, shape[1]!, shape[2]!, 1];
+  return shape as [number, number, number, number];
+}
+
 export class ShapeOps {
   constructor(private deviceMgr: DeviceManager) {}
 
@@ -98,11 +122,7 @@ export class ShapeOps {
       outStridesPadded[0], outStridesPadded[1], outStridesPadded[2], outStridesPadded[3],
       dims.length, outLength, 0, 0,
     ]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
     const pipeline = getOrCreatePipeline(PERMUTE_ND_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, perm, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
@@ -119,18 +139,14 @@ export class ShapeOps {
     const outShape = meta.shape.filter((_, i) => i !== d);
     const outLength = product(outShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const sPadded = padShapeTo4(meta.shape);
-    const strides = computeStrides(meta.shape);
+    const inShape = padShapeTo4Left(meta.shape);
+    const outShapePadded = padShapeTo4Left(outShape);
     const params = new Uint32Array([
-      sPadded[0], sPadded[1], sPadded[2], sPadded[3],
-      strides[0]!, strides[1]!, strides[2]!, strides[3]!,
-      d + (4 - rank), index, outLength,
+      inShape[0], inShape[1], inShape[2], inShape[3],
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+      d, index, rank, outLength, 0,
     ]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
     const pipeline = getOrCreatePipeline(SELECT_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
@@ -151,18 +167,20 @@ export class ShapeOps {
     outShape[d] = sliceSize;
     const outLength = product(outShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const sPadded = padShapeTo4(meta.shape);
-    const strides = computeStrides(meta.shape);
+    const inputShape = padShapeTo4Left(meta.shape);
+    const outputShape = padShapeTo4Left(outShape);
+    const starts = [0, 0, 0, 0] as [number, number, number, number];
+    const steps = [1, 1, 1, 1] as [number, number, number, number];
+    starts[d] = s;
+    steps[d] = step;
     const params = new Int32Array([
-      sPadded[0], sPadded[1], sPadded[2], sPadded[3],
-      strides[0]!, strides[1]!, strides[2]!, strides[3]!,
-      d + (4 - rank), s, e, step, outLength,
+      inputShape[0], inputShape[1], inputShape[2], inputShape[3],
+      outputShape[0], outputShape[1], outputShape[2], outputShape[3],
+      starts[0], starts[1], starts[2], starts[3],
+      steps[0], steps[1], steps[2], steps[3],
+      rank, outLength, 0, 0,
     ]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 80);
     const pipeline = getOrCreatePipeline(SLICE_SHADER, "slice");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
@@ -181,13 +199,16 @@ export class ShapeOps {
     outShape[d] = a.shape[d]! + b.shape[d]!;
     const outLength = product(outShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const sPadded = padShapeTo4(a.shape);
-    const params = new Uint32Array([sPadded[0], sPadded[1], sPadded[2], sPadded[3], d + (4 - rank), a.shape[d]!, outLength]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const aShape = padShapeTo4Left(a.shape);
+    const bShape = padShapeTo4Left(b.shape);
+    const outShapePadded = padShapeTo4Left(outShape);
+    const params = new Uint32Array([
+      aShape[0], aShape[1], aShape[2], aShape[3],
+      bShape[0], bShape[1], bShape[2], bShape[3],
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+      d, rank, 0, 0,
+    ]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
     const pipeline = getOrCreatePipeline(CAT_SHADER, "main");
     dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
@@ -206,13 +227,14 @@ export class ShapeOps {
     outShape.splice(d, 0, 2);
     const outLength = product(outShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const sPadded = padShapeTo4(a.shape);
-    const params = new Uint32Array([sPadded[0], sPadded[1], sPadded[2], sPadded[3], d + (4 - rank), outLength]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const inShape = padShapeTo4Left(a.shape);
+    const outShapePadded = padShapeTo4Left(outShape);
+    const params = new Uint32Array([
+      inShape[0], inShape[1], inShape[2], inShape[3],
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+      d, rank, 0, 0,
+    ]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 48);
     const pipeline = getOrCreatePipeline(STACK_SHADER, "main");
     dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
@@ -225,20 +247,15 @@ export class ShapeOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const outLength = product(shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const sPadded = padShapeTo4(meta.shape);
+    const outShape = padShapeTo4(shape);
     const strides = computeStrides(meta.shape);
     const broadcastStrides = meta.shape.map((s, i) => (s === 1 ? 0 : strides[i]!));
     const bsPadded = padShapeTo4(broadcastStrides);
     const params = new Uint32Array([
-      sPadded[0], sPadded[1], sPadded[2], sPadded[3],
+      outShape[0], outShape[1], outShape[2], outShape[3],
       bsPadded[0], bsPadded[1], bsPadded[2], bsPadded[3],
-      outLength,
     ]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 32);
     const pipeline = getOrCreatePipeline(EXPAND_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
@@ -250,29 +267,32 @@ export class ShapeOps {
     await this.deviceMgr.ensureReady();
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const indices = this.deviceMgr.getTensorMeta(indicesId);
-    const data = await this.deviceMgr.readFromGPU(indices.buffer, indices.length, "int32");
     const rank = meta.shape.length;
+    if (rank > 2) throw new Error("indexSelect currently supports only 1D and 2D tensors.");
     const d = normalizeDim(dim, rank);
     const outShape = [...meta.shape];
     outShape[d] = indices.length;
     const outLength = product(outShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const sPadded = padShapeTo4(meta.shape);
-    const strides = computeStrides(meta.shape);
-    const params = new Uint32Array([
-      sPadded[0], sPadded[1], sPadded[2], sPadded[3],
-      strides[0]!, strides[1]!, strides[2]!, strides[3]!,
-      d + (4 - rank), indices.length, ...data,
-    ]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: (12 + data.length) * 4,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(INDEX_SELECT_SHADER, "index_select_2d");
-    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
-    await syncDevice();
-    paramBuffer.destroy();
+    const pipeline = getOrCreatePipeline(INDEX_SELECT_SHADER, rank === 1 ? "index_select_1d" : "index_select_2d");
+    if (rank === 1) {
+      const params = new Uint32Array([0, 0, 0, indices.length]);
+      const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
+      dispatchCompute(pipeline, [meta.buffer, indices.buffer, out, paramBuffer], calculateWorkgroups(outLength));
+      await syncDevice();
+      paramBuffer.destroy();
+    } else {
+      const params2d = new Uint32Array([
+        d,
+        meta.shape[0] ?? 1,
+        meta.shape[1] ?? 1,
+        indices.length,
+      ]);
+      const paramBuffer2d = createUniformParamBuffer(this.deviceMgr, params2d, 16);
+      dispatchCompute(pipeline, [meta.buffer, indices.buffer, out, paramBuffer2d], calculateWorkgroups(outLength));
+      await syncDevice();
+      paramBuffer2d.destroy();
+    }
     return this.deviceMgr.registerTensorAsHandle(out, outShape, meta.dtype, outLength);
   }
 
@@ -280,11 +300,7 @@ export class ShapeOps {
     const [rows, cols] = meta.shape;
     const out = createStorageBuffer(this.deviceMgr.device!, meta.bytes);
     const params = new Uint32Array([rows, cols, 0, 0]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
     const pipeline = getOrCreatePipeline(TRANSPOSE_SHADER, "transpose_2d");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(rows * cols));
     await syncDevice();
