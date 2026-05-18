@@ -18,6 +18,7 @@ import {
   ELEMENTWISE_SHADER,
   UNARY_SHADER,
   LOG_SOFTMAX_SHADER,
+  NLL_LOSS_SHADER,
   createStorageBuffer,
   padShapeTo4,
 } from "./utils.js";
@@ -236,6 +237,27 @@ export class ReductionOps {
       ? meta.shape.map((s, i) => (i === resolvedDim ? 1 : s))
       : outShape;
     return this.deviceMgr.registerTensorAsHandle(out, finalShape, meta.dtype, outLength);
+  }
+
+  async nllLoss(inputId: number, targetsId: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const input = this.deviceMgr.getTensorMeta(inputId);
+    const targets = this.deviceMgr.getTensorMeta(targetsId);
+    const batchSize = targets.length;
+    const numClasses = input.shape[input.shape.length - 1];
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, batchSize * 4));
+    const params = new Uint32Array([batchSize, numClasses, 0, 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(NLL_LOSS_SHADER, "nll_loss");
+    dispatchCompute(pipeline, [input.buffer, targets.buffer, out, paramBuffer], calculateWorkgroups(batchSize));
+    await syncDevice();
+    paramBuffer.destroy();
+    const outShape = [batchSize];
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, input.dtype as SupportedDType, batchSize);
   }
 
   async softmax(tensorId: number, dim: number): Promise<TensorHandle> {

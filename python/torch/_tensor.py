@@ -1352,6 +1352,37 @@ def batch_norm_from_tensor(
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
+def nll_loss_from_tensor(
+    input: Tensor,
+    target: Tensor,
+) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.nllLoss(input._id, target._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def batch_norm_inference_from_tensor(
+    input: Tensor,
+    running_mean: Tensor,
+    running_var: Tensor,
+    weight: Tensor | None = None,
+    bias: Tensor | None = None,
+    eps: float = 1e-5,
+) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.batchNorm(
+        input._id,
+        weight._id if weight is not None else None,
+        bias._id if bias is not None else None,
+        running_mean._id,
+        running_var._id,
+        float(eps),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
 def layer_norm_from_tensor(
     input: Tensor,
     normalized_shape: Sequence[int],

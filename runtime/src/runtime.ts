@@ -439,6 +439,10 @@ export class TorchPyodideRuntime {
     return this.reductionOps.logSoftmax(tensorId, dim);
   }
 
+  async nllLoss(inputId: number, targetsId: number): Promise<TensorHandle> {
+    return this.reductionOps.nllLoss(inputId, targetsId);
+  }
+
   async eq(aId: number, bId: number): Promise<TensorHandle> {
     return this.compareOps.eq(aId, bId);
   }

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Sequence
 
 import torch
-from torch._tensor import Tensor, tensor_from_data, _reshape_flat_values
+from torch._tensor import Tensor, tensor_from_data
 
 
 # ── Activation functions ──────────────────────────────────────────
@@ -96,14 +96,20 @@ def linear(x: Tensor, weight: Tensor, bias: Tensor | None = None) -> Tensor:
 def bilinear(
     x1: Tensor, x2: Tensor, weight: Tensor, bias: Tensor | None = None
 ) -> Tensor:
-    """Bilinear transformation: output = x1 @ weight @ x2^T + bias
+    """Bilinear transformation using fused matmul.
 
     weight: (out_features, in1_features, in2_features)
     x1: (*, in1_features)
     x2: (*, in2_features)
 
-    Uses the identity: output[o] = sum_i x1[i] * (weight[o,i,:] @ x2)
+    Uses: output[o] = sum_i x1[i] * (weight[o,i,:] @ x2)
     which avoids materializing the full (..., O, I1, I2) tensor.
+
+    Implementation uses reshape and matmul for GPU speed:
+    weight -> (out_features * in1_features, in2_features)
+    x2 @ weight.T -> (batch, out_features * in1_features)
+    then reshape to (batch, out_features, in1_features)
+    then elementwise mul with x1 and sum over in1_features.
     """
     out_features, in1_features, in2_features = weight.shape
     orig_shape = list(x1.shape[:-1]) + [out_features]
@@ -111,22 +117,19 @@ def bilinear(
     x2_flat = x2.reshape(-1, in2_features)
     batch = x1_flat.shape[0]
 
-    # For each i in in1_features, compute: x1[b,i] * (weight[:,i,:] @ x2[b,:])
-    # weight[:,i,:] is (out_features, in2)
-    # weight[:,i,:] @ x2[b,:] is (out_features,)
-    # x1[b,i] * that is (out_features,)
-    # Sum over i gives final (batch, out_features)
-
-    accum = torch.zeros((batch, out_features))
-    for i in range(in1_features):
-        w_i = weight[:, i, :]  # (out_features, in2)
-        wx2 = x2_flat @ w_i.T  # (batch, out_features)
-        accum = accum + x1_flat[:, i:i+1] * wx2
+    # Flatten weight: (out_features, in1_features, in2_features) -> (out_features * in1_features, in2_features)
+    w_flat = weight.reshape(out_features * in1_features, in2_features)
+    # x2 @ w_flat.T: (batch, out_features * in1_features)
+    wx2 = x2_flat.matmul(w_flat.T)
+    # Reshape to (batch, out_features, in1_features)
+    wx2 = wx2.reshape(batch, out_features, in1_features)
+    # x1_flat[:, None, :] * wx2: broadcast over out_features
+    result = (x1_flat[:, None, :] * wx2).sum(dim=2)
 
     if bias is not None:
-        accum = accum + bias
+        result = result + bias
 
-    return accum.reshape(*orig_shape)
+    return result.reshape(*orig_shape)
 
 
 # ── Normalization ─────────────────────────────────────────────────
@@ -141,7 +144,7 @@ def batch_norm(
     momentum: float = 0.1,
     eps: float = 1e-5,
 ) -> Tensor:
-    from torch._tensor import batch_norm_from_tensor
+    from torch._tensor import batch_norm_inference_from_tensor
     if training:
         mean = x.mean(dim=0)
         var = ((x - mean) ** 2).mean(dim=0)
@@ -149,17 +152,17 @@ def batch_norm(
             running_mean._set(running_mean * (1 - momentum) + mean * momentum)
         if running_var is not None:
             running_var._set(running_var * (1 - momentum) + var * momentum)
+        inv_std = (var + eps).rsqrt()
+        x_norm = (x - mean) * inv_std
+        if weight is not None:
+            x_norm = x_norm * weight
+        if bias is not None:
+            x_norm = x_norm + bias
+        return x_norm
     else:
         if running_mean is None or running_var is None:
             raise RuntimeError("running_mean and running_var required in eval mode")
-        mean = running_mean
-        var = running_var
-    x_norm = (x - mean) / (var + eps).sqrt()
-    if weight is not None:
-        x_norm = x_norm * weight
-    if bias is not None:
-        x_norm = x_norm + bias
-    return x_norm
+        return batch_norm_inference_from_tensor(x, running_mean, running_var, weight, bias, eps)
 
 
 def layer_norm(x: Tensor, normalized_shape: int | Sequence[int], weight: Tensor | None = None, bias: Tensor | None = None, eps: float = 1e-5) -> Tensor:
@@ -205,28 +208,13 @@ def cross_entropy(input: Tensor, target: Tensor, reduction: str = "mean") -> Ten
 
 
 def nll_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
-    batch_size = target.shape[0]
-    flat_target = _flatten(target.tolist())
-    flat_input_list = _flatten(input.tolist())
-    num_classes = len(flat_input_list) // batch_size
-    loss_vals = []
-    for i in range(batch_size):
-        t = int(flat_target[i])
-        idx = i * num_classes + t
-        loss_vals.append(-flat_input_list[idx])
-    shape_out = list(target.shape)
+    from torch._tensor import nll_loss_from_tensor
+    loss_per_batch = nll_loss_from_tensor(input, target)
     if reduction == "none":
-        if len(shape_out) == 0:
-            return tensor_from_data(loss_vals, input.dtype)
-        # reshape flat list back to target shape
-        flat = loss_vals
-        # use _reshape_flat_values to create nested list, then tensor_from_data
-        reshaped = _reshape_flat_values(flat, shape_out)
-        return tensor_from_data(reshaped, input.dtype)
-    total = sum(loss_vals)
+        return loss_per_batch
     if reduction == "sum":
-        return tensor_from_data([total], input.dtype)
-    return tensor_from_data([total / batch_size], input.dtype)
+        return loss_per_batch.sum()
+    return loss_per_batch.mean()
 
 
 def mse_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
