@@ -74,17 +74,15 @@ function setEditorCode(code: string): void {
   });
 }
 
-function siteBase(): string {
-  const path = location.pathname;
-  const idx = path.indexOf("/", 1);
-  return idx === -1 ? "/" : path.substring(0, idx + 1);
+function assetUrl(path: string): string {
+  return new URL(path, `${window.location.origin}${import.meta.env.BASE_URL}`).toString();
 }
 
 async function fetchCode(file: string): Promise<string> {
   const cached = codeCache.get(file);
   if (cached !== undefined) return cached;
   const fileName = file.substring(file.lastIndexOf("/") + 1);
-  const url = siteBase() + "examples/" + fileName;
+  const url = assetUrl("examples/" + fileName);
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Failed to fetch example "${file}": HTTP ${response.status}.`);
@@ -124,7 +122,7 @@ function assertValidCatalog(raw: unknown): { default?: string; metaList: Example
 }
 
 async function loadCatalog(): Promise<string | undefined> {
-  const response = await fetch(siteBase() + "examples.json", { cache: "no-store" });
+  const response = await fetch(assetUrl("examples.json"), { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Failed to load examples catalog: HTTP ${response.status}.`);
   }

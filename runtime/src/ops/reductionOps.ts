@@ -52,11 +52,45 @@ export class ReductionOps {
   }
 
   async argmax(tensorId: number): Promise<TensorHandle> {
-    return this.argReduce(tensorId, ARGMAX_SHADER, "argmax");
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const batchElements = product(meta.shape.slice(0, -1));
+    const reduceDim = meta.shape[meta.shape.length - 1]!;
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, batchElements * 4));
+    const params = new Uint32Array([reduceDim, batchElements, 0, 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(ARGMAX_SHADER, "argmax");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(batchElements));
+    await syncDevice();
+    paramBuffer.destroy();
+
+    const finalShape = meta.shape.slice(0, -1).length > 0 ? meta.shape.slice(0, -1) : [1];
+    return this.deviceMgr.registerTensorAsHandle(out, finalShape, "int32", batchElements);
   }
 
   async argmin(tensorId: number): Promise<TensorHandle> {
-    return this.argReduce(tensorId, ARGMIN_SHADER, "argmin");
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const batchElements = product(meta.shape.slice(0, -1));
+    const reduceDim = meta.shape[meta.shape.length - 1]!;
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, batchElements * 4));
+    const params = new Uint32Array([reduceDim, batchElements, 0, 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(ARGMIN_SHADER, "argmin");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(batchElements));
+    await syncDevice();
+    paramBuffer.destroy();
+
+    const finalShape = meta.shape.slice(0, -1).length > 0 ? meta.shape.slice(0, -1) : [1];
+    return this.deviceMgr.registerTensorAsHandle(out, finalShape, "int32", batchElements);
   }
 
   private async reduceAll(tensorId: number, mode: string): Promise<TensorHandle> {
@@ -77,8 +111,23 @@ export class ReductionOps {
       });
       this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
-      const shader = this.shaderForMode(mode);
-      const pipeline = getOrCreatePipeline(shader, "main");
+      let pipeline;
+      switch (mode) {
+        case "prod":
+          pipeline = getOrCreatePipeline(REDUCE_PROD_SHADER, "main");
+          break;
+        case "max":
+          pipeline = getOrCreatePipeline(REDUCE_MAX_SHADER, "main");
+          break;
+        case "min":
+          pipeline = getOrCreatePipeline(REDUCE_MIN_SHADER, "main");
+          break;
+        case "sum":
+        case "mean":
+        default:
+          pipeline = getOrCreatePipeline(REDUCE_SUM_SHADER, "main");
+          break;
+      }
       dispatchCompute(pipeline, [src, out, paramBuffer], calculateWorkgroups(groups));
 
       src = out;
@@ -127,8 +176,7 @@ export class ReductionOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
-    const shader = REDUCE_DIM_SHADER;
-    const pipeline = getOrCreatePipeline(shader, "main");
+    const pipeline = getOrCreatePipeline(REDUCE_DIM_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
@@ -139,33 +187,4 @@ export class ReductionOps {
     return this.deviceMgr.registerTensorAsHandle(out, finalShape, meta.dtype, outLength);
   }
 
-  private async argReduce(tensorId: number, shader: string, entrypoint: string): Promise<TensorHandle> {
-    await this.deviceMgr.ensureReady();
-    const meta = this.deviceMgr.getTensorMeta(tensorId);
-    const batchElements = product(meta.shape.slice(0, -1));
-    const reduceDim = meta.shape[meta.shape.length - 1]!;
-    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, batchElements * 4));
-    const params = new Uint32Array([reduceDim, batchElements, 0, 0]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(shader, entrypoint);
-    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(batchElements));
-    await syncDevice();
-    paramBuffer.destroy();
-
-    const finalShape = meta.shape.slice(0, -1).length > 0 ? meta.shape.slice(0, -1) : [1];
-    return this.deviceMgr.registerTensorAsHandle(out, finalShape, "int32", batchElements);
-  }
-
-  private shaderForMode(mode: string): string {
-    if (mode === "sum") return REDUCE_SUM_SHADER;
-    if (mode === "prod") return REDUCE_PROD_SHADER;
-    if (mode === "max") return REDUCE_MAX_SHADER;
-    if (mode === "min") return REDUCE_MIN_SHADER;
-    if (mode === "mean") return REDUCE_SUM_SHADER;
-    return REDUCE_SUM_SHADER;
-  }
 }
