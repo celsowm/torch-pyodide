@@ -58,6 +58,26 @@ def _check_target(torch_mod: Any, tensor_cls: Any, target: dict[str, str]) -> Ta
         ok = isinstance(attr, property) or attr is not None
         return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
 
+    if kind == "nn_func":
+        parts = target_id.split(".")
+        current = torch_mod
+        for part in parts:
+            if not hasattr(current, part):
+                return TargetResult(target_id, kind, False, "missing")
+            current = getattr(current, part)
+        ok = callable(current)
+        return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
+
+    if kind == "nn_class":
+        parts = target_id.split(".")
+        current = torch_mod
+        for part in parts:
+            if not hasattr(current, part):
+                return TargetResult(target_id, kind, False, "missing")
+            current = getattr(current, part)
+        ok = isinstance(current, type)
+        return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
+
     if kind == "cuda_func":
         parts = target_id.split(".")[1:]  # drop torch
         current = torch_mod
@@ -77,6 +97,12 @@ def main() -> None:
 
     sys.path.insert(0, str(ROOT))
     import torch as local_torch
+    # Import nn submodules so report can scan nn_func and nn_class targets
+    import torch.nn  # type: ignore[import-untyped]
+    try:
+        import torch.nn.functional  # type: ignore[import-untyped]
+    except ImportError:
+        pass
 
     targets = registry["targets"]
     results = [_check_target(local_torch, local_torch.Tensor, t) for t in targets]

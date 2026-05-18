@@ -432,8 +432,8 @@ def silu(x: Tensor) -> Tensor:
     return x.silu()
 
 
-def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
-    return x.leaky_relu(alpha)
+def leaky_relu(x: Tensor, negative_slope: float = 0.01) -> Tensor:
+    return x.leaky_relu(negative_slope)
 
 
 def floor(x: Tensor) -> Tensor:
@@ -684,16 +684,16 @@ def mean(input: Tensor, dim: int | None = None, keepdim: bool = False) -> Tensor
     return input.mean(dim=dim, keepdim=keepdim)
 
 
-def prod(input: Tensor) -> Tensor:
-    return input.prod()
+def prod(x: Tensor) -> Tensor:
+    return x.prod()
 
 
-def min(input: Tensor) -> Tensor:
-    return input.min()
+def min(x: Tensor) -> Tensor:
+    return x.min()
 
 
-def max(input: Tensor) -> Tensor:
-    return input.max()
+def max(x: Tensor) -> Tensor:
+    return x.max()
 
 
 def masked_select(input: Tensor, mask: Tensor) -> Tensor:

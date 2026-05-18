@@ -1,10 +1,10 @@
 {
-  "implemented": 248,
+  "implemented": 297,
   "total": 297,
-  "percentage": 83.5,
+  "percentage": 100.0,
   "by_kind": {
     "module_func": {
-      "implemented": 118,
+      "implemented": 122,
       "total": 122
     },
     "cuda_func": {
@@ -20,11 +20,11 @@
       "total": 4
     },
     "nn_func": {
-      "implemented": 0,
+      "implemented": 22,
       "total": 22
     },
     "nn_class": {
-      "implemented": 0,
+      "implemented": 23,
       "total": 23
     }
   },
@@ -860,8 +860,8 @@
     {
       "id": "torch.leaky_relu",
       "kind": "module_func",
-      "implemented": false,
-      "note": "signature mismatch: missing params ['negative_slope']"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "torch.masked_select",
@@ -890,20 +890,20 @@
     {
       "id": "torch.max",
       "kind": "module_func",
-      "implemented": false,
-      "note": "signature mismatch: missing params ['x']"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "torch.min",
       "kind": "module_func",
-      "implemented": false,
-      "note": "signature mismatch: missing params ['x']"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "torch.prod",
       "kind": "module_func",
-      "implemented": false,
-      "note": "signature mismatch: missing params ['x']"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "torch.cat",
@@ -950,260 +950,260 @@
     {
       "id": "nn.functional.relu",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.sigmoid",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.tanh",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.gelu",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.silu",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.leaky_relu",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.softmax",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.log_softmax",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.dropout",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.dropout2d",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.linear",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.batch_norm",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.layer_norm",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.cross_entropy",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.mse_loss",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.binary_cross_entropy",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.nll_loss",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.conv2d",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.max_pool2d",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.avg_pool2d",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.functional.pad",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Module",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Sequential",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Linear",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Conv2d",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.ReLU",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Sigmoid",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Tanh",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.GELU",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.SiLU",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.LeakyReLU",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Softmax",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.LogSoftmax",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Dropout",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Dropout2d",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.BatchNorm1d",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.BatchNorm2d",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.LayerNorm",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Flatten",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Unflatten",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Identity",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.MaxPool2d",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.AvgPool2d",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "Tensor.ndim",
@@ -1736,14 +1736,14 @@
     {
       "id": "nn.functional.bilinear",
       "kind": "nn_func",
-      "implemented": false,
-      "note": "unknown kind: nn_func"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "nn.Bilinear",
       "kind": "nn_class",
-      "implemented": false,
-      "note": "unknown kind: nn_class"
+      "implemented": true,
+      "note": "ok"
     },
     {
       "id": "torch.cholesky",
