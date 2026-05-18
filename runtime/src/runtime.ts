@@ -351,6 +351,10 @@ export class TorchPyodideRuntime {
     return this.unaryOps.rad2deg(tensorId);
   }
 
+  async fill(tensorId: number, value: number): Promise<TensorHandle> {
+    return this.unaryOps.fill(tensorId, value);
+  }
+
   async sum(tensorId: number): Promise<TensorHandle> {
     return this.reductionOps.sum(tensorId);
   }

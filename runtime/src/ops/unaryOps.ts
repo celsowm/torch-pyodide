@@ -1,5 +1,4 @@
-import { TensorHandle, TensorMeta } from "./types.js";
-import { product } from "./types.js";
+import { TensorHandle, TensorMeta, product } from "./types.js";
 import {
   assertUnaryDType,
   getOrCreatePipeline,
@@ -366,5 +365,15 @@ export class UnaryOps {
     await syncDevice();
     const outDtype = this.BOOL_OPS.has(entrypoint) ? "bool" : meta.dtype;
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, outDtype, length);
+  }
+
+  async fill(tensorId: number, value: number): Promise<TensorHandle> {
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const length = product(meta.shape);
+    const dtype = meta.dtype as "float32" | "int32" | "bool";
+    const data = new Float32Array(length).fill(value);
+    const buffer = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    this.deviceMgr.device!.queue.writeBuffer(buffer, 0, data);
+    return this.deviceMgr.registerTensorAsHandle(buffer, meta.shape, dtype, length);
   }
 }
