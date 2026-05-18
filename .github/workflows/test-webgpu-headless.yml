@@ -43,8 +43,41 @@ jobs:
       - name: Install Playwright browsers (for browser deps only)
         run: npx playwright install --with-deps chromium
 
-      - name: Test WebGPU in various modes
-        run: node runtime/test-webgpu-gh.mjs
+      - name: Test WebGPU directly via Chrome (no Playwright)
+        run: |
+          CHROME=$(which google-chrome-stable)
+          echo "Testing with: $CHROME"
+          echo "Version: $($CHROME --version)"
+          echo ""
+          
+          # Try to get navigator.gpu info by dumping chrome://gpu
+          # 1. Check if --enable-unsafe-webgpu flag is recognized
+          $CHROME --headless=new --enable-unsafe-webgpu --enable-features=Vulkan --no-sandbox --dump-dom --disable-gpu about:blank 2>&1 | head -5
+          
+          echo ""
+          echo "=== Test 1: Check what --help says about webgpu ==="
+          $CHROME --headless=new --enable-unsafe-webgpu --no-sandbox --enable-features=Vulkan --disable-gpu --no-first-run about:blank 2>&1 | grep -i webgpu || echo "No WebGPU in output"
+
+      - name: Test WebGPU detection via JS
+        run: |
+          CHROME=$(which google-chrome-stable)
+          echo "
+          (async () => {
+            const result = {
+              hasNavigatorGPU: typeof navigator.gpu !== 'undefined',
+              hasRequestAdapter: typeof navigator.gpu?.requestAdapter === 'function',
+            };
+            if (navigator.gpu) {
+              try {
+                const adapter = await navigator.gpu.requestAdapter();
+                result.adapter = adapter ? { name: adapter.name } : null;
+              } catch(e) { result.adapterError = e.message; }
+            }
+            console.log(JSON.stringify(result));
+          })();
+          " > /tmp/test-webgpu.js
+          
+          $CHROME --headless=new --enable-unsafe-webgpu --enable-features=Vulkan --no-sandbox --disable-gpu --no-first-run --js-flags='--harmony' --virtual-time-budget=5000 /tmp/test-webgpu.js 2>&1
 
       - name: Summary
         run: echo "## WebGPU Headless Test Results" >> $GITHUB_STEP_SUMMARY
