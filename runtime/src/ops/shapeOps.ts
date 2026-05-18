@@ -87,16 +87,16 @@ export class ShapeOps {
       size: dims.length * 4,
       usage: BufferUsage.STORAGE | BufferUsage.COPY_DST,
     });
-    this.deviceMgr.writeBuffer(perm, 0, new Uint32Array(dims));
-    const inShape = padShapeTo4(meta.shape);
-    const outS = padShapeTo4(outShape);
-    const inStrides = computeStrides(meta.shape);
-    const sPadded = padShapeTo4(dims.map(d => inStrides[d]!));
+    const offset = 4 - dims.length;
+    this.deviceMgr.writeBuffer(perm, 0, new Uint32Array(dims.map(d => d + offset)));
+    const outShapePadded = padShapeTo4(outShape);
+    const srcStridesPadded = computeStrides(padShapeTo4(meta.shape));
+    const outStridesPadded = computeStrides(padShapeTo4(outShape));
     const params = new Uint32Array([
-      inShape[0], inShape[1], inShape[2], inShape[3],
-      outS[0], outS[1], outS[2], outS[3],
-      sPadded[0], sPadded[1], sPadded[2], sPadded[3],
-      outLength,
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+      srcStridesPadded[0], srcStridesPadded[1], srcStridesPadded[2], srcStridesPadded[3],
+      outStridesPadded[0], outStridesPadded[1], outStridesPadded[2], outStridesPadded[3],
+      dims.length, outLength, 0, 0,
     ]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,

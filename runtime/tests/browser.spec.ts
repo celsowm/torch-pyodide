@@ -187,6 +187,7 @@ test("shape transpose and permute match the playground example plus an extra ND 
 
     const out = {
       transpose: await rt.toList(t.id),
+      permute: await rt.toList(p.id),
       transposeShape: t.shape,
       permuteShape: p.shape,
       extraPermuteShape: q.shape,
@@ -203,6 +204,7 @@ test("shape transpose and permute match the playground example plus an extra ND 
   });
 
   expect(result.transpose).toEqual([1, 3, 2, 4]);
+  expect(result.permute).toEqual([1, 3, 2, 4]);
   expect(result.transposeShape).toEqual([2, 2]);
   expect(result.permuteShape).toEqual([2, 2, 1]);
   expect(result.extraPermuteShape).toEqual([2, 2, 2, 1]);

@@ -27,6 +27,7 @@ fn coord_to_flat(coords: array<u32, 4>, strides: array<u32, 4>) -> u32 {
 fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let dst_idx = gid.x;
   if (dst_idx >= params.total) { return; }
+  let offset = 4u - params.ndim;
 
   // Convert dst_idx to output coordinates
   var out_strides_arr: array<u32, 4>;
@@ -50,8 +51,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   var out_coords: array<u32, 4>;
   var rem = dst_idx;
   for (var d = 0u; d < params.ndim; d++) {
-    out_coords[d] = rem / out_strides_arr[d];
-    rem = rem % out_strides_arr[d];
+    let dim_idx = offset + d;
+    out_coords[dim_idx] = rem / out_strides_arr[dim_idx];
+    rem = rem % out_strides_arr[dim_idx];
   }
 
   // Apply inverse permutation to get source coords
@@ -60,12 +62,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   // We compute inv_perm: inv_perm[perm[i]] = i
   var inv_perm: array<u32, 4>;
   for (var d = 0u; d < params.ndim; d++) {
-    inv_perm[perm[d]] = d;
+    let dim_idx = offset + d;
+    inv_perm[perm[d]] = dim_idx;
   }
 
   var src_coords: array<u32, 4>;
   for (var d = 0u; d < params.ndim; d++) {
-    src_coords[d] = out_coords[inv_perm[d]];
+    let dim_idx = offset + d;
+    src_coords[dim_idx] = out_coords[inv_perm[dim_idx]];
   }
 
   let src_idx = coord_to_flat(src_coords, src_strides_arr);
