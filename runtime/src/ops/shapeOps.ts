@@ -17,6 +17,7 @@ import {
   TRIL_SHADER,
   TRIU_SHADER,
   FLIP_SHADER,
+  REPEAT_SHADER,
   normalizeDim,
   computeStrides,
   normalizeSliceStart,
@@ -340,16 +341,23 @@ export class ShapeOps {
     const outLength = product(outShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
     const outShapePadded = padShapeTo4(outShape);
+    const inShapePadded = padShapeTo4(meta.shape);
     const inStrides = computeStrides(meta.shape);
     const outStrides = computeStrides(outShape);
+    const repeats = new Array(4).fill(1);
+    for (let i = 0; i < sizes.length; i++) {
+      repeats[i] = sizes[i] ?? 1;
+    }
     const params = new Uint32Array([
+      inShapePadded[0], inShapePadded[1], inShapePadded[2], inShapePadded[3],
       outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
       inStrides[0], inStrides[1], inStrides[2], inStrides[3],
       outStrides[0], outStrides[1], outStrides[2], outStrides[3],
+      repeats[0], repeats[1], repeats[2], repeats[3],
       meta.shape.length, outLength, 0, 0,
     ]);
-    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
-    const pipeline = getOrCreatePipeline(PERMUTE_ND_SHADER, "main");
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 96);
+    const pipeline = getOrCreatePipeline(REPEAT_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
