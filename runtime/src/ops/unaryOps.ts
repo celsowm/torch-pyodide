@@ -26,6 +26,11 @@ const ENTRYPOINT_MAP: Record<string, string> = {
   silu: "silu_op",
   gelu: "gelu",
   neg: "neg",
+  floor: "floor_op",
+  ceil: "ceil_op",
+  round: "round_op",
+  reciprocal: "reciprocal_op",
+  square: "square_op",
 };
 
 export class UnaryOps {
