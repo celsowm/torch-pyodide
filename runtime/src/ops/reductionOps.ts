@@ -268,7 +268,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(LOG_SOFTMAX_SHADER, "main");
+    const pipeline = getOrCreatePipeline(LOG_SOFTMAX_SHADER, "log_softmax");
     dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();

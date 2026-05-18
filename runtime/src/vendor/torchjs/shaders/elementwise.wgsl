@@ -74,3 +74,10 @@ fn bitwise_xor(@builtin(global_invocation_id) global_id: vec3<u32>) {
     if (idx >= arrayLength(&result)) { return; }
     result[idx] = bitcast<f32>(bitcast<i32>(a[idx]) ^ bitcast<i32>(b[idx]));
 }
+
+@compute @workgroup_size(256)
+fn heaviside(@builtin(global_invocation_id) global_id: vec3<u32>) {
+    let idx = global_id.x;
+    if (idx >= arrayLength(&result)) { return; }
+    result[idx] = select(0.0, 1.0, a[idx] >= 0.0);
+}
