@@ -83,6 +83,11 @@ export class ShapeOps {
     const outShape = dims.map(d => meta.shape[d]!);
     const outLength = product(outShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
+    const perm = this.deviceMgr.device!.createBuffer({
+      size: dims.length * 4,
+      usage: BufferUsage.STORAGE | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(perm, 0, new Uint32Array(dims));
     const inShape = padShapeTo4(meta.shape);
     const outS = padShapeTo4(outShape);
     const inStrides = computeStrides(meta.shape);
@@ -99,8 +104,9 @@ export class ShapeOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(PERMUTE_ND_SHADER, "main");
-    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
+    dispatchCompute(pipeline, [meta.buffer, perm, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
+    perm.destroy();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, outShape, meta.dtype, outLength);
   }
