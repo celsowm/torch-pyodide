@@ -2,7 +2,6 @@ name: WebGPU Headless Experiment
 
 on:
   workflow_dispatch:
-  pull_request:
   push:
     branches: ["main"]
 
@@ -15,13 +14,8 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: "npm"
@@ -32,13 +26,10 @@ jobs:
           sudo apt-get install -y -qq libvulkan1 mesa-vulkan-drivers vulkan-tools
           vulkaninfo --summary
 
-      - name: Install Google Chrome stable
-        run: |
-          curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq google-chrome-stable
-          google-chrome-stable --version
+      - name: Install Google Chrome (via browser-tools action)
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
 
       - name: Install deps
         run: npm ci
@@ -49,14 +40,11 @@ jobs:
       - name: Build runtime
         run: npm run build:runtime
 
-      - name: Install Playwright browsers
+      - name: Install Playwright browsers (for browser deps only)
         run: npx playwright install --with-deps chromium
 
-      - name: Test WebGPU with Google Chrome (channel: chrome)
-        run: |
-          node runtime/test-webgpu-gh.mjs
+      - name: Test WebGPU in various modes
+        run: node runtime/test-webgpu-gh.mjs
 
       - name: Summary
-        run: |
-          echo "## WebGPU Headless Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "See step logs above for detailed results." >> $GITHUB_STEP_SUMMARY
+        run: echo "## WebGPU Headless Test Results" >> $GITHUB_STEP_SUMMARY

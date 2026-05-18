@@ -1,9 +1,42 @@
 import { chromium } from 'playwright';
+import { execSync } from 'child_process';
+
+// Find Chrome executable path
+function findChrome() {
+  try {
+    // Try which/google-chrome
+    const which = execSync('which google-chrome-stable 2>/dev/null || which google-chrome 2>/dev/null || which chromium-browser 2>/dev/null', { encoding: 'utf8' }).trim();
+    if (which) return which;
+  } catch (_) {}
+  // Check common paths
+  const common = [
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/snap/bin/chromium',
+  ];
+  for (const p of common) {
+    try { execSync(`test -x ${p}`); return p; } catch (_) {}
+  }
+  return null;
+}
+
+const chromePath = findChrome();
+console.log(`Chrome executable: ${chromePath || 'NOT FOUND'}`);
+if (!chromePath) {
+  console.log('Google Chrome not found. Exiting.');
+  process.exit(1);
+}
+
+// Get Chrome version
+try {
+  const ver = execSync(`"${chromePath}" --version 2>/dev/null || true`, { encoding: 'utf8' }).trim();
+  console.log(`Chrome version: ${ver}`);
+} catch (_) {}
 
 const configs = [
   {
-    name: 'Google Chrome headless=new with unsafe-webgpu + Mesa Vulkan',
-    channel: 'chrome',
+    name: 'headless=new + unsafe-webgpu + Mesa egl',
     args: [
       '--headless=new',
       '--enable-unsafe-webgpu',
@@ -13,8 +46,7 @@ const configs = [
     ]
   },
   {
-    name: 'Google Chrome headless=new with unsafe-webgpu + SwiftShader',
-    channel: 'chrome',
+    name: 'headless=new + unsafe-webgpu + SwiftShader',
     args: [
       '--headless=new',
       '--enable-unsafe-webgpu',
@@ -25,21 +57,12 @@ const configs = [
     ]
   },
   {
-    name: 'Google Chrome headless=new with unsafe-webgpu (no GL override)',
-    channel: 'chrome',
+    name: 'headless=new + unsafe-webgpu (no GL override)',
     args: [
       '--headless=new',
       '--enable-unsafe-webgpu',
       '--enable-features=Vulkan,UseSkiaRenderer',
       '--no-sandbox',
-    ]
-  },
-  {
-    name: 'Google Chrome headed with Xvfb virtual display',
-    channel: 'chrome',
-    args: [
-      '--no-sandbox',
-      '--disable-gpu-sandbox',
     ]
   },
 ];
@@ -48,24 +71,31 @@ for (const cfg of configs) {
   console.log(`\n=== ${cfg.name} ===`);
   try {
     const browser = await chromium.launch({
-      channel: cfg.channel,
-      headless: cfg.name.includes('headless') ? true : false,
+      executablePath: chromePath,
+      headless: true,
       args: cfg.args,
     });
     const page = await browser.newPage();
     await page.goto('about:blank');
     const result = await page.evaluate(async () => {
-      if (!navigator.gpu) return { gpu: false, error: 'navigator.gpu is undefined' };
+      if (!navigator.gpu) {
+        return { gpu: false, error: 'navigator.gpu is undefined' };
+      }
       try {
         const adapter = await navigator.gpu.requestAdapter();
-        if (!adapter) return { gpu: true, adapter: false, error: 'requestAdapter returned null' };
+        if (!adapter) {
+          return { gpu: true, adapter: false, error: 'requestAdapter returned null' };
+        }
         const device = await adapter.requestDevice();
-        const info = {
-          name: adapter.name,
-          features: Array.from(adapter.features).join(', '),
-          deviceCreated: !!device,
+        return {
+          gpu: true,
+          adapter: true,
+          info: {
+            name: adapter.name,
+            features: Array.from(adapter.features).join(', '),
+            deviceCreated: !!device,
+          }
         };
-        return { gpu: true, adapter: true, info };
       } catch (e) {
         return { gpu: true, adapter: false, error: e.message };
       }
@@ -73,7 +103,7 @@ for (const cfg of configs) {
     console.log(JSON.stringify(result, null, 2));
     await browser.close();
     if (result.gpu && result.adapter) {
-      console.log('✓ SUCCESS: WebGPU is available!');
+      console.log('\n*** SUCCESS! ***');
       process.exit(0);
     }
   } catch (e) {
@@ -81,5 +111,5 @@ for (const cfg of configs) {
   }
 }
 
-console.log('\n✗ All approaches failed. WebGPU not available.');
+console.log('\n*** All approaches failed ***');
 process.exit(1);
