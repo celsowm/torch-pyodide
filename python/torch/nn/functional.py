@@ -247,7 +247,8 @@ def nll_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
 
 
 def mse_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
-    loss = (input - target) ** 2
+    diff = input - target
+    loss = diff * diff
     if reduction == "none":
         return loss
     if reduction == "sum":
