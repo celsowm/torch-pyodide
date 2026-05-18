@@ -109,6 +109,135 @@ class Tensor:
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
         return Tensor(tensor_id, shape, dtype)
 
+    def sum(self) -> "Tensor":
+        return sum_from_tensor(self)
+
+    def mean(self) -> "Tensor":
+        return mean_from_tensor(self)
+
+    def max(self) -> "Tensor":
+        return max_from_tensor(self)
+
+    def min(self) -> "Tensor":
+        return min_from_tensor(self)
+
+    def prod(self) -> "Tensor":
+        return prod_from_tensor(self)
+
+    def pow(self, other: "Tensor | float") -> "Tensor":
+        return pow_from_tensors(self, other) if isinstance(other, Tensor) else pow_from_tensors(self, _scalar_to_tensor(float(other), self._dtype))
+
+    def heaviside(self, values: "Tensor") -> "Tensor":
+        return heaviside_from_tensors(self, values)
+
+    def maximum(self, other: "Tensor") -> "Tensor":
+        return maximum_from_tensors(self, other)
+
+    def minimum(self, other: "Tensor") -> "Tensor":
+        return minimum_from_tensors(self, other)
+
+    def any(self) -> "Tensor":
+        return any_from_tensor(self)
+
+    def all(self) -> "Tensor":
+        return all_from_tensor(self)
+
+    def cumsum(self) -> "Tensor":
+        return cumsum_from_tensor(self)
+
+    def cumprod(self) -> "Tensor":
+        return cumprod_from_tensor(self)
+
+    def tril(self, diagonal: int = 0) -> "Tensor":
+        return tril_from_tensor(self, diagonal)
+
+    def triu(self, diagonal: int = 0) -> "Tensor":
+        return triu_from_tensor(self, diagonal)
+
+    def flip(self, dims: Sequence[int]) -> "Tensor":
+        return flip_from_tensor(self, dims)
+
+    def where(self, condition: "Tensor", other: "Tensor") -> "Tensor":
+        return where_from_tensors(condition, self, other)
+
+    def cat(self, other: "Tensor", dim: int = 0) -> "Tensor":
+        return cat_from_tensors([self, other], dim)
+
+    def stack(self, other: "Tensor", dim: int = 0) -> "Tensor":
+        return stack_from_tensors([self, other], dim)
+
+    def index_select(self, dim: int, index: "Tensor") -> "Tensor":
+        return index_select_from_tensor(self, dim, index)
+
+    def masked_select(self, mask: "Tensor") -> "Tensor":
+        return masked_select_from_tensor(self, mask)
+
+    def masked_fill(self, mask: "Tensor", value: float) -> "Tensor":
+        return masked_fill_from_tensor(self, mask, value)
+
+    def eq(self, other: "Tensor") -> "Tensor":
+        return eq_from_tensors(self, other)
+
+    def ne(self, other: "Tensor") -> "Tensor":
+        return ne_from_tensors(self, other)
+
+    def gt(self, other: "Tensor") -> "Tensor":
+        return gt_from_tensors(self, other)
+
+    def lt(self, other: "Tensor") -> "Tensor":
+        return lt_from_tensors(self, other)
+
+    def ge(self, other: "Tensor") -> "Tensor":
+        return ge_from_tensors(self, other)
+
+    def le(self, other: "Tensor") -> "Tensor":
+        return le_from_tensors(self, other)
+
+    def isinf(self) -> "Tensor":
+        return isinf_from_tensor(self)
+
+    def isfinite(self) -> "Tensor":
+        return isfinite_from_tensor(self)
+
+    def isposinf(self) -> "Tensor":
+        return isposinf_from_tensor(self)
+
+    def isneginf(self) -> "Tensor":
+        return isneginf_from_tensor(self)
+
+    def logical_not(self) -> "Tensor":
+        return logical_not_from_tensor(self)
+
+    def erf(self) -> "Tensor":
+        return erf_from_tensor(self)
+
+    def erfc(self) -> "Tensor":
+        return erfc_from_tensor(self)
+
+    def lgamma(self) -> "Tensor":
+        return lgamma_from_tensor(self)
+
+    def digamma(self) -> "Tensor":
+        return digamma_from_tensor(self)
+
+    def i0(self) -> "Tensor":
+        return i0_from_tensor(self)
+
+    def deg2rad(self) -> "Tensor":
+        return deg2rad_from_tensor(self)
+
+    def rad2deg(self) -> "Tensor":
+        return rad2deg_from_tensor(self)
+
+    def empty_like(self) -> "Tensor":
+        return empty_like_from_tensor(self)
+
+    def zeros_like(self) -> "Tensor":
+        return zeros_like_from_tensor(self)
+
+    def ones_like(self) -> "Tensor":
+        return ones_like_from_tensor(self)
+
     def relu(self) -> "Tensor":
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.relu(self._id))
@@ -963,6 +1092,20 @@ def ge_from_tensors(a: Tensor, b: Tensor) -> Tensor:
 def sum_dim_from_tensor(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.sumDim(tensor._id, int(dim), keepdim))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def sum_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.sum(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def mean_from_tensor(tensor: Tensor) -> Tensor:
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.mean(tensor._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
 

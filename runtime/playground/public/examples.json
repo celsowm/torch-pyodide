@@ -24,6 +24,11 @@
     { "id": "reduce_dim", "label": "Reduction by dim", "file": "examples/reduce_dim.py" },
     { "id": "masked_select_fill", "label": "Masked Select + Fill", "file": "examples/masked_select_fill.py" },
     { "id": "broadcast_compare", "label": "Broadcast + Compare", "file": "examples/broadcast_compare.py" },
-    { "id": "reduce_dim_keepdim", "label": "Reduction keepdim", "file": "examples/reduce_dim_keepdim.py" }
+    { "id": "reduce_dim_keepdim", "label": "Reduction keepdim", "file": "examples/reduce_dim_keepdim.py" },
+    { "id": "nn_linear_relu", "label": "nn Linear + ReLU", "file": "examples/nn_linear_relu.py" },
+    { "id": "nn_conv2d", "label": "nn Conv2d", "file": "examples/nn_conv2d.py" },
+    { "id": "nn_batchnorm", "label": "nn BatchNorm1d", "file": "examples/nn_batchnorm.py" },
+    { "id": "nn_pooling", "label": "nn MaxPool2d + AvgPool2d", "file": "examples/nn_pooling.py" },
+    { "id": "nn_losses", "label": "nn Losses", "file": "examples/nn_losses.py" }
   ]
 }
