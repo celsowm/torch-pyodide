@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from . import init
-
 from .functional import (
     relu,
     sigmoid,
@@ -48,6 +46,13 @@ from .modules import (
     MaxPool2d,
     AvgPool2d,
 )
+
+def __getattr__(name: str):
+    if name == "init":
+        import importlib
+        return importlib.import_module("torch.nn.init")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "relu",
