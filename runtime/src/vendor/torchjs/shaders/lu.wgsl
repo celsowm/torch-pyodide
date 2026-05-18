@@ -5,8 +5,8 @@ struct Dims {
 }
 
 @group(0) @binding(0) var<storage, read_write> A: array<f32>;
-@group(0) @binding(1) var<uniform> dims: Dims;
-@group(0) @binding(2) var<storage, read_write> P: array<u32>;
+@group(0) @binding(1) var<storage, read_write> P: array<u32>;
+@group(0) @binding(2) var<uniform> dims: Dims;
 
 @compute @workgroup_size(256)
 fn lu_pivot(@builtin(global_invocation_id) global_id: vec3<u32>) {

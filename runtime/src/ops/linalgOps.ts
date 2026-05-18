@@ -88,9 +88,9 @@ export class LinalgOps {
         usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
       });
       this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-      dispatchCompute(pivotPipeline, [aBuf, paramBuffer, pivotBuf], calculateWorkgroups(batch));
+      dispatchCompute(pivotPipeline, [aBuf, pivotBuf, paramBuffer], calculateWorkgroups(batch));
       await syncDevice();
-      dispatchCompute(updatePipeline, [aBuf, paramBuffer, pivotBuf], calculateWorkgroups(batch * n));
+      dispatchCompute(updatePipeline, [aBuf, pivotBuf, paramBuffer], calculateWorkgroups(batch * n));
       await syncDevice();
       paramBuffer.destroy();
     }
