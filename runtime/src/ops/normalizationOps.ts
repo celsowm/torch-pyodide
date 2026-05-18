@@ -26,14 +26,18 @@ export class NormalizationOps {
     await this.deviceMgr.ensureReady();
     const input = this.deviceMgr.getTensorMeta(inputId);
     const shape = input.shape;
-    // Assume (N, C, H, W) or (N, C, L)
+    // Support (N, C), (N, C, L), (N, C, H, W)
     let batch: number, channels: number, spatial: number;
-    if (shape.length >= 3) {
+    if (shape.length === 2) {
+      batch = shape[0];
+      channels = shape[1];
+      spatial = 1;
+    } else if (shape.length >= 3) {
       batch = shape[0];
       channels = shape[1];
       spatial = product(shape.slice(2));
     } else {
-      throw new Error("batch_norm needs at least 3D input");
+      throw new Error("batch_norm needs at least 2D input");
     }
     const total = batch * channels * spatial;
 
