@@ -195,6 +195,35 @@ def pad(x: Tensor, pad: Sequence[int], mode: str = "constant", value: float = 0.
     return result
 
 
+# ── Activation functions (extended) ───────────────────────────────
+
+def prelu(x: Tensor, weight: Tensor) -> Tensor:
+    return torch.where(x > 0.0, x, x * weight)
+
+
+def elu(x: Tensor, alpha: float = 1.0) -> Tensor:
+    return torch.where(x > 0.0, x, alpha * (x.exp() - 1.0))
+
+
+def celu(x: Tensor, alpha: float = 1.0) -> Tensor:
+    return torch.max(x, torch.zeros_like(x)) + alpha * (torch.min(x, torch.zeros_like(x)) / alpha).exp().sub(1.0).mul(alpha)
+
+
+def rrelu(x: Tensor, lower: float = 0.125, upper: float = 0.3333333333333333, training: bool = True) -> Tensor:
+    import random as _random
+    if training:
+        a = _random.uniform(lower, upper)
+    else:
+        a = (lower + upper) / 2.0
+    return torch.where(x > 0.0, x, x * a)
+
+
+def glu(x: Tensor, dim: int = -1) -> Tensor:
+    size = x.shape[dim] // 2
+    a, b = x.split(size, dim=dim)
+    return a * torch.sigmoid(b)
+
+
 # ── Loss functions ────────────────────────────────────────────────
 
 def cross_entropy(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
@@ -220,6 +249,37 @@ def nll_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
 def mse_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
     diff = input - target
     loss = diff * diff
+    if reduction == "none":
+        return loss
+    if reduction == "sum":
+        return loss.sum()
+    return loss.mean()
+
+
+def binary_cross_entropy_with_logits(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
+    # sigmoid + BCE fused
+    max_val = torch.clamp(-input, 0.0)
+    loss = input - input * target + max_val + ((-max_val).exp() + (-input - max_val).exp()).log()
+    if reduction == "none":
+        return loss
+    if reduction == "sum":
+        return loss.sum()
+    return loss.mean()
+
+
+def l1_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
+    loss = (input - target).abs()
+    if reduction == "none":
+        return loss
+    if reduction == "sum":
+        return loss.sum()
+    return loss.mean()
+
+
+def smooth_l1_loss(input: Tensor, target: Tensor, reduction: str = "mean", beta: float = 1.0) -> Tensor:
+    diff = input - target
+    abs_diff = diff.abs()
+    loss = torch.where(abs_diff < beta, 0.5 * diff * diff / beta, abs_diff - 0.5 * beta)
     if reduction == "none":
         return loss
     if reduction == "sum":

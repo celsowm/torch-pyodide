@@ -223,6 +223,58 @@ class LeakyReLU(Module):
         return x.leaky_relu(self.alpha)
 
 
+class PReLU(Module):
+    def __init__(self, num_parameters: int = 1, init: float = 0.25) -> None:
+        super().__init__()
+        self.num_parameters = num_parameters
+        self.weight = torch.tensor([init] * num_parameters)
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import prelu
+        return prelu(x, self.weight)
+
+
+class ELU(Module):
+    def __init__(self, alpha: float = 1.0) -> None:
+        super().__init__()
+        self.alpha = alpha
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import elu
+        return elu(x, self.alpha)
+
+
+class CELU(Module):
+    def __init__(self, alpha: float = 1.0) -> None:
+        super().__init__()
+        self.alpha = alpha
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import celu
+        return celu(x, self.alpha)
+
+
+class RReLU(Module):
+    def __init__(self, lower: float = 0.125, upper: float = 0.3333333333333333) -> None:
+        super().__init__()
+        self.lower = lower
+        self.upper = upper
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import rrelu
+        return rrelu(x, self.lower, self.upper, self.training)
+
+
+class GLU(Module):
+    def __init__(self, dim: int = -1) -> None:
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import glu
+        return glu(x, self.dim)
+
+
 class Softmax(Module):
     def __init__(self, dim: int = -1) -> None:
         super().__init__()
@@ -273,6 +325,30 @@ class Identity(Module):
 
 # ── Convolution ───────────────────────────────────────────────────
 
+class Conv1d(Module):
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int, stride: int = 1, padding: int = 0, bias: bool = True) -> None:
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.weight = torch.randn((out_channels, in_channels, kernel_size)) * 0.01
+        if bias:
+            self.bias = torch.zeros((out_channels,))
+        else:
+            self.bias = None
+
+    def forward(self, x: Tensor) -> Tensor:
+        # Convert 1D conv to 2D conv: add a dummy H dimension (H=1)
+        # Input: (N, C, L) -> (N, C, 1, L)
+        x_2d = x.unsqueeze(2)
+        w_2d = self.weight.unsqueeze(2)
+        from .functional import conv2d
+        result_2d = conv2d(x_2d, w_2d, self.bias, self.stride, self.padding)
+        return result_2d.squeeze(2)
+
+
 class Conv2d(Module):
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int | tuple[int, int], stride: int = 1, padding: int = 0, bias: bool = True) -> None:
         super().__init__()
@@ -287,11 +363,52 @@ class Conv2d(Module):
         if bias:
             self.bias = torch.zeros((out_channels,))
         else:
-            self.bias = None  # type: ignore
+            self.bias = None
 
     def forward(self, x: Tensor) -> Tensor:
         from .functional import conv2d
         return conv2d(x, self.weight, self.bias, self.stride, self.padding)
+
+
+class ConvTranspose2d(Module):
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int | tuple[int, int], stride: int = 1, padding: int = 0, bias: bool = True) -> None:
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        if isinstance(kernel_size, int):
+            kernel_size = (kernel_size, kernel_size)
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.weight = torch.randn((in_channels, out_channels, kernel_size[0], kernel_size[1])) * 0.01
+        if bias:
+            self.bias = torch.zeros((out_channels,))
+        else:
+            self.bias = None
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import conv2d
+        return conv2d(x, self.weight.transpose(0, 1), self.bias, 1, 0)
+
+
+# ── Embedding ─────────────────────────────────────────────────────
+
+class Embedding(Module):
+    def __init__(self, num_embeddings: int, embedding_dim: int, padding_idx: int | None = None) -> None:
+        super().__init__()
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+        self.padding_idx = padding_idx
+        self.weight = torch.randn((num_embeddings, embedding_dim)) * 0.01
+
+    def forward(self, x: Tensor) -> Tensor:
+        # index_select based lookup
+        result = torch.index_select(self.weight, 0, x)
+        if self.padding_idx is not None:
+            mask = x == self.padding_idx
+            if isinstance(mask, Tensor):
+                result = result.masked_fill(mask.unsqueeze(-1).expand(*result.shape), 0.0)
+        return result
 
 
 # ── Pooling ───────────────────────────────────────────────────────
@@ -322,3 +439,39 @@ class AvgPool2d(Module):
     def forward(self, x: Tensor) -> Tensor:
         from .functional import avg_pool2d
         return avg_pool2d(x, self.kernel_size, self.stride, self.padding)
+
+
+class AdaptiveAvgPool2d(Module):
+    def __init__(self, output_size: int | tuple[int, int]) -> None:
+        super().__init__()
+        if isinstance(output_size, int):
+            output_size = (output_size, output_size)
+        self.output_size = output_size
+
+    def forward(self, x: Tensor) -> Tensor:
+        h, w = x.shape[2], x.shape[3]
+        oh, ow = self.output_size
+        stride_h = h // oh
+        stride_w = w // ow
+        kernel_h = h - (oh - 1) * stride_h
+        kernel_w = w - (ow - 1) * stride_w
+        from .functional import avg_pool2d
+        return avg_pool2d(x, (kernel_h, kernel_w), (stride_h, stride_w), 0)
+
+
+class AdaptiveMaxPool2d(Module):
+    def __init__(self, output_size: int | tuple[int, int]) -> None:
+        super().__init__()
+        if isinstance(output_size, int):
+            output_size = (output_size, output_size)
+        self.output_size = output_size
+
+    def forward(self, x: Tensor) -> Tensor:
+        h, w = x.shape[2], x.shape[3]
+        oh, ow = self.output_size
+        stride_h = h // oh
+        stride_w = w // ow
+        kernel_h = h - (oh - 1) * stride_h
+        kernel_w = w - (ow - 1) * stride_w
+        from .functional import max_pool2d
+        return max_pool2d(x, (kernel_h, kernel_w), (stride_h, stride_w), 0)

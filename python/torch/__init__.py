@@ -97,6 +97,10 @@ from ._tensor import (
     tril_from_tensor,
     triu_from_tensor,
     flip_from_tensor,
+    topk_from_tensor,
+    sort_from_tensor,
+    gather_from_tensor,
+    scatter_from_tensor,
 )
 
 __all__ = [
@@ -114,6 +118,11 @@ __all__ = [
     "ones_like",
     "empty",
     "empty_like",
+    "eye",
+    "randint",
+    "randperm",
+    "linspace",
+    "logspace",
     "add",
     "sub",
     "mul",
@@ -221,6 +230,24 @@ __all__ = [
     "dot",
     "outer",
     "norm",
+    "split",
+    "chunk",
+    "repeat",
+    "tile",
+    "no_grad",
+    "inference_mode",
+    "set_grad_enabled",
+    "is_grad_enabled",
+    "topk",
+    "sort",
+    "gather",
+    "scatter",
+    "einsum",
+    "save",
+    "load",
+    "diag",
+    "distributions",
+    "linalg",
 ]
 
 
@@ -393,7 +420,19 @@ def slice(input: Tensor, dim: int, start: int | None = None, end: int | None = N
 
 
 def cat(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
-    return cat_from_tensors(tensors, dim=dim)
+    # Pairwise cat for >2 tensors (runtime only supports 2)
+    ts = list(tensors)
+    while len(ts) > 2:
+        new_ts: list[Tensor] = []
+        for i in range(0, len(ts), 2):
+            if i + 1 < len(ts):
+                new_ts.append(cat_from_tensors([ts[i], ts[i + 1]], dim=dim))
+            else:
+                new_ts.append(ts[i])
+        ts = new_ts
+    if len(ts) == 2:
+        return cat_from_tensors([ts[0], ts[1]], dim=dim)
+    return ts[0]
 
 
 def stack(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
@@ -720,8 +759,234 @@ def det(x: Tensor) -> Tensor:
     return x.det()
 
 
+def triu(x: Tensor, diagonal: int = 0) -> Tensor:
+    return triu_from_tensor(x, diagonal)
+
+
 def triangular_solve(a: Tensor, b: Tensor, upper: bool = False) -> Tensor:
     return a.triangular_solve(b, upper=upper)
+
+
+# ── Einsum ────────────────────────────────────────────────────────
+
+def einsum(equation: str, *operands: Tensor) -> Tensor:
+    """Einstein summation convention. Supports simple cases like 'ij,jk->ik'."""
+    parts = equation.replace(" ", "").split("->")
+    input_eq = parts[0]
+    output_eq = parts[1] if len(parts) > 1 else ""
+    input_terms = input_eq.split(",")
+    ops = list(operands)
+    if len(input_terms) == 1:
+        # Single operand: diagonal or trace-like
+        return _einsum_single_op(input_terms[0], output_eq, ops[0])
+    elif len(input_terms) == 2:
+        a_idx = input_terms[0]
+        b_idx = input_terms[1]
+        a, b = ops[0], ops[1]
+        # Determine sum dims (letters in both a and b but not in output)
+        sum_dims = set(a_idx) & set(b_idx) - set(output_eq)
+        keep_dims = set(output_eq)
+        # Find the common dim for matmul
+        if len(a_idx) == 2 and len(b_idx) == 2 and len(sum_dims) == 1:
+            # ij,jk->ik or similar
+            sum_char = next(iter(sum_dims))
+            a_sum_pos = a_idx.index(sum_char)
+            b_sum_pos = b_idx.index(sum_char)
+            # Transpose a so sum dim is last
+            if a_sum_pos == 0:
+                a = a.transpose(0, 1)
+            # Transpose b so sum dim is first
+            if b_sum_pos == 1:
+                b = b.transpose(0, 1)
+            return a.matmul(b)
+        # General case: use elementwise mul and sum
+        # Broadcast align shapes
+        all_dims_str = "".join(dict.fromkeys(a_idx + b_idx))
+        a_shape_map = {c: a.shape[a_idx.index(c)] for c in a_idx}
+        b_shape_map = {c: b.shape[b_idx.index(c)] for c in b_idx}
+        expand_shape = []
+        a_strides = []
+        b_strides = []
+        sz = 1
+        for c in all_dims_str:
+            asz = a_shape_map.get(c, 1)
+            bsz = b_shape_map.get(c, 1)
+            expand_shape.append(max(asz, bsz))
+            a_strides.append(sz if c in a_idx else 0)
+            b_strides.append(sz if c in b_idx else 0)
+            sz *= expand_shape[-1]
+        a_exp = a.reshape([a_shape_map.get(c, 1) if c in a_idx else 1 for c in all_dims_str])
+        b_exp = b.reshape([b_shape_map.get(c, 1) if c in b_idx else 1 for c in all_dims_str])
+        # Expand and multiply
+        expanded = a_exp * b_exp
+        # Sum over dims not in output
+        sum_dims_list = [all_dims_str.index(c) for c in sum_dims]
+        if sum_dims_list:
+            result = expanded
+            for d in reversed(sorted(sum_dims_list)):
+                result = result.sum(dim=d)
+            if output_eq:
+                # Reorder to match output_eq
+                perm = [all_dims_str.index(c) for c in output_eq if c in all_dims_str]
+                if perm:
+                    result = result.permute(perm)
+        else:
+            result = expanded
+        return result
+    raise NotImplementedError(f"einsum only supports 1 or 2 operands, got {len(input_terms)}")
+
+
+def _einsum_single_op(input_str: str, output_str: str, x: Tensor) -> Tensor:
+    """Handle single operand einsum like 'ii->i' (diagonal) or 'ij->ji' (transpose)."""
+    if len(input_str) == 2 and len(output_str) == 2:
+        if input_str == output_str:
+            return x
+        # Transpose
+        perm = [input_str.index(c) for c in output_str]
+        return x.permute(perm)
+    if len(input_str) == 2 and len(output_str) == 1 and input_str[0] == input_str[1]:
+        # ii -> i: diagonal
+        n = x.shape[0]
+        vals = [x.tolist()[i * n + i] for i in range(n)]
+        from ._tensor import tensor_from_data
+        return tensor_from_data(vals, x.dtype)
+    if len(input_str) == 2 and len(output_str) == 0:
+        # ij -> : trace (sum of diagonal)
+        return x.sum()
+    return x
+
+
+# ── Save / Load ──────────────────────────────────────────────────
+
+def save(obj: object, f: str) -> None:
+    from ._save import save as _save
+    _save(obj, f)
+
+
+def load(f: str, map_location: object = None, weights_only: bool = False) -> object:
+    from ._save import load as _load
+    return _load(f, map_location=map_location, weights_only=weights_only)
+
+
+# ── diag ─────────────────────────────────────────────────────────
+
+def diag(x: Tensor) -> Tensor:
+    return x.diag()
+
+
+# Make submodules accessible
+from torch import nn as nn
+from torch import optim as optim
+from torch import jit as jit
+from torch import utils as utils
+from torch import distributions as distributions
+from torch import linalg as linalg
+
+
+# ── Creation ops ─────────────────────────────────────────────────
+
+def eye(n: int, m: int | None = None, dtype: str = "float32") -> Tensor:
+    rows = n
+    cols = m if m is not None else n
+    data: list[float] = []
+    for i in range(rows):
+        for j in range(cols):
+            data.append(1.0 if i == j else 0.0)
+    return tensor_from_data(data, [rows, cols], dtype=dtype)
+
+
+def randint(low: int, high: int | None = None, size: int | Sequence[int] | None = None, dtype: str = "int64") -> Tensor:
+    if high is None:
+        low, high = 0, low
+    if size is None:
+        size = [1]
+    if isinstance(size, int):
+        size = [size]
+    r = rand(list(size))
+    span = float(high - low)
+    scaled = r.mul(span).add(float(low))
+    return scaled.to(dtype)
+
+
+def randperm(n: int, dtype: str = "int64") -> Tensor:
+    import random
+    indices = list(range(n))
+    random.shuffle(indices)
+    return tensor_from_data(indices, [n], dtype=dtype)
+
+
+def linspace(start: float, end: float, steps: int, dtype: str = "float32") -> Tensor:
+    if steps < 2:
+        return full([steps], start, dtype=dtype)
+    step = (end - start) / (steps - 1)
+    return arange(start=start, end=end + step * 0.5, step=step, dtype=dtype)
+
+
+def logspace(start: float, end: float, steps: int, dtype: str = "float32") -> Tensor:
+    return linspace(start, end, steps, dtype=dtype).pow(10.0)
+
+
+# ── Shape ops ────────────────────────────────────────────────────
+
+def split(tensor: Tensor, split_size: int | list[int], dim: int = 0) -> list[Tensor]:
+    return tensor.split(split_size, dim=dim)
+
+
+def chunk(tensor: Tensor, chunks: int, dim: int = 0) -> list[Tensor]:
+    return tensor.chunk(chunks, dim=dim)
+
+
+def repeat(tensor: Tensor, *sizes: int) -> Tensor:
+    return tensor.repeat(*sizes)
+
+
+def tile(tensor: Tensor, *sizes: int) -> Tensor:
+    return tensor.repeat(*sizes)
+
+
+def topk(tensor: Tensor, k: int, dim: int = -1, largest: bool = True) -> tuple[Tensor, Tensor]:
+    return topk_from_tensor(tensor, k, dim=dim, largest=largest)
+
+
+def sort(tensor: Tensor, dim: int = -1, descending: bool = False) -> tuple[Tensor, Tensor]:
+    return sort_from_tensor(tensor, dim=dim, descending=descending)
+
+
+def gather(tensor: Tensor, dim: int, index: Tensor) -> Tensor:
+    return gather_from_tensor(tensor, dim, index)
+
+
+def scatter(tensor: Tensor, dim: int, index: Tensor, src: Tensor | float) -> Tensor:
+    return scatter_from_tensor(tensor, dim, index, src)
+
+
+# ── Context managers ────────────────────────────────────────────
+
+class no_grad:
+    def __enter__(self) -> no_grad:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        pass
+
+
+class inference_mode:
+    def __init__(self, mode: bool = True) -> None:
+        pass
+
+    def __enter__(self) -> inference_mode:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        pass
+
+
+def set_grad_enabled(mode: bool) -> None:
+    pass
+
+
+def is_grad_enabled() -> bool:
+    return False
 
 
 # ── Dtype constants ──────────────────────────────────────────────
@@ -732,3 +997,10 @@ int32 = "int32"
 int64 = "int64"
 uint8 = "uint8"
 bool_ = "bool"
+
+
+# Make submodules accessible
+from torch import nn as nn
+from torch import optim as optim
+from torch import jit as jit
+from torch import utils as utils

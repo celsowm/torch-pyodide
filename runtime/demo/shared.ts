@@ -2,9 +2,21 @@ import initPy from "../../python/torch/__init__.py?raw";
 import cudaPy from "../../python/torch/cuda.py?raw";
 import runtimePy from "../../python/torch/_runtime.py?raw";
 import tensorPy from "../../python/torch/_tensor.py?raw";
+import savePy from "../../python/torch/_save.py?raw";
 import nnInitPy from "../../python/torch/nn/__init__.py?raw";
 import nnModulesPy from "../../python/torch/nn/modules.py?raw";
 import nnFunctionalPy from "../../python/torch/nn/functional.py?raw";
+import nnInitPyRaw from "../../python/torch/nn/init.py?raw";
+import nnRnnPy from "../../python/torch/nn/rnn.py?raw";
+import nnTransformerPy from "../../python/torch/nn/transformer.py?raw";
+import nnMultiheadAttentionPy from "../../python/torch/nn/multihead_attention.py?raw";
+import nnUtilsInitPy from "../../python/torch/nn/utils/__init__.py?raw";
+import jitInitPy from "../../python/torch/jit/__init__.py?raw";
+import optimInitPy from "../../python/torch/optim/__init__.py?raw";
+import utilsInitPy from "../../python/torch/utils/__init__.py?raw";
+import utilsDataInitPy from "../../python/torch/utils/data/__init__.py?raw";
+import linalgInitPy from "../../python/torch/linalg/__init__.py?raw";
+import distributionsInitPy from "../../python/torch/distributions/__init__.py?raw";
 import { installTorchRuntime } from "../src";
 
 type PyodideApi = {
@@ -54,10 +66,29 @@ for name in list(sys.modules):
   pyodide.FS.writeFile("/home/pyodide/torch/cuda.py", cudaPy);
   pyodide.FS.writeFile("/home/pyodide/torch/_runtime.py", runtimePy);
   pyodide.FS.writeFile("/home/pyodide/torch/_tensor.py", tensorPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/_save.py", savePy);
   pyodide.FS.mkdirTree("/home/pyodide/torch/nn");
   pyodide.FS.writeFile("/home/pyodide/torch/nn/__init__.py", nnInitPy);
   pyodide.FS.writeFile("/home/pyodide/torch/nn/modules.py", nnModulesPy);
   pyodide.FS.writeFile("/home/pyodide/torch/nn/functional.py", nnFunctionalPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/nn/init.py", nnInitPyRaw);
+  pyodide.FS.writeFile("/home/pyodide/torch/nn/rnn.py", nnRnnPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/nn/transformer.py", nnTransformerPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/nn/multihead_attention.py", nnMultiheadAttentionPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/nn/utils");
+  pyodide.FS.writeFile("/home/pyodide/torch/nn/utils/__init__.py", nnUtilsInitPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/jit");
+  pyodide.FS.writeFile("/home/pyodide/torch/jit/__init__.py", jitInitPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/optim");
+  pyodide.FS.writeFile("/home/pyodide/torch/optim/__init__.py", optimInitPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/utils");
+  pyodide.FS.writeFile("/home/pyodide/torch/utils/__init__.py", utilsInitPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/utils/data");
+  pyodide.FS.writeFile("/home/pyodide/torch/utils/data/__init__.py", utilsDataInitPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/linalg");
+  pyodide.FS.writeFile("/home/pyodide/torch/linalg/__init__.py", linalgInitPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/distributions");
+  pyodide.FS.writeFile("/home/pyodide/torch/distributions/__init__.py", distributionsInitPy);
   pyodide.runPython(`
 import sys
 home = "/home/pyodide"
