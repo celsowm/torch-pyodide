@@ -322,7 +322,12 @@ test.describe("all playground examples", () => {
   ];
 
   for (const ex of examples) {
-    test(`${ex.id} runs without error`, async ({ page }) => {
+    test(`${ex.id} runs without error @webgpu`, async ({ page }) => {
+      const hasWebGPU = await page.evaluate(() => Boolean((navigator as any).gpu));
+      if (!hasWebGPU) {
+        test.skip();
+        return;
+      }
       test.setTimeout(120000);
       await page.goto("/demo/index.html?force_fallback=1");
 
