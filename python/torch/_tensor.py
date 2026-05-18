@@ -1284,7 +1284,7 @@ def conv2d_from_tensors(
     bias_list: list[float] | None = None
     bias_id: int | None = None
     if bias is not None:
-        bias_list = list(bias.numpy())
+        bias_list = bias.tolist()
     else:
         bias_id = None
     meta = _run_js_awaitable(runtime.conv2d(
