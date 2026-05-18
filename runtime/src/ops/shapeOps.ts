@@ -333,6 +333,29 @@ export class ShapeOps {
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
   }
 
+  async repeat(tensorId: number, sizes: number[]): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const outShape = meta.shape.map((s, i) => s * (sizes[i] ?? 1));
+    const outLength = product(outShape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
+    const outShapePadded = padShapeTo4(outShape);
+    const inStrides = computeStrides(meta.shape);
+    const outStrides = computeStrides(outShape);
+    const params = new Uint32Array([
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
+      inStrides[0], inStrides[1], inStrides[2], inStrides[3],
+      outStrides[0], outStrides[1], outStrides[2], outStrides[3],
+      meta.shape.length, outLength, 0, 0,
+    ]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
+    const pipeline = getOrCreatePipeline(PERMUTE_ND_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, meta.dtype, outLength);
+  }
+
   async indexSelect(tensorId: number, dim: number, indicesId: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     const meta = this.deviceMgr.getTensorMeta(tensorId);

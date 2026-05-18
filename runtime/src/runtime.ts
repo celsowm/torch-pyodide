@@ -547,6 +547,10 @@ export class TorchPyodideRuntime {
     return this.shapeOps.flip(tensorId, dims);
   }
 
+  async repeat(tensorId: number, sizes: number[]): Promise<TensorHandle> {
+    return this.shapeOps.repeat(tensorId, sizes);
+  }
+
   /** Execute a batch of operations — all compute work is accumulated and submitted once. */
   async runBatch<T>(fn: () => Promise<T>): Promise<T> {
     this.deviceMgr.beginFrame();
