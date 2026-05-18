@@ -25,8 +25,8 @@ running_var = bn.running_var.tolist()
 
 out = {
     "x_shape": list(x.shape),
-    "output_train": [round(v, 4) for v in y_train.tolist()],
-    "output_eval": [round(v, 4) for v in y_eval.tolist()],
+    "output_train": [[round(v, 4) for v in row] for row in y_train.tolist()],
+    "output_eval": [[round(v, 4) for v in row] for row in y_eval.tolist()],
     "running_mean": [round(v, 4) for v in running_mean],
     "running_var": [round(v, 4) for v in running_var],
 }
