@@ -287,6 +287,17 @@
     { "id": "torch.norm", "kind": "module_func", "params": ["x", "p"] },
     { "id": "Tensor.norm", "kind": "tensor_method" },
     { "id": "nn.functional.bilinear", "kind": "nn_func" },
-    { "id": "nn.Bilinear", "kind": "nn_class" }
+    { "id": "nn.Bilinear", "kind": "nn_class" },
+    { "id": "torch.cholesky", "kind": "module_func" },
+    { "id": "Tensor.cholesky", "kind": "tensor_method" },
+    { "id": "torch.lu", "kind": "module_func" },
+    { "id": "Tensor.lu", "kind": "tensor_method" },
+    { "id": "torch.inv", "kind": "module_func" },
+    { "id": "Tensor.inv", "kind": "tensor_method" },
+    { "id": "torch.triangular_solve", "kind": "module_func" },
+    { "id": "Tensor.triangular_solve", "kind": "tensor_method" },
+    { "id": "torch.det", "kind": "module_func" },
+    { "id": "Tensor.det", "kind": "tensor_method" },
+    { "id": "Tensor.item", "kind": "tensor_method" }
   ]
 }

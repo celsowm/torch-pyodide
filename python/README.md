@@ -1,8 +1,33 @@
 # torch-pyodide
 
 **PyTorch-compatible API that runs entirely in the browser.**
+Built on [Pyodide](https://pyodide.org) and [WebGPU](https://www.w3.org/TR/webgpu/).
 
-Built on [Pyodide](https://pyodide.org) and [WebGPU](https://www.w3.org/TR/webgpu/), `torch-pyodide` lets you write PyTorch code that executes on the GPU inside the browser — no server, no CUDA, no installation beyond `pip install torch-pyodide`.
+## Try it now
+
+[Open the playground](https://celsowm.github.io/torch-pyodide/playground/) — write and run PyTorch code in your browser.
+
+## Install
+
+### In Pyodide (browser)
+
+```python
+import micropip
+await micropip.install("torch-pyodide")
+import torch
+
+x = torch.randn((3, 4))
+w = torch.randn((4, 5))
+y = x.matmul(w)
+print(y.shape)  # (3, 5)
+```
+
+### Locally (with Python + Node.js)
+
+```bash
+pip install torch-pyodide
+# Requires Node.js 20+ and a WebGPU-capable browser/device
+```
 
 ## What works
 
@@ -16,25 +41,6 @@ Built on [Pyodide](https://pyodide.org) and [WebGPU](https://www.w3.org/TR/webgp
 - **Indexing**: `select`, `slice`, `index_select`, `masked_select`, `masked_fill`, `where`
 - **Neural network** (`torch.nn`): `Linear`, `Bilinear`, `Conv2d`, `BatchNorm1d/2d`, `LayerNorm`, `Dropout`, pooling, loss functions, activations
 - **CUDA stub**: `torch.cuda.is_available()`, `torch.cuda.device_count()`, etc.
-
-## Quick start
-
-```python
-import torch
-
-x = torch.randn((3, 4))
-w = torch.randn((4, 5))
-y = x.matmul(w)
-print(y.shape)  # (3, 5)
-
-# Neural networks
-model = torch.nn.Sequential(
-    torch.nn.Linear(4, 16),
-    torch.nn.ReLU(),
-    torch.nn.Linear(16, 2),
-)
-logits = model(x)
-```
 
 ## License
 

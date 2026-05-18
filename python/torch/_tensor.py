@@ -134,6 +134,86 @@ class Tensor:
         else:
             return (self.abs() ** p).sum() ** (1.0 / p)
 
+    def cholesky(self) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.cholesky(self._id))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def lu(self) -> tuple["Tensor", "Tensor"]:
+        runtime = _get_runtime()
+        result = _run_js_awaitable(runtime.lu(self._id))
+        a_meta = result[0]
+        p_meta = result[1]
+        a_id, a_shape, a_dtype = _js_meta_to_tuple(a_meta)
+        p_id, p_shape, p_dtype = _js_meta_to_tuple(p_meta)
+        return Tensor(a_id, a_shape, a_dtype), Tensor(p_id, p_shape, p_dtype)
+
+    def triangular_solve(self, b: "Tensor", upper: bool = False) -> "Tensor":
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.triangularSolve(self._id, b._id, upper))
+        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, shape, dtype)
+
+    def item(self) -> float:
+        return _run_js_awaitable(_get_runtime().toList(self._id))[0]
+
+    def det(self) -> "Tensor":
+        from ._tensor import tensor_from_data
+        n = self._shape[-1]
+        a_lu, pivot = self.lu()
+        pivot_data = _run_js_awaitable(_get_runtime().toList(pivot._id))
+        pivot_data = [int(x) for x in pivot_data]
+        visited = [False] * n
+        sign = 1
+        for i in range(n):
+            if not visited[i]:
+                j = i
+                while not visited[j]:
+                    visited[j] = True
+                    j = pivot_data[j]
+                if j != i:
+                    sign *= -1
+        a_data = _run_js_awaitable(_get_runtime().toList(a_lu._id))
+        u_diag_prod = 1.0
+        for i in range(n):
+            u_diag_prod *= a_data[i * n + i]
+        return tensor_from_data(sign * u_diag_prod, self._dtype)
+
+    def inv(self) -> "Tensor":
+        from .__init__ import zeros, tril, triu, cat, ones
+        from ._tensor import tensor_from_data
+        n = self._shape[-1]
+        a_lu, pivot = self.lu()
+        # Extract L: tril with diagonal=-1 + identity
+        l_part = tril(a_lu, diagonal=-1)
+        # Create identity for diagonal of L
+        eye_data = [0.0] * (n * n)
+        for i in range(n):
+            eye_data[i * n + i] = 1.0
+        l_full = tensor_from_data(eye_data, self._dtype).reshape([n, n]) + l_part
+        # Extract U: triu with diagonal=0
+        u_full = triu(a_lu, diagonal=0)
+        # Solve for each column of identity
+        inv_cols = []
+        for j in range(n):
+            col = tensor_from_data([1.0 if i == j else 0.0 for i in range(n)], self._dtype).reshape([n, 1])
+            y = l_full.triangular_solve(col, upper=False)
+            x = u_full.triangular_solve(y, upper=True)
+            inv_cols.append(x)
+        return cat(inv_cols, dim=1)
+
+    def det(self) -> "Tensor":
+        return det_from_tensor(self)
+
+    def diag(self) -> "Tensor":
+        from .__init__ import zeros
+        n = self._shape[-1]
+        result = zeros([n], dtype=self._dtype)
+        for i in range(n):
+            result._set_scalar(i, self._get_scalar(i, i))
+        return result
+
     def sum(self) -> "Tensor":
         return sum_from_tensor(self)
 

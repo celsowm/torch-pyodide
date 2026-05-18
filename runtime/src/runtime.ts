@@ -8,6 +8,7 @@ import { ReductionOps } from "./ops/reductionOps.js";
 import { ShapeOps } from "./ops/shapeOps.js";
 import { CompareOps } from "./ops/compareOps.js";
 import { MaskingOps } from "./ops/maskingOps.js";
+import { LinalgOps } from "./ops/linalgOps.js";
 
 export class TorchPyodideRuntime {
   private deviceMgr = new DeviceManager();
@@ -18,6 +19,7 @@ export class TorchPyodideRuntime {
   private shapeOps: ShapeOps;
   private compareOps: CompareOps;
   private maskingOps: MaskingOps;
+  private linalgOps: LinalgOps;
 
   constructor() {
     setDeviceManager(this.deviceMgr);
@@ -29,6 +31,7 @@ export class TorchPyodideRuntime {
     this.shapeOps = new ShapeOps(dm);
     this.compareOps = new CompareOps(dm);
     this.maskingOps = new MaskingOps(dm);
+    this.linalgOps = new LinalgOps(dm);
   }
 
   async init(gpuProvider?: GPU | null): Promise<void> {
@@ -584,6 +587,18 @@ export class TorchPyodideRuntime {
 
   async memoryReserved(_deviceIndex?: number): Promise<number> {
     return this.deviceMgr.memoryReserved();
+  }
+
+  async cholesky(tensorId: number): Promise<TensorHandle> {
+    return this.linalgOps.cholesky(tensorId);
+  }
+
+  async lu(tensorId: number): Promise<TensorHandle[]> {
+    return this.linalgOps.lu(tensorId);
+  }
+
+  async triangularSolve(aId: number, bId: number, upper: boolean): Promise<TensorHandle> {
+    return this.linalgOps.triangularSolve(aId, bId, upper);
   }
 }
 

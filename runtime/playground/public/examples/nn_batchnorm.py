@@ -1,4 +1,5 @@
 import json
+import torch
 import torch.nn as nn
 
 bn = nn.BatchNorm1d(4)

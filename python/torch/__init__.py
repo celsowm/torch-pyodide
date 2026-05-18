@@ -236,89 +236,9 @@ def ones(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
     return ones_from_shape(shape, dtype=dtype)
 
 
-def rand(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return rand_from_shape(shape, dtype=dtype)
 
 
-def randn(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return randn_from_shape(shape, dtype=dtype)
-
-
-def arange(
-    start: float,
-    end: float | None = None,
-    step: float = 1.0,
-    dtype: str = "float32",
-) -> Tensor:
-    return arange_from_values(start=start, end=end, step=step, dtype=dtype)
-
-
-def full(shape: int | Sequence[int], fill_value: float, dtype: str = "float32") -> Tensor:
-    return full_from_shape(shape=shape, fill_value=fill_value, dtype=dtype)
-
-
-def full_like(input: Tensor, fill_value: float, dtype: str | None = None) -> Tensor:
-    return full_like_from_tensor(input, fill_value=fill_value, dtype=dtype)
-
-
-def zeros_like(input: Tensor, dtype: str | None = None) -> Tensor:
-    return zeros_like_from_tensor(input, dtype=dtype)
-
-
-def ones_like(input: Tensor, dtype: str | None = None) -> Tensor:
-    return ones_like_from_tensor(input, dtype=dtype)
-
-
-def empty(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return empty_from_shape(shape, dtype=dtype)
-
-
-def empty_like(input: Tensor, dtype: str | None = None) -> Tensor:
-    return empty_like_from_tensor(input, dtype=dtype)
-
-
-def add(a: Tensor, b: Tensor) -> Tensor:
-    return a.add(b)
-
-
-def sub(a: Tensor, b: Tensor) -> Tensor:
-    return a.sub(b)
-
-
-def mul(a: Tensor, b: Tensor) -> Tensor:
-    return a.mul(b)
-
-
-def div(a: Tensor, b: Tensor) -> Tensor:
-    return a.div(b)
-
-
-def matmul(a: Tensor, b: Tensor) -> Tensor:
-    return a.matmul(b)
-
-
-def mm(a: Tensor, b: Tensor) -> Tensor:
-    return a.mm(b)
-
-
-def bmm(a: Tensor, b: Tensor) -> Tensor:
-    return a.bmm(b)
-
-
-def mv(a: Tensor, b: Tensor) -> Tensor:
-    return a.mv(b)
-
-
-def dot(a: Tensor, b: Tensor) -> Tensor:
-    return a.dot(b)
-
-
-def outer(a: Tensor, b: Tensor) -> Tensor:
-    return a.outer(b)
-
-
-def norm(x: Tensor, p: float | str = "fro") -> Tensor:
-    return x.norm(p)
+    return a.triangular_solve(b, upper=upper)
 
 
 def relu(x: Tensor) -> Tensor:
@@ -703,3 +623,23 @@ def masked_select(input: Tensor, mask: Tensor) -> Tensor:
 
 def masked_fill(input: Tensor, mask: Tensor, value: float) -> Tensor:
     return masked_fill_from_tensor(input, mask=mask, value=value)
+
+
+def cholesky(x: Tensor) -> Tensor:
+    return x.cholesky()
+
+
+def lu(x: Tensor) -> tuple[Tensor, Tensor]:
+    return x.lu()
+
+
+def inv(x: Tensor) -> Tensor:
+    return x.inv()
+
+
+def det(x: Tensor) -> Tensor:
+    return x.det()
+
+
+def triangular_solve(a: Tensor, b: Tensor, upper: bool = False) -> Tensor:
+    return a.triangular_solve(b, upper=upper)

@@ -1,4 +1,5 @@
 import json
+import torch
 import torch.nn as nn
 
 conv = nn.Conv2d(1, 4, 3)

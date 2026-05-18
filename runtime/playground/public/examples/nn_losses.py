@@ -1,4 +1,5 @@
 import json
+import torch
 import torch.nn.functional as F
 
 logits = torch.randn((2, 3))

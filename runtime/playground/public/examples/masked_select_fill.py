@@ -2,7 +2,7 @@ import json
 import torch
 
 x = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
-mask = torch.tensor([[1.0, 0.0, 1.0], [0.0, 1.0, 0.0]])
+mask = torch.tensor([[True, False, True], [False, True, False]])
 filled = torch.masked_fill(x, mask, 99.0)
 selected = torch.masked_select(x, mask)
 out = {
