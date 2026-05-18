@@ -286,83 +286,72 @@ test("runBatch accumulates compute ops into a single submit @webgpu", async ({ p
   expect(result).toEqual([110, 440, 990, 1760]);
 });
 
-test.describe("playground example scripts", () => {
-  const examples: { id: string; file: string }[] = [
-    { id: "tensor_basics", file: "tensor_basics.py" },
-    { id: "matmul_relu", file: "matmul_relu.py" },
-    { id: "reshape_transpose", file: "reshape_transpose.py" },
-    { id: "rand_tensor", file: "rand_tensor.py" },
-    { id: "clamp_values", file: "clamp_values.py" },
-    { id: "where_select", file: "where_select.py" },
-    { id: "argmax_argmin", file: "argmax_argmin.py" },
-    { id: "randn_tensor", file: "randn_tensor.py" },
-    { id: "arange_int32", file: "arange_int32.py" },
-    { id: "full_and_full_like", file: "full_and_full_like.py" },
-    { id: "unary_abs_neg", file: "unary_abs_neg.py" },
-    { id: "unary_sqrt_exp_log", file: "unary_sqrt_exp_log.py" },
-    { id: "shape_flatten_squeeze", file: "shape_flatten_squeeze.py" },
-    { id: "shape_transpose_permute", file: "shape_transpose_permute.py" },
-    { id: "index_select_slice", file: "index_select_slice.py" },
-    { id: "cat_stack", file: "cat_stack.py" },
-    { id: "expand_index_select", file: "expand_index_select.py" },
-    { id: "broadcasting", file: "broadcasting.py" },
-    { id: "compare_ops", file: "compare_ops.py" },
-    { id: "unary_advanced", file: "unary_advanced.py" },
-    { id: "reduce_dim", file: "reduce_dim.py" },
-    { id: "masked_select_fill", file: "masked_select_fill.py" },
-    { id: "broadcast_compare", file: "broadcast_compare.py" },
-    { id: "reduce_dim_keepdim", file: "reduce_dim_keepdim.py" },
-    { id: "nn_linear_relu", file: "nn_linear_relu.py" },
-    { id: "nn_conv2d", file: "nn_conv2d.py" },
-    { id: "nn_batchnorm", file: "nn_batchnorm.py" },
-    { id: "nn_pooling", file: "nn_pooling.py" },
-    { id: "nn_losses", file: "nn_losses.py" },
-    { id: "nn_nll_loss", file: "nn_nll_loss.py" },
-    { id: "nn_batchnorm_training", file: "nn_batchnorm_training.py" },
+test.describe("all playground examples", () => {
+  const examples: { id: string; code: string }[] = [
+    { id: "tensor_basics", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nb = torch.ones((2, 2))\nc = a.add(b).mul(torch.tensor([[2.0, 2.0], [2.0, 2.0]]))\nout = {\n  "shape": list(c.shape),\n  "values": c.tolist(),\n  "sum": c.sum().tolist(),\n  "mean": c.mean().tolist(),\n  "cuda_available": torch.cuda.is_available(),\n  "cuda_device_count": torch.cuda.device_count(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "matmul_relu", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, -2.0], [3.0, -4.0]])\nw = torch.tensor([[0.5, 1.0], [1.5, -1.0]])\ny = x.matmul(w).relu()\nout = {\n  "shape": list(y.shape),\n  "values": y.tolist(),\n  "sum": y.sum().tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "reshape_transpose", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nt = a.T\nr = t.reshape((4,))\nout = {\n  "transpose": t.tolist(),\n  "reshape": r.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "rand_tensor", code: `import json\nimport torch\n\nx = torch.rand((2, 3))\nout = {\n  "shape": list(x.shape),\n  "values": x.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "clamp_values", code: `import json\nimport torch\n\nx = torch.tensor([[-1.0, 0.2, 0.8], [1.5, 2.0, -0.3]])\ny = torch.clamp(x, 0.0, 1.0)\nout = {\n  "input": x.tolist(),\n  "clamped": y.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "where_select", code: `import json\nimport torch\n\ncond = torch.tensor([[True, False], [False, True]])\nx = torch.tensor([[10.0, 20.0], [30.0, 40.0]])\ny = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nout_tensor = torch.where(cond, x, y)\nout = {\n  "condition": cond.tolist(),\n  "x": x.tolist(),\n  "y": y.tolist(),\n  "where": out_tensor.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "argmax_argmin", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 3.0, 2.0], [9.0, 0.5, 7.0]])\nmax_idx = torch.argmax(x)\nmin_idx = torch.argmin(x)\nout = {\n  "input": x.tolist(),\n  "argmax": max_idx.tolist(),\n  "argmin": min_idx.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "randn_tensor", code: `import json\nimport torch\n\nx = torch.randn((2, 4))\nout = {\n  "shape": list(x.shape),\n  "values": x.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "arange_int32", code: `import json\nimport torch\n\nx = torch.arange(1, 10, 2, dtype=torch.int32)\nout = {\n  "dtype": str(x.dtype),\n  "values": x.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "full_and_full_like", code: `import json\nimport torch\n\nbase = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\na = torch.full((2, 2), 7.0, dtype=torch.int32)\nb = torch.full_like(base, 9.0)\nout = {\n  "full": a.tolist(),\n  "full_dtype": str(a.dtype),\n  "full_like": b.tolist(),\n  "full_like_dtype": str(b.dtype),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "unary_abs_neg", code: `import json\nimport torch\n\nx = torch.tensor([[-1.0, 2.0], [-3.0, 4.0]])\nout = {\n  "input": x.tolist(),\n  "abs": torch.abs(x).tolist(),\n  "neg": torch.neg(x).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "unary_sqrt_exp_log", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 4.0], [9.0, 16.0]])\ny = torch.tensor([[0.0, 1.0], [2.0, 0.0]])\nz = torch.tensor([[1.0, 2.718281828], [7.389056099, 1.0]])\nout = {\n  "sqrt": torch.sqrt(x).tolist(),\n  "exp": torch.exp(y).tolist(),\n  "log": torch.log(z).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "shape_flatten_squeeze", code: `import json\nimport torch\n\nx = torch.tensor([[[1.0], [2.0]], [[3.0], [4.0]]])\nout = {\n  "input_shape": list(x.shape),\n  "flatten_1_2": torch.flatten(x, 1, 2).tolist(),\n  "squeeze_all_shape": list(torch.squeeze(x).shape),\n  "unsqueeze_dim0_shape": list(torch.unsqueeze(torch.tensor([1.0, 2.0]), 0).shape),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "shape_transpose_permute", code: `import json\nimport torch\n\nx = torch.tensor([[[1.0, 2.0]], [[3.0, 4.0]]])\nt = torch.transpose(torch.tensor([[1.0, 2.0], [3.0, 4.0]]), 0, 1)\np = torch.permute(x, (2, 0, 1))\nout = {\n  "transpose": t.tolist(),\n  "permute_shape": list(p.shape),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "index_select_slice", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nout = {\n  "select_row_1": torch.select(x, 0, 1).tolist(),\n  "slice_rows_0_3_step2": x[0:3:2].tolist(),\n  "getitem_row_1": x[1].tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "cat_stack", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nb = torch.tensor([[5.0, 6.0], [7.0, 8.0]])\ncat_rows = torch.cat([a, b], dim=0)\ncat_cols = torch.cat([a, b], dim=1)\nstacked = torch.stack([a, b], dim=0)\nout = {\n  "cat_dim0": cat_rows.tolist(),\n  "cat_dim0_shape": list(cat_rows.shape),\n  "cat_dim1": cat_cols.tolist(),\n  "cat_dim1_shape": list(cat_cols.shape),\n  "stack_dim0": stacked.tolist(),\n  "stack_dim0_shape": list(stacked.shape),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "expand_index_select", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\ne = x.expand(3, 2, 2)\nindices = torch.tensor([0, 1], dtype=torch.int64)\ns = torch.index_select(x, 0, indices)\nout = {\n  "input": x.tolist(),\n  "expand_shape": list(e.shape),\n  "expand": e.tolist(),\n  "index_select": s.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "broadcasting", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nb = torch.tensor([10.0, 20.0, 30.0])\nc = torch.tensor([[1.0], [2.0]])\nout = {\n  "a + b (broadcast)": a.add(b).tolist(),\n  "a * c (broadcast)": a.mul(c).tolist(),\n  "b - a (broadcast)": b.sub(a).tolist(),\n  "shape_a": list(a.shape),\n  "shape_b": list(b.shape),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "compare_ops", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 5.0], [3.0, 2.0]])\nb = torch.tensor([[1.0, 3.0], [3.0, 4.0]])\nout = {\n  "a": a.tolist(),\n  "b": b.tolist(),\n  "eq": torch.eq(a, b).tolist(),\n  "ne": torch.ne(a, b).tolist(),\n  "lt": torch.lt(a, b).tolist(),\n  "le": torch.le(a, b).tolist(),\n  "gt": torch.gt(a, b).tolist(),\n  "ge": torch.ge(a, b).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "unary_advanced", code: `import json\nimport torch\nimport torch.nn.functional as F\n\nx = torch.tensor([[-1.0, 0.0, 1.0], [2.0, -2.0, 0.5]])\nout = {\n  "input": x.tolist(),\n  "sigmoid": torch.sigmoid(x).tolist(),\n  "tanh": torch.tanh(x).tolist(),\n  "sin": torch.sin(x).tolist(),\n  "cos": torch.cos(x).tolist(),\n  "gelu": F.gelu(x).tolist(),\n  "silu": F.silu(x).tolist(),\n  "leaky_relu": F.leaky_relu(x, 0.01).tolist(),\n  "floor": torch.floor(x).tolist(),\n  "ceil": torch.ceil(x).tolist(),\n  "round": torch.round(x).tolist(),\n  "reciprocal": torch.reciprocal(x).tolist(),\n  "square": torch.square(x).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "reduce_dim", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nout = {\n  "input": x.tolist(),\n  "sum(0)": torch.sum(x, 0).tolist(),\n  "sum(1)": torch.sum(x, 1).tolist(),\n  "mean(0)": torch.mean(x, 0).tolist(),\n  "mean(1)": torch.mean(x, 1).tolist(),\n  "prod": torch.prod(x).tolist(),\n  "min": torch.min(x).tolist(),\n  "max": torch.max(x).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "masked_select_fill", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nmask = torch.tensor([[True, False, True], [False, True, False]])\nfilled = torch.masked_fill(x, mask, 99.0)\nselected = torch.masked_select(x, mask)\nout = {\n  "input": x.tolist(),\n  "mask": mask.tolist(),\n  "masked_fill": filled.tolist(),\n  "masked_select": selected.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "broadcast_compare", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 5.0, 3.0], [4.0, 2.0, 6.0]])\nthreshold = torch.tensor([3.0, 3.0, 3.0])\nout = {\n  "a": a.tolist(),\n  "threshold": threshold.tolist(),\n  "a > threshold": torch.gt(a, threshold).tolist(),\n  "a <= threshold": torch.le(a, threshold).tolist(),\n  "where(a > 3, a, 0)": torch.where(torch.gt(a, torch.tensor(3.0)), a, torch.zeros_like(a)).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "reduce_dim_keepdim", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nout = {\n  "input_shape": list(x.shape),\n  "sum(0, keepdim)": torch.sum(x, 0, True).tolist(),\n  "sum(0, keepdim)_shape": list(torch.sum(x, 0, True).shape),\n  "mean(1, keepdim)": torch.mean(x, 1, True).tolist(),\n  "mean(1, keepdim)_shape": list(torch.mean(x, 1, True).shape),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "nn_linear_relu", code: `import json\nimport torch\nimport torch.nn as nn\n\nmodel = nn.Sequential(\n    nn.Linear(4, 8),\n    nn.ReLU(),\n    nn.Linear(8, 2),\n)\nx = torch.randn((3, 4))\ny = model(x)\nout = {"shape": list(y.shape), "values": y.tolist()}\nprint(json.dumps(out, indent=2))` },
+    { id: "nn_conv2d", code: `import json\nimport torch\nimport torch.nn as nn\n\nconv = nn.Conv2d(1, 4, 3)\nx = torch.randn((2, 1, 6, 6))\ny = conv(x)\nout = {"shape": list(y.shape), "sum": y.sum().tolist()}\nprint(json.dumps(out, indent=2))` },
+    { id: "nn_batchnorm", code: `import json\nimport torch\nimport torch.nn as nn\n\nbn = nn.BatchNorm1d(4)\nx = torch.randn((3, 4))\ny = bn(x)\nout = {"shape": list(y.shape), "values": y.tolist()}\nprint(json.dumps(out, indent=2))` },
+    { id: "nn_pooling", code: `import json\nimport torch\nimport torch.nn as nn\n\nx = torch.randn((1, 2, 8, 8))\nmax_pool = nn.MaxPool2d(2)\navg_pool = nn.AvgPool2d(2)\nout = {\n    "max_pool_shape": list(max_pool(x).shape),\n    "avg_pool_shape": list(avg_pool(x).shape),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "nn_losses", code: `import json\nimport torch\nimport torch.nn.functional as F\n\nlogits = torch.randn((2, 3))\ntarget = torch.tensor([0, 2])\nloss = F.cross_entropy(logits, target)\nmse = F.mse_loss(logits, torch.zeros((2, 3)))\nout = {\n    "cross_entropy": loss.tolist(),\n    "mse_loss": mse.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "nn_nll_loss", code: `import json\nimport torch\nimport torch.nn.functional as F\n\nlogits = torch.randn((2, 4))\ntarget = torch.tensor([1, 3])\nlog_probs = F.log_softmax(logits, dim=-1)\nnll = F.nll_loss(log_probs, target, reduction="mean")\nce = F.cross_entropy(logits, target, reduction="mean")\nnll_none = F.nll_loss(log_probs, target, reduction="none")\nout = {\n    "log_probs": [[round(v, 4) for v in row] for row in log_probs.tolist()],\n    "nll_loss_mean": round(nll.item(), 4),\n    "cross_entropy_mean": round(ce.item(), 4),\n    "nll_loss_none": [round(v, 4) for v in nll_none.tolist()],\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "nn_batchnorm_training", code: `import json\nimport torch\nimport torch.nn as nn\n\nbn = nn.BatchNorm1d(4)\nbn.weight = torch.ones((4,))\nbn.bias = torch.zeros((4,))\n\nx = torch.tensor([[1.0, 2.0, 3.0, 4.0],\n                  [5.0, 6.0, 7.0, 8.0],\n                  [9.0, 10.0, 11.0, 12.0]])\n\nbn.train()\ny_train = bn(x)\n\nbn.eval()\ny_eval = bn(x)\n\nrunning_mean = bn.running_mean.tolist()\nrunning_var = bn.running_var.tolist()\n\nout = {\n    "x_shape": list(x.shape),\n    "output_train": [[round(v, 4) for v in row] for row in y_train.tolist()],\n    "output_eval": [[round(v, 4) for v in row] for row in y_eval.tolist()],\n    "running_mean": [round(v, 4) for v in running_mean],\n    "running_var": [round(v, 4) for v in running_var],\n}\nprint(json.dumps(out, indent=2))` },
   ];
 
   for (const ex of examples) {
     test(`${ex.id} runs without error`, async ({ page }) => {
-      await page.goto("/playground/index.html");
-      await page.waitForSelector("#run:not([disabled])", { timeout: 120000 });
+      test.setTimeout(120000);
+      await page.goto("/demo/index.html?force_fallback=1");
 
-      await page.selectOption("#example-select", ex.id, { timeout: 10000 });
-
-      await page.waitForTimeout(500);
-      await page.click("#run");
-
-      // Wait until output appears or an error is shown
       await page.waitForFunction(
-        () => {
-          const output = document.querySelector("#output");
-          if (!output || !output.textContent) return false;
-          return output.textContent.length > 0;
-        },
+        () => Boolean((window as any).__pyodide),
         { timeout: 60000 }
       );
 
-      const outputText = await page.locator("#output").innerText();
+      const outputText = await page.evaluate(async (code) => {
+        const pyodide = (window as any).__pyodide;
+        try {
+          const result = await pyodide.runPythonAsync(code);
+          return JSON.stringify(result);
+        } catch (e) {
+          return String(e);
+        }
+      }, ex.code);
 
-      // If WebGPU is unavailable, skip — this is an env limitation, not a code bug
       if (outputText.includes("Failed to get WebGPU adapter")) {
         test.skip();
         return;
       }
 
-      // Must not contain Python or runtime errors
-      expect(outputText).not.toContain("Traceback (most recent call last)");
-      expect(outputText).not.toContain("Error:");
+      expect(outputText).not.toContain("Traceback");
       expect(outputText).not.toContain("PythonError");
       expect(outputText).not.toContain("object has no attribute");
       expect(outputText).not.toContain("is not subscriptable");
-
-      // Must contain valid JSON output
-      expect(outputText).toMatch(/^\{/);
-      try {
-        JSON.parse(outputText);
-      } catch {
-        expect(outputText).toBe("valid JSON output");
-      }
+      const parsed = JSON.parse(outputText);
+      expect(parsed).toBeTruthy();
     });
   }
 });

@@ -21,6 +21,7 @@ async function main() {
     const { pyodide, indexURL } = bootstrap;
     installMode = bootstrap.installMode;
     installDetail = bootstrap.installDetail;
+    (globalThis as any).__pyodide = pyodide;
 
     try {
       pyodide.runPython(`
