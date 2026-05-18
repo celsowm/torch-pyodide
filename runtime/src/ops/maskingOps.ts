@@ -57,7 +57,7 @@ export class MaskingOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(MASKED_FILL_SHADER, "main");
-    dispatchCompute(pipeline, [out, mask.buffer, paramBuffer], calculateWorkgroups(length));
+    dispatchCompute(pipeline, [meta.buffer, mask.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);

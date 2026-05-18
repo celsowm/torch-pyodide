@@ -269,7 +269,7 @@ export class ReductionOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(LOG_SOFTMAX_SHADER, "log_softmax");
-    dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
+      dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
@@ -303,7 +303,7 @@ export class ReductionOps {
       });
       this.deviceMgr.writeBuffer(paramBuffer, 0, params);
       const pipeline = getOrCreatePipeline(UNARY_SHADER, op);
-      dispatchCompute(pipeline, [a.buffer, out, paramBuffer], calculateWorkgroups(aLength));
+      dispatchCompute(pipeline, [a.buffer, out], calculateWorkgroups(aLength));
       await syncDevice();
       paramBuffer.destroy();
       return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, aLength);

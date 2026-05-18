@@ -283,7 +283,7 @@ export class ShapeOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(TRIL_SHADER, "main");
-    dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
+    dispatchCompute(pipeline, [out, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
@@ -306,7 +306,7 @@ export class ShapeOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(TRIU_SHADER, "main");
-    dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
+    dispatchCompute(pipeline, [out, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);

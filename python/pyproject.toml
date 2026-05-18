@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torch-pyodide"
-version = "0.0.8"
+version = "0.0.9"
 description = "PyTorch-compatible API that runs in the browser — via Pyodide + WebGPU."
 requires-python = ">=3.11"
 readme = "README.md"
