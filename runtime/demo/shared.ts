@@ -2,6 +2,9 @@ import initPy from "../../python/torch/__init__.py?raw";
 import cudaPy from "../../python/torch/cuda.py?raw";
 import runtimePy from "../../python/torch/_runtime.py?raw";
 import tensorPy from "../../python/torch/_tensor.py?raw";
+import nnInitPy from "../../python/torch/nn/__init__.py?raw";
+import nnModulesPy from "../../python/torch/nn/modules.py?raw";
+import nnFunctionalPy from "../../python/torch/nn/functional.py?raw";
 import { installTorchRuntime } from "../src";
 
 type PyodideApi = {
@@ -51,6 +54,10 @@ for name in list(sys.modules):
   pyodide.FS.writeFile("/home/pyodide/torch/cuda.py", cudaPy);
   pyodide.FS.writeFile("/home/pyodide/torch/_runtime.py", runtimePy);
   pyodide.FS.writeFile("/home/pyodide/torch/_tensor.py", tensorPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/nn");
+  pyodide.FS.writeFile("/home/pyodide/torch/nn/__init__.py", nnInitPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/nn/modules.py", nnModulesPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/nn/functional.py", nnFunctionalPy);
   pyodide.runPython(`
 import sys
 home = "/home/pyodide"
