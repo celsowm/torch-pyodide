@@ -722,3 +722,13 @@ def det(x: Tensor) -> Tensor:
 
 def triangular_solve(a: Tensor, b: Tensor, upper: bool = False) -> Tensor:
     return a.triangular_solve(b, upper=upper)
+
+
+# ── Dtype constants ──────────────────────────────────────────────
+
+float32 = "float32"
+float64 = "float64"
+int32 = "int32"
+int64 = "int64"
+uint8 = "uint8"
+bool_ = "bool"
