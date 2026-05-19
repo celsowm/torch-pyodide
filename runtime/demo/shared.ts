@@ -1,4 +1,5 @@
 import initPy from "../../python/torch/__init__.py?raw";
+import autogradPy from "../../python/torch/autograd.py?raw";
 import cudaPy from "../../python/torch/cuda.py?raw";
 import runtimePy from "../../python/torch/_runtime.py?raw";
 import tensorPy from "../../python/torch/_tensor.py?raw";
@@ -63,6 +64,7 @@ for name in list(sys.modules):
 `);
   pyodide.FS.mkdirTree("/home/pyodide/torch");
   pyodide.FS.writeFile("/home/pyodide/torch/__init__.py", initPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/autograd.py", autogradPy);
   pyodide.FS.writeFile("/home/pyodide/torch/cuda.py", cudaPy);
   pyodide.FS.writeFile("/home/pyodide/torch/_runtime.py", runtimePy);
   pyodide.FS.writeFile("/home/pyodide/torch/_tensor.py", tensorPy);
