@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torch-pyodide"
-version = "0.0.16"
-description = "PyTorch-compatible module for the browser with full autograd, runtime-backed backprop, multi-operand einsum, advanced DataLoader, and reflect/replicate/circular padding — via Pyodide + WebGPU."
+version = "0.0.17"
+description = "PyTorch-compatible module with autograd, runtime-backed backprop, multi-operand einsum, advanced DataLoader, reflect/replicate/circular padding, float16/bfloat16, and 11 new playground examples — via Pyodide + WebGPU."
 requires-python = ">=3.11"
 readme = "README.md"
 
