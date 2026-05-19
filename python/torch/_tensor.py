@@ -1487,11 +1487,11 @@ def cat_from_tensors(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
 
 
 def stack_from_tensors(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
-    runtime = _get_runtime()
-    ids = [t._id for t in tensors]
-    meta = _run_js_awaitable(runtime.stack(ids, int(dim)))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    if len(tensors) == 0:
+        raise ValueError("stack requires at least one tensor")
+    from .__init__ import cat
+    unsqueezed = [t.unsqueeze(dim) for t in tensors]
+    return cat(unsqueezed, dim=dim)
 
 
 def expand_from_tensor(tensor: Tensor, shape: int | Sequence[int]) -> Tensor:
