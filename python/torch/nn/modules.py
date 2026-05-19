@@ -649,3 +649,110 @@ class AdaptiveMaxPool2d(Module):
         kernel_w = w - (ow - 1) * stride_w
         from .functional import max_pool2d
         return max_pool2d(x, (kernel_h, kernel_w), (stride_h, stride_w), 0)
+
+
+# ── Pooling 1D ───────────────────────────────────────────────────
+
+class MaxPool1d(Module):
+    def __init__(self, kernel_size: int, stride: int | None = None, padding: int = 0) -> None:
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import max_pool1d
+        return max_pool1d(x, self.kernel_size, self.stride, self.padding)
+
+
+class AvgPool1d(Module):
+    def __init__(self, kernel_size: int, stride: int | None = None, padding: int = 0) -> None:
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import avg_pool1d
+        return avg_pool1d(x, self.kernel_size, self.stride, self.padding)
+
+
+class AdaptiveAvgPool1d(Module):
+    def __init__(self, output_size: int) -> None:
+        super().__init__()
+        self.output_size = output_size
+
+    def forward(self, x: Tensor) -> Tensor:
+        length = x.shape[2]
+        out_len = self.output_size
+        stride = length // out_len
+        kernel = length - (out_len - 1) * stride
+        from .functional import avg_pool1d
+        return avg_pool1d(x, kernel, stride, 0)
+
+
+class Upsample(Module):
+    """Upsampling layer."""
+    def __init__(
+        self,
+        size: int | tuple[int, int] | None = None,
+        scale_factor: float | None = None,
+        mode: str = "nearest",
+        align_corners: bool | None = None,
+    ) -> None:
+        super().__init__()
+        self.size = size
+        self.scale_factor = scale_factor
+        self.mode = mode
+        self.align_corners = align_corners
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import interpolate
+        return interpolate(x, self.size, self.scale_factor, self.mode, self.align_corners)
+
+
+# ── Loss modules ─────────────────────────────────────────────────
+
+class CrossEntropyLoss(Module):
+    """Cross entropy loss module."""
+    def __init__(self, reduction: str = "mean", ignore_index: int = -100) -> None:
+        super().__init__()
+        self.reduction = reduction
+        self.ignore_index = ignore_index
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import cross_entropy
+        return cross_entropy(input, target, self.reduction)
+
+
+class BCEWithLogitsLoss(Module):
+    """Binary cross entropy with logits module."""
+    def __init__(self, reduction: str = "mean") -> None:
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import binary_cross_entropy_with_logits
+        return binary_cross_entropy_with_logits(input, target, reduction=self.reduction)
+
+
+class MSELoss(Module):
+    """Mean squared error loss module."""
+    def __init__(self, reduction: str = "mean") -> None:
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import mse_loss
+        return mse_loss(input, target, reduction=self.reduction)
+
+
+class L1Loss(Module):
+    """L1 loss module."""
+    def __init__(self, reduction: str = "mean") -> None:
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import l1_loss
+        return l1_loss(input, target, reduction=self.reduction)

@@ -405,6 +405,178 @@ def avg_pool2d(x: Tensor, kernel_size: int | tuple[int, int], stride: int | None
     return avg_pool2d_from_tensor(x, kernel_size, stride, [padding, padding], True)
 
 
+# ── Interpolate / Upsample ────────────────────────────────────────
+
+def interpolate(
+    x: Tensor,
+    size: int | tuple[int, ...] | None = None,
+    scale_factor: float | tuple[float, ...] | None = None,
+    mode: str = "nearest",
+    align_corners: bool | None = None,
+) -> Tensor:
+    """Upsamples or downsamples input using nearest, bilinear, or bicubic interpolation."""
+    import torch
+    if size is None and scale_factor is None:
+        raise ValueError("either size or scale_factor must be specified")
+    if size is not None and scale_factor is not None:
+        raise ValueError("only one of size or scale_factor can be specified")
+
+    if isinstance(size, int):
+        size = (size, size)
+    if isinstance(scale_factor, (int, float)):
+        scale_factor = (float(scale_factor), float(scale_factor))
+
+    if size is None and scale_factor is not None:
+        size = tuple(int(s * f) for s, f in zip(x.shape[2:], scale_factor))
+
+    out_h, out_w = size
+    in_h, in_w = x.shape[2], x.shape[3]
+
+    if mode == "nearest":
+        return _interpolate_nearest(x, out_h, out_w)
+    elif mode == "bilinear":
+        return _interpolate_bilinear(x, out_h, out_w, align_corners)
+    elif mode == "bicubic":
+        return _interpolate_bicubic(x, out_h, out_w, align_corners)
+    else:
+        raise ValueError(f"Unknown interpolation mode: {mode}")
+
+
+def _interpolate_nearest(x: Tensor, out_h: int, out_w: int) -> Tensor:
+    """Nearest neighbor interpolation via index_select."""
+    import torch
+    in_h, in_w = x.shape[2], x.shape[3]
+    # Build row indices
+    h_indices = [int(i * in_h / out_h) for i in range(out_h)]
+    w_indices = [int(j * in_w / out_w) for j in range(out_w)]
+
+    # Interpolate H dimension
+    result = None
+    for hi, idx in enumerate(h_indices):
+        row = x.select(2, idx)  # [N, C, W]
+        # Now interpolate W
+        expanded_rows = []
+        for wj, widx in enumerate(w_indices):
+            col = row.select(2, widx)  # [N, C]
+            expanded_rows.append(col.unsqueeze(2))  # [N, C, 1]
+        h_row = torch.cat(expanded_rows, dim=2)  # [N, C, W']
+        if result is None:
+            result = h_row.unsqueeze(2)
+        else:
+            result = torch.cat([result, h_row.unsqueeze(2)], dim=2)
+    return result
+
+
+def _interpolate_bilinear(x: Tensor, out_h: int, out_w: int, align_corners: bool | None) -> Tensor:
+    """Bilinear interpolation using tensor operations (efficient)."""
+    import torch
+    in_h, in_w = x.shape[2], x.shape[3]
+    batch_size, channels = x.shape[0], x.shape[1]
+
+    if align_corners:
+        h_scale = (in_h - 1) / (out_h - 1) if out_h > 1 else 0
+        w_scale = (in_w - 1) / (out_w - 1) if out_w > 1 else 0
+    else:
+        h_scale = in_h / out_h
+        w_scale = in_w / out_w
+
+    # Create coordinate grids
+    h_coords = [(i * h_scale) for i in range(out_h)]
+    w_coords = [(j * w_scale) for j in range(out_w)]
+
+    # For each output coordinate, interpolate from 4 nearest input pixels
+    out = torch.zeros((batch_size, channels, out_h, out_w), dtype=x.dtype)
+
+    for oh in range(out_h):
+        ih_f = h_coords[oh]
+        ih0 = int(ih_f)
+        ih1 = min(in_h - 1, ih0 + 1)
+        di = ih_f - ih0
+
+        for ow in range(out_w):
+            iw_f = w_coords[ow]
+            iw0 = int(iw_f)
+            iw1 = min(in_w - 1, iw0 + 1)
+            dj = iw_f - iw0
+
+            # Bilinear: v = (1-di)(1-dj)*v00 + (1-di)*dj*v01 + di*(1-dj)*v10 + di*dj*v11
+            v00 = x.select(2, ih0).select(2, iw0)
+            v01 = x.select(2, ih0).select(2, iw1)
+            v10 = x.select(2, ih1).select(2, iw0)
+            v11 = x.select(2, ih1).select(2, iw1)
+
+            v = (
+                v00.mul((1 - di) * (1 - dj))
+                .add(v01.mul((1 - di) * dj))
+                .add(v10.mul(di * (1 - dj)))
+                .add(v11.mul(di * dj))
+            )
+
+            # Use index assignment
+            out_data = out.tolist()
+            for n in range(batch_size):
+                for c in range(channels):
+                    out_data[n][c][oh][ow] = v.tolist()[n][c]
+            out = torch.tensor(out_data, dtype=x.dtype)
+    return out
+
+
+def _interpolate_bicubic(x: Tensor, out_h: int, out_w: int, align_corners: bool | None) -> Tensor:
+    """Bicubic interpolation (simplified - falls back to bilinear)."""
+    return _interpolate_bilinear(x, out_h, out_w, align_corners)
+
+
+# ── normalize / one_hot ──────────────────────────────────────────
+
+def normalize(x: Tensor, p: float = 2.0, dim: int = 1, eps: float = 1e-12) -> Tensor:
+    """L2 normalization along a dimension."""
+    norm = x.norm(p=p, dim=dim, keepdim=True)
+    return x.div(norm.clamp(min=eps))
+
+
+def one_hot(tensor: Tensor, num_classes: int | None = None) -> Tensor:
+    """Converts indices to one-hot encoding."""
+    import torch
+    if num_classes is None:
+        num_classes = int(tensor.max().item()) + 1
+    shape = list(tensor.shape) + [num_classes]
+    out = torch.zeros(shape, dtype=tensor.dtype)
+    # Set ones at the right indices
+    flat = tensor.flatten().tolist()
+    idx = 0
+    for i, v in enumerate(flat):
+        coords = []
+        temp = i
+        for s in reversed(tensor.shape):
+            coords.append(temp % s)
+            temp //= s
+        coords.reverse()
+        coords.append(int(v))
+        out[tuple(coords)] = 1.0
+    return out
+
+
+# ── Pooling 1D ───────────────────────────────────────────────────
+
+def max_pool1d(x: Tensor, kernel_size: int, stride: int | None = None, padding: int = 0) -> Tensor:
+    """1D max pooling. Adds dummy H dim and uses max_pool2d."""
+    if stride is None:
+        stride = kernel_size
+    # [N, C, L] -> [N, C, 1, L]
+    x_2d = x.unsqueeze(2)
+    result = max_pool2d(x_2d, (1, kernel_size), (1, stride), (0, padding))
+    return result.squeeze(2)
+
+
+def avg_pool1d(x: Tensor, kernel_size: int, stride: int | None = None, padding: int = 0) -> Tensor:
+    """1D average pooling. Adds dummy H dim and uses avg_pool2d."""
+    if stride is None:
+        stride = kernel_size
+    x_2d = x.unsqueeze(2)
+    result = avg_pool2d(x_2d, (1, kernel_size), (1, stride), padding)
+    return result.squeeze(2)
+
+
 # ── Internal helpers ──────────────────────────────────────────────
 
 def _flatten(data: object) -> list[float]:

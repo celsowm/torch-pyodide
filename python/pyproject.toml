@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torch-pyodide"
-version = "0.0.18"
-description = "PyTorch-compatible module with autograd, runtime-backed backprop, multi-operand einsum, advanced DataLoader, reflect/replicate/circular padding, float16/bfloat16, gradient clipping, and 11 init functions — via Pyodide + WebGPU."
+version = "0.0.19"
+description = "PyTorch-compatible module with autograd, interpolate/upsample, pooling 1D, loss modules, gradient clipping, nn.init, ModuleList, and float16/bfloat16 — via Pyodide + WebGPU."
 requires-python = ">=3.11"
 readme = "README.md"
 

@@ -192,6 +192,80 @@ def orthogonal_(tensor: object, gain: float = 1.0) -> object:
     return _assign_flat(tensor, out)
 
 
+def dirac_(tensor: object, groups: int = 1) -> object:
+    """Fills a {3, 4, 5}-dimensional tensor with the Dirac delta function."""
+    from torch import Tensor
+    if tensor.ndim not in (3, 4, 5):
+        raise ValueError("dirac_ only supports 3D, 4D, or 5D tensors")
+    dim1 = tensor.shape[0]
+    dim2 = tensor.shape[1]
+    if dim1 % groups != 0:
+        raise ValueError("tensor size must be divisible by groups")
+    dim2_per_group = dim2 // groups
+    min_dim = min(dim1, dim2_per_group)
+    flat = _flatten(tensor.tolist())  # type: ignore[union-attr]
+    n = len(flat)
+    out = [0.0] * n
+    # Set Dirac delta: identity matrix in the first two dimensions
+    for d in range(min_dim):
+        # Set the center of the kernel to 1
+        # For 3D: [out_channels, in_channels, kH*kW]
+        # For 4D: [out_channels, in_channels, kH, kW]
+        kernel_indices = []
+        nd = tensor.ndim
+        if nd == 3:
+            kh_kw = tensor.shape[2]
+            center = kh_kw // 2
+            kernel_indices = [(d, d * groups + d // dim1, center)]
+        elif nd == 4:
+            kh = tensor.shape[2]
+            kw = tensor.shape[3]
+            center_h = kh // 2
+            center_w = kw // 2
+            kernel_indices = [(d, d * groups + d // dim1, center_h, center_w)]
+        elif nd == 5:
+            kh = tensor.shape[2]
+            kw = tensor.shape[3]
+            kd = tensor.shape[4]
+            center_h = kh // 2
+            center_w = kw // 2
+            center_d = kd // 2
+            kernel_indices = [(d, d * groups + d // dim1, center_h, center_w, center_d)]
+        # Calculate flat index for this position
+        strides = _get_strides(tensor.shape)
+        for idx_tuple in kernel_indices:
+            flat_idx = sum(i * s for i, s in zip(idx_tuple, strides))
+            if flat_idx < n:
+                out[flat_idx] = 1.0
+    return _assign_flat(tensor, out)
+
+
+def eye_(tensor: object) -> object:
+    """Fills a 2D tensor with the identity matrix."""
+    from torch import Tensor
+    if tensor.ndim != 2:
+        raise ValueError("eye_ only supports 2D tensors")
+    rows, cols = tensor.shape[0], tensor.shape[1]
+    flat = _flatten(tensor.tolist())  # type: ignore[union-attr]
+    n = len(flat)
+    out = [0.0] * n
+    min_dim = min(rows, cols)
+    for i in range(min_dim):
+        idx = i * cols + i
+        if idx < n:
+            out[idx] = 1.0
+    return _assign_flat(tensor, out)
+
+
+def _get_strides(shape: Sequence[int]) -> list[int]:
+    strides = []
+    running = 1
+    for s in reversed(shape):
+        strides.append(running)
+        running *= s
+    return list(reversed(strides))
+
+
 def _flatten(data: object) -> list[float]:
     if isinstance(data, list):
         out: list[float] = []
