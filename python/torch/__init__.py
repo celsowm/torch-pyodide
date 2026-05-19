@@ -901,6 +901,23 @@ from torch import utils as utils
 from torch import distributions as distributions
 from torch import linalg as linalg
 
+# DataLoader utilities
+from torch.utils.data import (
+    Dataset,
+    TensorDataset,
+    DataLoader,
+    Sampler,
+    SequentialSampler,
+    RandomSampler,
+    BatchSampler,
+    SubsetRandomSampler,
+    WeightedRandomSampler,
+    ConcatDataset,
+    Subset,
+    default_collate,
+    default_convert,
+)
+
 
 # ── Creation ops ─────────────────────────────────────────────────
 
