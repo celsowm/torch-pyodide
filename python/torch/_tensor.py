@@ -243,8 +243,56 @@ class Tensor:
     def __neg__(self) -> "Tensor":
         return self.neg()
 
+    def __lt__(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import eq_from_tensors, ne_from_tensors, lt_from_tensors, le_from_tensors, gt_from_tensors, ge_from_tensors
+        if isinstance(other, float):
+            other = _scalar_to_tensor(other, self._dtype)
+        return lt_from_tensors(self, other)
+
+    def __le__(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import le_from_tensors
+        if isinstance(other, float):
+            other = _scalar_to_tensor(other, self._dtype)
+        return le_from_tensors(self, other)
+
+    def __gt__(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import gt_from_tensors
+        if isinstance(other, float):
+            other = _scalar_to_tensor(other, self._dtype)
+        return gt_from_tensors(self, other)
+
+    def __ge__(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import ge_from_tensors
+        if isinstance(other, float):
+            other = _scalar_to_tensor(other, self._dtype)
+        return ge_from_tensors(self, other)
+
+    def __eq__(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import eq_from_tensors
+        if isinstance(other, float):
+            other = _scalar_to_tensor(other, self._dtype)
+        return eq_from_tensors(self, other)
+
+    def __ne__(self, other: "Tensor | float") -> "Tensor":
+        from ._tensor import ne_from_tensors
+        if isinstance(other, float):
+            other = _scalar_to_tensor(other, self._dtype)
+        return ne_from_tensors(self, other)
+
     def __pow__(self, other: "Tensor | float") -> "Tensor":
         return pow_from_tensors(self, other) if isinstance(other, Tensor) else pow_from_tensors(self, _scalar_to_tensor(float(other), self._dtype))
+
+    def __and__(self, other: "Tensor") -> "Tensor":
+        return self.mul(other)
+
+    def __or__(self, other: "Tensor") -> "Tensor":
+        return self.add(other).clamp(0.0, 1.0)
+
+    def __xor__(self, other: "Tensor") -> "Tensor":
+        return (self.__or__(other)).__sub__(self.__and__(other))
+
+    def __invert__(self) -> "Tensor":
+        return _scalar_to_tensor(1.0, self._dtype).sub(self)
 
     def matmul(self, other: "Tensor") -> "Tensor":
         from .autograd import _Node, is_grad_enabled, _grad_matmul

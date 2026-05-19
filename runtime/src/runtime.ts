@@ -59,6 +59,10 @@ export class TorchPyodideRuntime {
     return this.creationOps.ones(shape, dtype);
   }
 
+  async setSeed(seed: number): Promise<void> {
+    return this.creationOps.setSeed(seed);
+  }
+
   async rand(shape: number[], dtype: string): Promise<TensorHandle> {
     return this.creationOps.rand(shape, dtype);
   }

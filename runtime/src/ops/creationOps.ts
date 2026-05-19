@@ -15,7 +15,13 @@ import {
 import { DeviceManager } from "./device.js";
 
 export class CreationOps {
+  private randomSeed: number = 42;
+
   constructor(private deviceMgr: DeviceManager) {}
+
+  async setSeed(seed: number): Promise<void> {
+    this.randomSeed = seed;
+  }
 
   async tensorFromData(data: number[], shape: number[], dtype: string): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
@@ -43,9 +49,9 @@ export class CreationOps {
     await this.deviceMgr.ensureReady();
     assertDType(dtype);
     const length = product(shape);
-    // All shaders use f32 internally; dtype is tracked in metadata
+    const seed = this.randomSeed++;
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const paramsData = new Uint32Array([Math.floor(Math.random() * 0xffffffff), length, 0, 0]);
+    const paramsData = new Uint32Array([seed >>> 0, length, 0, 0]);
     const paramsBuffer = this.deviceMgr.device!.createBuffer({
       size: paramsData.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
@@ -62,8 +68,9 @@ export class CreationOps {
     await this.deviceMgr.ensureReady();
     assertDType(dtype);
     const length = product(shape);
+    const seed = this.randomSeed++;
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const paramsData = new Uint32Array([Math.floor(Math.random() * 0xffffffff), length, 0, 0]);
+    const paramsData = new Uint32Array([seed >>> 0, length, 0, 0]);
     const paramsBuffer = this.deviceMgr.device!.createBuffer({
       size: paramsData.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,

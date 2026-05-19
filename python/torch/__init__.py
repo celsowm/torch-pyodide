@@ -110,6 +110,7 @@ from ._tensor import (
     sort_from_tensor,
     gather_from_tensor,
     scatter_from_tensor,
+    _get_runtime,
 )
 
 __all__ = [
@@ -277,6 +278,17 @@ def rand(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
 
 def randn(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
     return randn_from_shape(shape, dtype=dtype)
+
+
+def manual_seed(seed: int) -> None:
+    _get_runtime().setSeed(seed)
+
+
+def seed() -> int:
+    import random
+    s = random.randint(0, 2**31 - 1)
+    manual_seed(s)
+    return s
 
 
 def arange(
