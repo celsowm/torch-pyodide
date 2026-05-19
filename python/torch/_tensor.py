@@ -1300,9 +1300,16 @@ def empty_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tens
 
 
 def pow_from_tensors(a: Tensor, b: Tensor) -> Tensor:
+    from .autograd import _Node, is_grad_enabled, _grad_pow
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.pow(a._id, b._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and (a._requires_grad or b._requires_grad):
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: _grad_pow(g, a, b), [a, b])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
