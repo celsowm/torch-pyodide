@@ -745,7 +745,11 @@ class Tensor:
         return Tensor(tensor_id, out_shape, out_dtype)
 
     def slice(self, dim: int, start: int | None = None, end: int | None = None, step: int = 1) -> "Tensor":
+        from ._autograd import _Node, is_grad_enabled, _grad_slice
+
         runtime = _get_runtime()
+        resolved_start = start if start is not None else 0
+        resolved_end = end
         if start is None and end is None:
             meta = _run_js_awaitable(runtime.slice(self._id, int(dim), None, None, int(step)))
         elif end is None:
@@ -753,6 +757,13 @@ class Tensor:
         else:
             meta = _run_js_awaitable(runtime.slice(self._id, int(dim), int(start) if start is not None else None, int(end), int(step)))
         tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+        if is_grad_enabled() and self._requires_grad:
+            result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+            actual_start = resolved_start if start is not None else 0
+            actual_step = step
+            result._node = _Node(result, lambda g: (_grad_slice(g, self, dim, actual_start, resolved_end, actual_step),), [self])
+            return result
         return Tensor(tensor_id, out_shape, out_dtype)
 
     @property
@@ -2003,6 +2014,28 @@ def nll_loss_backward_from_tensors(
         int(batch_size),
         int(num_classes),
         float(scale),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def slice_backward_from_tensors(
+    grad_output: Tensor,
+    input_shape: list[int],
+    sliced_shape: list[int],
+    dim: int,
+    start: int,
+    step: int = 1,
+) -> Tensor:
+    """Backward pass of slice: scatter grad_output back to full tensor shape."""
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.sliceBackward(
+        grad_output._id,
+        list(input_shape),
+        list(sliced_shape),
+        int(dim),
+        int(start),
+        int(step),
     ))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)

@@ -48,7 +48,8 @@ def dropout(x: Tensor, p: float = 0.5, training: bool = True) -> Tensor:
     shape = list(x.shape)
     raw = x.tolist()
     import random as _random
-    _rng = _random.Random(42)
+    import time
+    _rng = _random.Random(int(time.time() * 1000) & 0xFFFFFFFF)
     flat_vals = _flatten(raw)
     out_flat = []
     for v in flat_vals:
@@ -65,7 +66,8 @@ def dropout2d(x: Tensor, p: float = 0.5, training: bool = True) -> Tensor:
     shape = list(x.shape)
     raw = x.tolist()
     import random as _random
-    _rng = _random.Random(42)
+    import time
+    _rng = _random.Random(int(time.time() * 1000) & 0xFFFFFFFF)
     batch, channels = shape[0], shape[1]
     flat_vals = _flatten(raw)
     out_flat = list(flat_vals)

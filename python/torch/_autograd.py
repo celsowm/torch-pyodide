@@ -472,14 +472,20 @@ def _grad_select(grad_output: Tensor, input_tensor: Tensor, dim: int, index: int
     return grad_input
 
 
-def _grad_slice(grad_output: Tensor, input_tensor: Tensor, dim: int, start: int, end: int) -> Tensor | None:
-    """d/dinput slice(input) = zeros_like(input); result[dim, start:end] = grad_output"""
+def _grad_slice(grad_output: Tensor, input_tensor: Tensor, dim: int, start: int, end: int, step: int = 1) -> Tensor | None:
+    """d/dinput slice(input) = scatter zeros_like(input) at [dim, start:end] with grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import zeros_like_from_tensor
-    grad_input = zeros_like_from_tensor(input_tensor)
-    # Simplificado: precisa de scatter_
-    return grad_input
+    from ._tensor import slice_backward_from_tensors
+    sliced_shape = list(grad_output.shape)
+    return slice_backward_from_tensors(
+        grad_output,
+        list(input_tensor.shape),
+        sliced_shape,
+        dim,
+        start,
+        step,
+    )
 
 
 def _grad_where(grad_output: Tensor, condition: Tensor, x: Tensor, y: Tensor) -> tuple[Tensor | None, Tensor | None, Tensor | None]:

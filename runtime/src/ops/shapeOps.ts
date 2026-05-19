@@ -12,6 +12,7 @@ import {
   PERMUTE_ND_SHADER,
   SELECT_SHADER,
   SLICE_SHADER,
+  SLICE_BACKWARD_SHADER,
   EXPAND_SHADER,
   INDEX_SELECT_SHADER,
   TRIL_SHADER,
@@ -190,6 +191,44 @@ export class ShapeOps {
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, outShape, meta.dtype, outLength);
+  }
+
+  async sliceBackward(
+    gradOutputId: number,
+    inputShape: number[],
+    slicedShape: number[],
+    dim: number,
+    start: number,
+    step: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const gradOutput = this.deviceMgr.getTensorMeta(gradOutputId);
+    const inputLength = product(inputShape);
+    const gradInput = createStorageBuffer(this.deviceMgr.device!, Math.max(4, inputLength * 4));
+
+    const inputShapePadded = padShapeTo4Left(slicedShape);
+    const outputShapePadded = padShapeTo4Left(inputShape);
+    const starts = [0, 0, 0, 0] as [number, number, number, number];
+    const steps = [1, 1, 1, 1] as [number, number, number, number];
+    const rank = inputShape.length;
+    const d = dim < 0 ? dim + rank : dim;
+    starts[d] = start;
+    steps[d] = step;
+
+    const params = new Int32Array([
+      inputShapePadded[0], inputShapePadded[1], inputShapePadded[2], inputShapePadded[3],
+      outputShapePadded[0], outputShapePadded[1], outputShapePadded[2], outputShapePadded[3],
+      starts[0], starts[1], starts[2], starts[3],
+      steps[0], steps[1], steps[2], steps[3],
+      rank, product(slicedShape), 0, 0,
+    ]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 80);
+
+    const pipeline = getOrCreatePipeline(SLICE_BACKWARD_SHADER, "slice_backward");
+    dispatchCompute(pipeline, [gradOutput.buffer, gradInput, paramBuffer], calculateWorkgroups(product(slicedShape)));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(gradInput, inputShape, gradOutput.dtype as SupportedDType, inputLength);
   }
 
   async cat(tensorIds: number[], dim: number): Promise<TensorHandle> {

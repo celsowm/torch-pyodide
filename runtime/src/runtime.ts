@@ -537,6 +537,17 @@ export class TorchPyodideRuntime {
     return this.shapeOps.slice(tensorId, dim, start, end, step);
   }
 
+  async sliceBackward(
+    gradOutputId: number,
+    inputShape: number[],
+    slicedShape: number[],
+    dim: number,
+    start: number,
+    step: number,
+  ): Promise<TensorHandle> {
+    return this.shapeOps.sliceBackward(gradOutputId, inputShape, slicedShape, dim, start, step);
+  }
+
   async cat(tensorIds: number[], dim: number): Promise<TensorHandle> {
     return this.shapeOps.cat(tensorIds, dim);
   }
