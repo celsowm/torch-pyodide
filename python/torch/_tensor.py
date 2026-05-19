@@ -124,7 +124,12 @@ class Tensor:
     cuda = detach
 
     def half(self) -> "Tensor":
-        return self
+        """Convert to float16. Note: WebGPU runtime uses float32 internally, so this is a dtype hint only."""
+        return Tensor(self._id, self._shape, "float16", _requires_grad=self._requires_grad)
+
+    def bfloat16(self) -> "Tensor":
+        """Convert to bfloat16. Note: WebGPU runtime uses float32 internally, so this is a dtype hint only."""
+        return Tensor(self._id, self._shape, "bfloat16", _requires_grad=self._requires_grad)
 
     def float(self) -> "Tensor":
         return self if self._dtype == "float32" else self.to("float32")

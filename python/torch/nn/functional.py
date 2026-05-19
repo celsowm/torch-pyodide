@@ -177,9 +177,7 @@ def layer_norm(x: Tensor, normalized_shape: int | Sequence[int], weight: Tensor 
 # ── Padding ───────────────────────────────────────────────────────
 
 def pad(x: Tensor, pad: Sequence[int], mode: str = "constant", value: float = 0.0) -> Tensor:
-    if mode != "constant":
-        raise NotImplementedError(f"padding mode '{mode}' not yet implemented")
-    if len(pad) == 0 or len(pad) > 4 or len(pad) % 2 != 0:
+    if len(pad) == 0 or len(pad) > 8 or len(pad) % 2 != 0:
         raise ValueError(f"invalid pad tuple: {pad}")
     result = x
     for i in range(0, len(pad), 2):
@@ -188,13 +186,91 @@ def pad(x: Tensor, pad: Sequence[int], mode: str = "constant", value: float = 0.
         right = pad[i + 1]
         if left == 0 and right == 0:
             continue
-        pad_shape = list(result.shape)
-        pad_shape[dim] = left
-        left_pad = torch.full(pad_shape, value, dtype=result.dtype)
-        pad_shape[dim] = right
-        right_pad = torch.full(pad_shape, value, dtype=result.dtype)
-        result = torch.cat([left_pad, result, right_pad], dim=dim)
+        if mode == "constant":
+            pad_shape = list(result.shape)
+            pad_shape[dim] = left
+            left_pad = torch.full(pad_shape, value, dtype=result.dtype)
+            pad_shape[dim] = right
+            right_pad = torch.full(pad_shape, value, dtype=result.dtype)
+            result = torch.cat([left_pad, result, right_pad], dim=dim)
+        elif mode == "reflect":
+            result = _pad_reflect(result, dim, left, right)
+        elif mode == "replicate":
+            result = _pad_replicate(result, dim, left, right)
+        elif mode == "circular":
+            result = _pad_circular(result, dim, left, right)
+        else:
+            raise NotImplementedError(f"padding mode '{mode}' not yet implemented")
     return result
+
+
+def _pad_reflect(x: Tensor, dim: int, left: int, right: int) -> Tensor:
+    """Reflect padding: pads with reflection of tensor at boundaries."""
+    dim_size = x.shape[dim]
+    parts = []
+    # Left padding: reflect from left boundary
+    if left > 0:
+        # indices: 1, 2, ..., left (modulated to reflect)
+        indices = []
+        for i in range(left, 0, -1):
+            idx = i % (2 * dim_size)
+            if idx >= dim_size:
+                idx = 2 * dim_size - 1 - idx
+            indices.append(idx)
+        left_part = x.index_select(dim, torch.tensor(indices, dtype=torch.int32))
+        parts.append(left_part)
+    parts.append(x)
+    # Right padding: reflect from right boundary
+    if right > 0:
+        indices = []
+        for i in range(right):
+            idx = (dim_size - 2 - i) % (2 * dim_size)
+            if idx < 0:
+                idx = -1 - idx
+            if idx >= dim_size:
+                idx = 2 * dim_size - 1 - idx
+            indices.append(idx)
+        right_part = x.index_select(dim, torch.tensor(indices, dtype=torch.int32))
+        parts.append(right_part)
+    if len(parts) == 1:
+        return parts[0]
+    return torch.cat(parts, dim=dim)
+
+
+def _pad_replicate(x: Tensor, dim: int, left: int, right: int) -> Tensor:
+    """Replicate padding: pads with replication of edge values."""
+    parts = []
+    if left > 0:
+        left_idx = [0] * left
+        left_part = x.index_select(dim, torch.tensor(left_idx, dtype=torch.int32))
+        parts.append(left_part)
+    parts.append(x)
+    if right > 0:
+        size = x.shape[dim]
+        right_idx = [size - 1] * right
+        right_part = x.index_select(dim, torch.tensor(right_idx, dtype=torch.int32))
+        parts.append(right_part)
+    if len(parts) == 1:
+        return parts[0]
+    return torch.cat(parts, dim=dim)
+
+
+def _pad_circular(x: Tensor, dim: int, left: int, right: int) -> Tensor:
+    """Circular padding: pads with circular repetition of tensor."""
+    parts = []
+    size = x.shape[dim]
+    if left > 0:
+        left_indices = list(range(size - left, size))
+        left_part = x.index_select(dim, torch.tensor(left_indices, dtype=torch.int32))
+        parts.append(left_part)
+    parts.append(x)
+    if right > 0:
+        right_indices = list(range(right))
+        right_part = x.index_select(dim, torch.tensor(right_indices, dtype=torch.int32))
+        parts.append(right_part)
+    if len(parts) == 1:
+        return parts[0]
+    return torch.cat(parts, dim=dim)
 
 
 # ── Activation functions (extended) ───────────────────────────────
