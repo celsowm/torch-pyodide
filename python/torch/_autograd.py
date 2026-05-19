@@ -731,3 +731,42 @@ def _grad_index_select(grad_output: Tensor, input_tensor: Tensor, dim: int, inde
     # Simplificado
     from ._tensor import zeros_like_from_tensor
     return zeros_like_from_tensor(input_tensor)
+
+
+# ── torch.autograd.grad ──────────────────────────────────────────
+
+def grad(
+    outputs: "Tensor | Sequence[Tensor]",
+    inputs: "Tensor | Sequence[Tensor]",
+    grad_outputs: "Tensor | Sequence[Tensor] | None" = None,
+    retain_graph: bool = False,
+    create_graph: bool = False,
+) -> tuple:
+    """Compute and return the sum of gradients of outputs w.r.t. inputs."""
+    from ._tensor import ones_like_from_tensor
+    if isinstance(outputs, list):
+        total = outputs[0]
+        for o in outputs[1:]:
+            total = total.add(o)
+    else:
+        total = outputs
+
+    if isinstance(inputs, list):
+        input_list = inputs
+    else:
+        input_list = [inputs]
+
+    if grad_outputs is None:
+        grad_outputs = ones_like_from_tensor(total)
+
+    total._backward(grad_outputs)
+
+    grads: list = []
+    for inp in input_list:
+        g = inp.grad if inp._requires_grad else None
+        grads.append(g)
+
+    if not retain_graph:
+        _clear_graph(total)
+
+    return tuple(grads)

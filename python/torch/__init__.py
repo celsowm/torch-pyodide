@@ -998,7 +998,7 @@ def scatter(tensor: Tensor, dim: int, index: Tensor, src: Tensor | float) -> Ten
 
 # ── Context managers ────────────────────────────────────────────
 
-from ._autograd import no_grad, inference_mode, set_grad_enabled, is_grad_enabled
+from ._autograd import no_grad, inference_mode, set_grad_enabled, is_grad_enabled, grad
 
 
 # ── Dtype constants ──────────────────────────────────────────────

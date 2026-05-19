@@ -54,6 +54,11 @@ class Tensor:
     def requires_grad(self, value: bool) -> None:
         self._requires_grad = value
 
+    def requires_grad_(self, requires_grad: bool = True) -> "Tensor":
+        """Sets this tensor's requires_grad attribute in-place."""
+        self._requires_grad = requires_grad
+        return self
+
     @property
     def is_leaf(self) -> bool:
         """Um tensor é leaf se não foi criado por uma operação (não tem _node)."""

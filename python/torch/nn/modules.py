@@ -68,6 +68,180 @@ class Sequential(Module):
             x = m(x)
         return x
 
+    def __getitem__(self, idx: int) -> Module:
+        return self._modules[str(idx)]
+
+    def __len__(self) -> int:
+        return len(self._modules)
+
+
+class ModuleList(Module):
+    """Holds submodules in a list. Behaves like a Python list."""
+    def __init__(self, modules=None) -> None:
+        super().__init__()
+        self._list: list[Module] = []
+        if modules is not None:
+            for m in modules:
+                self.append(m)
+
+    def append(self, module: Module) -> "ModuleList":
+        idx = len(self._list)
+        self._list.append(module)
+        self.register_module(str(idx), module)
+        return self
+
+    def extend(self, modules) -> "ModuleList":
+        for m in modules:
+            self.append(m)
+        return self
+
+    def insert(self, index: int, module: Module) -> None:
+        self._list.insert(index, module)
+        self._rebuild_dict()
+
+    def __getitem__(self, idx: int) -> Module:
+        return self._list[idx]
+
+    def __setitem__(self, idx: int, module: Module) -> None:
+        self._list[idx] = module
+        self._rebuild_dict()
+
+    def __delitem__(self, idx: int) -> None:
+        del self._list[idx]
+        self._rebuild_dict()
+
+    def __len__(self) -> int:
+        return len(self._list)
+
+    def __iter__(self):
+        return iter(self._list)
+
+    def __repr__(self) -> str:
+        lines = [f"  ({i}): {m}" for i, m in enumerate(self._list)]
+        return "ModuleList(\n" + "\n".join(lines) + "\n)"
+
+    def _rebuild_dict(self) -> None:
+        self._modules.clear()
+        for i, m in enumerate(self._list):
+            self._modules[str(i)] = m
+
+
+class ModuleDict(Module):
+    """Holds submodules in a dictionary."""
+    def __init__(self, modules=None) -> None:
+        super().__init__()
+        if modules is not None:
+            for name, m in modules.items():
+                self[name] = m
+
+    def __getitem__(self, key: str) -> Module:
+        return self._modules[key]
+
+    def __setitem__(self, key: str, module: Module) -> None:
+        self.register_module(key, module)
+
+    def __delitem__(self, key: str) -> None:
+        del self._modules[key]
+
+    def keys(self):
+        return self._modules.keys()
+
+    def values(self):
+        return self._modules.values()
+
+    def items(self):
+        return self._modules.items()
+
+    def __len__(self) -> int:
+        return len(self._modules)
+
+    def __iter__(self):
+        return iter(self._modules)
+
+    def __repr__(self) -> str:
+        lines = [f"  ({k}): {m}" for k, m in self._modules.items()]
+        return "ModuleDict(\n" + "\n".join(lines) + "\n)"
+
+
+# ── Parameter ─────────────────────────────────────────────────────
+
+class Parameter(Tensor):
+    """A Tensor that is automatically registered as a parameter when assigned to a Module."""
+    def __new__(cls, data=None, requires_grad=True, dtype="float32"):
+        import torch
+        if data is None:
+            data = torch.tensor([], dtype=dtype)
+        if isinstance(data, list):
+            import torch
+            data = torch.tensor(data, dtype=dtype)
+        instance = super().__new__(cls, data._id, list(data.shape), data.dtype)
+        instance._requires_grad = requires_grad
+        instance._data = data
+        return instance
+
+    def __repr__(self) -> str:
+        return f"Parameter containing:\n{super().__repr__()}"
+
+
+class ParameterList(Module):
+    """Holds parameters in a list."""
+    def __init__(self, parameters=None) -> None:
+        super().__init__()
+        self._params: list[Parameter] = []
+        if parameters is not None:
+            for p in parameters:
+                self.append(p)
+
+    def append(self, param: Parameter) -> "ParameterList":
+        idx = len(self._params)
+        self._params.append(param)
+        self.register_parameter(str(idx), param)
+        return self
+
+    def extend(self, parameters) -> "ParameterList":
+        for p in parameters:
+            self.append(p)
+        return self
+
+    def __getitem__(self, idx: int) -> Parameter:
+        return self._params[idx]
+
+    def __setitem__(self, idx: int, param: Parameter) -> None:
+        self._params[idx] = param
+
+    def __iter__(self):
+        return iter(self._params)
+
+    def __len__(self) -> int:
+        return len(self._params)
+
+
+class ParameterDict(Module):
+    """Holds parameters in a dictionary."""
+    def __init__(self, parameters=None) -> None:
+        super().__init__()
+        if parameters is not None:
+            for name, p in parameters.items():
+                self[name] = p
+
+    def __getitem__(self, key: str) -> Parameter:
+        return self._parameters[key]
+
+    def __setitem__(self, key: str, param: Parameter) -> None:
+        self.register_parameter(key, param)
+
+    def keys(self):
+        return self._parameters.keys()
+
+    def values(self):
+        return self._parameters.values()
+
+    def items(self):
+        return self._parameters.items()
+
+    def __len__(self) -> int:
+        return len(self._parameters)
+
 
 # ── Linear ────────────────────────────────────────────────────────
 

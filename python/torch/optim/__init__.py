@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Iterable, Callable, Optional
 from torch import Tensor
 
 
@@ -8,14 +8,14 @@ class Optimizer:
     def __init__(self, params: Iterable[Tensor], defaults: dict[str, object]) -> None:
         self.param_groups: list[dict[str, object]] = []
         self.state: dict[int, dict[str, object]] = {}
-        
+
         # Inicializar grupos de parâmetros
         param_list = list(params)
         self.param_groups.append({
             "params": param_list,
             **defaults,
         })
-        
+
         # Inicializar estado para cada parâmetro
         for p in param_list:
             if not p._requires_grad:
@@ -31,8 +31,16 @@ class Optimizer:
                 if p.grad is not None:
                     p.grad = None
 
-    def step(self) -> None:
-        raise NotImplementedError("Optimizer step not implemented")
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        """Performs a single optimization step.
+        
+        Args:
+            closure: A closure that reevaluates the model and returns the loss.
+        """
+        loss = None
+        if closure is not None:
+            loss = closure()
+        return loss
 
     def state_dict(self) -> dict[str, object]:
         """Retorna o estado do otimizador como dicionário."""
@@ -75,7 +83,8 @@ class SGD(Optimizer):
         }
         super().__init__(params, defaults)
 
-    def step(self) -> None:
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        loss = super().step(closure)
         for group in self.param_groups:
             lr = float(group["lr"])
             momentum = float(group["momentum"])
@@ -118,6 +127,7 @@ class SGD(Optimizer):
                 # Usamos sub_ in-place se disponível, ou criamos novo tensor
                 p._id = p.sub(update)._id
                 p._shape = p.sub(update)._shape
+        return loss
 
 
 class Adam(Optimizer):
@@ -150,7 +160,8 @@ class Adam(Optimizer):
         }
         super().__init__(params, defaults)
 
-    def step(self) -> None:
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        loss = super().step(closure)
         for group in self.param_groups:
             lr = float(group["lr"])
             beta1, beta2 = group["betas"]
@@ -212,6 +223,7 @@ class Adam(Optimizer):
                 # Aplicar update
                 p._id = p.sub(update)._id
                 p._shape = p.sub(update)._shape
+        return loss
 
 
 class AdamW(Optimizer):
@@ -244,7 +256,8 @@ class AdamW(Optimizer):
         }
         super().__init__(params, defaults)
 
-    def step(self) -> None:
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        loss = super().step(closure)
         for group in self.param_groups:
             lr = float(group["lr"])
             beta1, beta2 = group["betas"]
@@ -300,6 +313,7 @@ class AdamW(Optimizer):
                 
                 p._id = p.sub(update)._id
                 p._shape = p.sub(update)._shape
+        return loss
 
 
 class RMSprop(Optimizer):
@@ -330,7 +344,8 @@ class RMSprop(Optimizer):
         }
         super().__init__(params, defaults)
 
-    def step(self) -> None:
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        loss = super().step(closure)
         for group in self.param_groups:
             lr = float(group["lr"])
             alpha = float(group["alpha"])
@@ -381,3 +396,4 @@ class RMSprop(Optimizer):
                 update = update.mul(lr)
                 p._id = p.sub(update)._id
                 p._shape = p.sub(update)._shape
+        return loss
