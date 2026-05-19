@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import time
 from typing import Sequence
 
 
@@ -18,157 +17,100 @@ def _calculate_fan_in_and_fan_out(tensor: object) -> tuple[int, int]:
     return fan_in, fan_out
 
 
-def _randn_like_flat(n: int) -> list[float]:
-    """Generate n random values from standard normal using Box-Muller."""
-    import random
-    random.seed(int(time.time() * 1000) + n)
-    out: list[float] = []
-    for _ in range(0, n, 2):
-        u1 = random.random()
-        u2 = random.random()
-        if u1 < 1e-10:
-            u1 = 1e-10
-        z0 = math.sqrt(-2.0 * math.log(u1)) * math.cos(2.0 * math.pi * u2)
-        z1 = math.sqrt(-2.0 * math.log(u1)) * math.sin(2.0 * math.pi * u2)
-        out.append(z0)
-        if len(out) < n:
-            out.append(z1)
-    return out[:n]
-
-
-def _rand_flat(n: int, a: float, b: float) -> list[float]:
-    """Generate n random values uniformly in [a, b]."""
-    import random
-    random.seed(int(time.time() * 1000) + n)
-    return [a + (b - a) * random.random() for _ in range(n)]
-
-
 def uniform_(tensor: object, a: float = 0.0, b: float = 1.0) -> object:
-    """Fills the tensor with values drawn from U(a, b)."""
     from torch import Tensor
-    data = tensor.tolist()  # type: ignore[union-attr]
-    flat = _flatten(data)
-    n = len(flat)
-    out = _rand_flat(n, a, b)
-    return _assign_flat(tensor, out)
+    span = b - a
+    r = _rand_gpu(list(tensor.shape), tensor.dtype)
+    result = r.mul(span).add(a)
+    tensor._set(result)
+    return tensor
 
 
 def normal_(tensor: object, mean: float = 0.0, std: float = 1.0) -> object:
-    """Fills the tensor with values drawn from N(mean, std)."""
     from torch import Tensor
-    data = tensor.tolist()  # type: ignore[union-attr]
-    flat = _flatten(data)
-    n = len(flat)
-    raw = _randn_like_flat(n)
-    out = [mean + std * v for v in raw]
-    return _assign_flat(tensor, out)
+    r = _randn_gpu(list(tensor.shape), tensor.dtype)
+    result = r.mul(std).add(mean)
+    tensor._set(result)
+    return tensor
 
 
 def constant_(tensor: object, val: float) -> object:
-    """Fills the tensor with a constant value."""
     from torch import Tensor
-    data = tensor.tolist()  # type: ignore[union-attr]
-    flat = _flatten(data)
-    n = len(flat)
-    return _assign_flat(tensor, [val] * n)
+    import torch as _torch
+    result = _torch.full(list(tensor.shape), val, dtype=tensor.dtype)
+    tensor._set(result)
+    return tensor
 
 
 def zeros_(tensor: object) -> object:
-    """Fills the tensor with zeros."""
-    return constant_(tensor, 0.0)
+    import torch as _torch
+    z = _torch.zeros(list(tensor.shape), dtype=tensor.dtype)
+    tensor._set(z)
+    return tensor
 
 
 def ones_(tensor: object) -> object:
-    """Fills the tensor with ones."""
-    return constant_(tensor, 1.0)
+    import torch as _torch
+    o = _torch.ones(list(tensor.shape), dtype=tensor.dtype)
+    tensor._set(o)
+    return tensor
 
 
 def xavier_uniform_(tensor: object, gain: float = 1.0) -> object:
-    """Fills with values from U(-a, a) where a = gain * sqrt(6 / (fan_in + fan_out))."""
-    from torch import Tensor
+    import torch as _torch
     fan_in, fan_out = _calculate_fan_in_and_fan_out(tensor)
     std = gain * math.sqrt(2.0 / (fan_in + fan_out))
     bound = math.sqrt(3.0) * std
-    data = tensor.tolist()  # type: ignore[union-attr]
-    flat = _flatten(data)
-    n = len(flat)
-    out = _rand_flat(n, -bound, bound)
-    return _assign_flat(tensor, out)
+    r = _rand_gpu(list(tensor.shape), tensor.dtype)
+    result = r.mul(2 * bound).sub(bound)
+    tensor._set(result)
+    return tensor
 
 
 def xavier_normal_(tensor: object, gain: float = 1.0) -> object:
-    """Fills with values from N(0, std) where std = gain * sqrt(2 / (fan_in + fan_out))."""
-    from torch import Tensor
+    import torch as _torch
     fan_in, fan_out = _calculate_fan_in_and_fan_out(tensor)
     std = gain * math.sqrt(2.0 / (fan_in + fan_out))
-    data = tensor.tolist()  # type: ignore[union-attr]
-    flat = _flatten(data)
-    n = len(flat)
-    raw = _randn_like_flat(n)
-    out = [std * v for v in raw]
-    return _assign_flat(tensor, out)
+    r = _randn_gpu(list(tensor.shape), tensor.dtype)
+    result = r.mul(std)
+    tensor._set(result)
+    return tensor
 
 
 def kaiming_uniform_(tensor: object, a: float = 0.0, mode: str = "fan_in", nonlinearity: str = "leaky_relu") -> object:
-    """Fills with values from U(-bound, bound) using He initialization."""
-    from torch import Tensor
+    import torch as _torch
     fan, _ = _calculate_fan_in_and_fan_out(tensor)
-    if mode == "fan_in":
-        gain = math.sqrt(2.0 / (1 + a ** 2)) if nonlinearity == "leaky_relu" else 1.0
-        bound = gain * math.sqrt(3.0 / max(fan, 1))
-    else:
-        gain = math.sqrt(2.0 / (1 + a ** 2)) if nonlinearity == "leaky_relu" else 1.0
-        bound = gain * math.sqrt(3.0 / max(fan, 1))
-    data = tensor.tolist()  # type: ignore[union-attr]
-    flat = _flatten(data)
-    n = len(flat)
-    out = _rand_flat(n, -bound, bound)
-    return _assign_flat(tensor, out)
+    gain = math.sqrt(2.0 / (1 + a ** 2)) if nonlinearity == "leaky_relu" else 1.0
+    bound = gain * math.sqrt(3.0 / max(fan, 1))
+    r = _rand_gpu(list(tensor.shape), tensor.dtype)
+    result = r.mul(2 * bound).sub(bound)
+    tensor._set(result)
+    return tensor
 
 
 def kaiming_normal_(tensor: object, a: float = 0.0, mode: str = "fan_in", nonlinearity: str = "leaky_relu") -> object:
-    """Fills with values from N(0, std) using He initialization."""
-    from torch import Tensor
+    import torch as _torch
     fan, _ = _calculate_fan_in_and_fan_out(tensor)
-    if mode == "fan_in":
-        gain = math.sqrt(2.0 / (1 + a ** 2)) if nonlinearity == "leaky_relu" else 1.0
-        std = gain / math.sqrt(max(fan, 1))
-    else:
-        gain = math.sqrt(2.0 / (1 + a ** 2)) if nonlinearity == "leaky_relu" else 1.0
-        std = gain / math.sqrt(max(fan, 1))
-    data = tensor.tolist()  # type: ignore[union-attr]
-    flat = _flatten(data)
-    n = len(flat)
-    raw = _randn_like_flat(n)
-    out = [std * v for v in raw]
-    return _assign_flat(tensor, out)
+    gain = math.sqrt(2.0 / (1 + a ** 2)) if nonlinearity == "leaky_relu" else 1.0
+    std = gain / math.sqrt(max(fan, 1))
+    r = _randn_gpu(list(tensor.shape), tensor.dtype)
+    result = r.mul(std)
+    tensor._set(result)
+    return tensor
 
 
 def orthogonal_(tensor: object, gain: float = 1.0) -> object:
-    """Fills with a (semi) orthogonal matrix."""
-    from torch import Tensor
+    import torch as _torch
     if tensor.ndim < 2:
         raise ValueError("orthogonal_ requires at least 2 dimensions")
-    rows = tensor.shape[0]
-    cols = tensor.shape[1]
-    flat = _flatten(tensor.tolist())  # type: ignore[union-attr]
-    n = rows * cols
-    raw = _randn_like_flat(n)
-
-    # Build matrix and do QR decomposition (simplified 2D)
-    matrix = []
-    idx = 0
-    for i in range(rows):
-        row = []
-        for j in range(cols):
-            row.append(raw[idx])
-            idx += 1
-        matrix.append(row)
-
-    # Gram-Schmidt orthogonalization
+    rows, cols = tensor.shape[0], tensor.shape[1]
+    raw = _randn_gpu([rows, cols], tensor.dtype)
+    flat = raw.flatten().tolist()
+    n = len(flat)
+    # Gram-Schmidt orthogonalization (CPU, unavoidable without QR GPU)
     q_rows: list[list[float]] = []
     for i in range(rows):
-        v = matrix[i][:]
+        v = flat[i * cols:(i + 1) * cols]
         for j in range(len(q_rows)):
             q = q_rows[j]
             dot_vq = sum(a * b for a, b in zip(v, q))
@@ -180,102 +122,66 @@ def orthogonal_(tensor: object, gain: float = 1.0) -> object:
         if norm_v > 1e-10:
             v = [a / norm_v for a in v]
         q_rows.append(v)
-
-    # Flatten result
     out: list[float] = []
     for row in q_rows:
         out.extend(row)
-    # Pad if needed
     while len(out) < n:
         out.append(0.0)
     out = [gain * v for v in out]
-    return _assign_flat(tensor, out)
+    _assign_flat(tensor, out)
+    return tensor
 
 
 def dirac_(tensor: object, groups: int = 1) -> object:
-    """Fills a {3, 4, 5}-dimensional tensor with the Dirac delta function."""
-    from torch import Tensor
+    import torch as _torch
     if tensor.ndim not in (3, 4, 5):
         raise ValueError("dirac_ only supports 3D, 4D, or 5D tensors")
-    dim1 = tensor.shape[0]
-    dim2 = tensor.shape[1]
+    result = _torch.zeros(list(tensor.shape), dtype=tensor.dtype)
+    dim1, dim2 = tensor.shape[0], tensor.shape[1]
     if dim1 % groups != 0:
         raise ValueError("tensor size must be divisible by groups")
     dim2_per_group = dim2 // groups
     min_dim = min(dim1, dim2_per_group)
-    flat = _flatten(tensor.tolist())  # type: ignore[union-attr]
-    n = len(flat)
-    out = [0.0] * n
-    # Set Dirac delta: identity matrix in the first two dimensions
     for d in range(min_dim):
-        # Set the center of the kernel to 1
-        # For 3D: [out_channels, in_channels, kH*kW]
-        # For 4D: [out_channels, in_channels, kH, kW]
-        kernel_indices = []
         nd = tensor.ndim
         if nd == 3:
             kh_kw = tensor.shape[2]
             center = kh_kw // 2
-            kernel_indices = [(d, d * groups + d // dim1, center)]
+            result[d, d * groups + d // dim1, center] = 1.0
         elif nd == 4:
-            kh = tensor.shape[2]
-            kw = tensor.shape[3]
-            center_h = kh // 2
-            center_w = kw // 2
-            kernel_indices = [(d, d * groups + d // dim1, center_h, center_w)]
+            kh, kw = tensor.shape[2], tensor.shape[3]
+            result[d, d * groups + d // dim1, kh // 2, kw // 2] = 1.0
         elif nd == 5:
-            kh = tensor.shape[2]
-            kw = tensor.shape[3]
-            kd = tensor.shape[4]
-            center_h = kh // 2
-            center_w = kw // 2
-            center_d = kd // 2
-            kernel_indices = [(d, d * groups + d // dim1, center_h, center_w, center_d)]
-        # Calculate flat index for this position
-        strides = _get_strides(tensor.shape)
-        for idx_tuple in kernel_indices:
-            flat_idx = sum(i * s for i, s in zip(idx_tuple, strides))
-            if flat_idx < n:
-                out[flat_idx] = 1.0
-    return _assign_flat(tensor, out)
+            kh, kw, kd = tensor.shape[2], tensor.shape[3], tensor.shape[4]
+            result[d, d * groups + d // dim1, kh // 2, kw // 2, kd // 2] = 1.0
+    tensor._set(result)
+    return tensor
 
 
 def eye_(tensor: object) -> object:
-    """Fills a 2D tensor with the identity matrix."""
-    from torch import Tensor
+    import torch as _torch
     if tensor.ndim != 2:
         raise ValueError("eye_ only supports 2D tensors")
     rows, cols = tensor.shape[0], tensor.shape[1]
-    flat = _flatten(tensor.tolist())  # type: ignore[union-attr]
-    n = len(flat)
-    out = [0.0] * n
+    result = _torch.zeros([rows, cols], dtype=tensor.dtype)
     min_dim = min(rows, cols)
     for i in range(min_dim):
-        idx = i * cols + i
-        if idx < n:
-            out[idx] = 1.0
-    return _assign_flat(tensor, out)
+        result[i, i] = 1.0
+    tensor._set(result)
+    return tensor
 
 
-def _get_strides(shape: Sequence[int]) -> list[int]:
-    strides = []
-    running = 1
-    for s in reversed(shape):
-        strides.append(running)
-        running *= s
-    return list(reversed(strides))
+def _rand_gpu(shape: list[int], dtype: str) -> object:
+    import torch as _torch
+    return _torch.rand(shape, dtype=dtype)
 
 
-def _flatten(data: object) -> list[float]:
-    if isinstance(data, list):
-        out: list[float] = []
-        for item in data:
-            out.extend(_flatten(item))
-        return out
-    return [float(data)]
+def _randn_gpu(shape: list[int], dtype: str) -> object:
+    import torch as _torch
+    return _torch.randn(shape, dtype=dtype)
 
 
-def _assign_flat(tensor: Tensor, flat: list[float]) -> Tensor:
+def _assign_flat(tensor: object, flat: list[float]) -> object:
     from torch._tensor import _reshape_flat_values, tensor_from_data
     reshaped = _reshape_flat_values(flat, list(tensor.shape))
     new_tensor = tensor_from_data(reshaped, tensor.dtype)

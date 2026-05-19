@@ -179,22 +179,16 @@ class Tensor:
         return Tensor(tensor_id, shape, dtype)
 
     def repeat_interleave(self, repeats: int, dim: int | None = None) -> "Tensor":
-        # Implement in pure Python using existing ops
+        from .__init__ import arange
         if dim is None:
             flat = self.flatten()
-            result_list: list[Tensor] = []
-            for i in range(flat._shape[0]):
-                val = flat.select(0, i)
-                for _ in range(repeats):
-                    result_list.append(val)
-            return cat(result_list, dim=0)
+            shape_0 = flat._shape[0]
+            indices = arange(shape_0, dtype="int64").unsqueeze(1).expand(shape_0, repeats).flatten()
+            return flat.index_select(0, indices)
         d = dim if dim >= 0 else dim + self._shape.__len__()
-        result_list: list[Tensor] = []
-        for i in range(self._shape[d]):
-            idx = self.select(dim=d, index=i)
-            for _ in range(repeats):
-                result_list.append(idx)
-        return cat(result_list, dim=d)
+        shape_d = self._shape[d]
+        indices = arange(shape_d, dtype="int64").unsqueeze(1).expand(shape_d, repeats).flatten()
+        return self.index_select(d, indices)
 
     tile = repeat
 
@@ -1090,11 +1084,15 @@ class Tensor:
                 elif isinstance(k, slice):
                     result = result.slice(dim=i, start=k.start, end=k.stop, step=k.step or 1)
                 elif isinstance(k, Tensor):
-                    indices_flat = k.flatten()
-                    picked: list[Tensor] = []
-                    for j in range(indices_flat._shape[0]):
-                        picked.append(result.select(dim=i, index=int(indices_flat.select(0, j).item())))
-                    result = cat(picked, dim=i)
+                    if result.ndim <= 2:
+                        result = result.index_select(dim=i, index=k.flatten())
+                    else:
+                        from .__init__ import cat
+                        indices_flat = k.flatten()
+                        picked: list[Tensor] = []
+                        for j in range(indices_flat._shape[0]):
+                            picked.append(result.select(dim=i, index=int(indices_flat.select(0, j).item())))
+                        result = cat(picked, dim=i)
                 else:
                     raise TypeError(f"Unsupported index type: {type(k)}")
             return result

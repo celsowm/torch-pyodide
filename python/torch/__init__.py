@@ -960,11 +960,11 @@ from torch.utils.data import (
 def eye(n: int, m: int | None = None, dtype: str = "float32") -> Tensor:
     rows = n
     cols = m if m is not None else n
-    data: list[float] = []
-    for i in range(rows):
-        for j in range(cols):
-            data.append(1.0 if i == j else 0.0)
-    return tensor_from_data(data, [rows, cols], dtype=dtype)
+    result = zeros([rows, cols], dtype=dtype)
+    min_dim = min(rows, cols)
+    for i in range(min_dim):
+        result[i, i] = 1.0
+    return result
 
 
 def randint(low: int, high: int | None = None, size: int | Sequence[int] | None = None, dtype: str = "int64") -> Tensor:
@@ -981,10 +981,9 @@ def randint(low: int, high: int | None = None, size: int | Sequence[int] | None 
 
 
 def randperm(n: int, dtype: str = "int64") -> Tensor:
-    import random
-    indices = list(range(n))
-    random.shuffle(indices)
-    return tensor_from_data(indices, [n], dtype=dtype)
+    r = rand([n])
+    _, indices = r.sort(dim=0)
+    return indices.to(dtype)
 
 
 def linspace(start: float, end: float, steps: int, dtype: str = "float32") -> Tensor:

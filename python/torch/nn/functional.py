@@ -45,45 +45,19 @@ def log_softmax(x: Tensor, dim: int = -1) -> Tensor:
 def dropout(x: Tensor, p: float = 0.5, training: bool = True) -> Tensor:
     if not training or p == 0.0:
         return x
-    shape = list(x.shape)
-    raw = x.tolist()
-    import random as _random
-    import time
-    _rng = _random.Random(int(time.time() * 1000) & 0xFFFFFFFF)
-    flat_vals = _flatten(raw)
-    out_flat = []
-    for v in flat_vals:
-        if _rng.random() < p:
-            out_flat.append(0.0)
-        else:
-            out_flat.append(float(v) / (1.0 - p))
-    return _unflatten(shape, out_flat, x.dtype)
+    import torch as _torch
+    mask = _torch.rand(list(x.shape), dtype=x.dtype) > p
+    return x.mul(mask).div(1.0 - p)
 
 
 def dropout2d(x: Tensor, p: float = 0.5, training: bool = True) -> Tensor:
     if not training or p == 0.0:
         return x
+    import torch as _torch
     shape = list(x.shape)
-    raw = x.tolist()
-    import random as _random
-    import time
-    _rng = _random.Random(int(time.time() * 1000) & 0xFFFFFFFF)
-    batch, channels = shape[0], shape[1]
-    flat_vals = _flatten(raw)
-    out_flat = list(flat_vals)
-    elem_per_channel = len(flat_vals) // (batch * channels)
-    import math
-    for b in range(batch):
-        for c in range(channels):
-            if _rng.random() < p:
-                for i in range(elem_per_channel):
-                    idx = b * channels * elem_per_channel + c * elem_per_channel + i
-                    out_flat[idx] = 0.0
-            else:
-                for i in range(elem_per_channel):
-                    idx = b * channels * elem_per_channel + c * elem_per_channel + i
-                    out_flat[idx] = float(out_flat[idx]) / (1.0 - p)
-    return _unflatten(shape, out_flat, x.dtype)
+    mask_shape = [shape[0], shape[1]] + [1] * (len(shape) - 2)
+    mask = (_torch.rand(mask_shape, dtype=x.dtype) > p).to(x.dtype)
+    return x.mul(mask).div(1.0 - p)
 
 
 # ── Linear ────────────────────────────────────────────────────────
@@ -535,25 +509,13 @@ def normalize(x: Tensor, p: float = 2.0, dim: int = 1, eps: float = 1e-12) -> Te
 
 
 def one_hot(tensor: Tensor, num_classes: int | None = None) -> Tensor:
-    """Converts indices to one-hot encoding."""
-    import torch
+    import torch as _torch
     if num_classes is None:
         num_classes = int(tensor.max().item()) + 1
-    shape = list(tensor.shape) + [num_classes]
-    out = torch.zeros(shape, dtype=tensor.dtype)
-    # Set ones at the right indices
-    flat = tensor.flatten().tolist()
-    idx = 0
-    for i, v in enumerate(flat):
-        coords = []
-        temp = i
-        for s in reversed(tensor.shape):
-            coords.append(temp % s)
-            temp //= s
-        coords.reverse()
-        coords.append(int(v))
-        out[tuple(coords)] = 1.0
-    return out
+    classes = _torch.arange(num_classes, dtype=tensor.dtype)
+    expanded = tensor.unsqueeze(-1).to(tensor.dtype)
+    result = (expanded == classes).to(tensor.dtype)
+    return result
 
 
 # ── Pooling 1D ───────────────────────────────────────────────────
@@ -577,16 +539,4 @@ def avg_pool1d(x: Tensor, kernel_size: int, stride: int | None = None, padding: 
     return result.squeeze(2)
 
 
-# ── Internal helpers ──────────────────────────────────────────────
 
-def _flatten(data: object) -> list[float]:
-    if isinstance(data, list):
-        out: list[float] = []
-        for item in data:
-            out.extend(_flatten(item))
-        return out
-    return [float(data)]
-
-
-def _unflatten(shape: list[int], flat: list[float], dtype: str) -> Tensor:
-    return tensor_from_data(_reshape_flat_values(flat, shape), dtype)
