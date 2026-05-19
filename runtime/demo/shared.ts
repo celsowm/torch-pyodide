@@ -150,7 +150,7 @@ export async function bootstrapPyodideTorch(options?: BootstrapOptions) {
   const pyodide = await loadPyodide({ indexURL });
   const hostname = globalThis.location?.hostname ?? "";
   const localHost = isLocalhostHost(hostname);
-  const preferLocalFallbackInProduction = options?.preferLocalFallbackInProduction ?? true;
+  const preferLocalFallbackInProduction = options?.preferLocalFallbackInProduction ?? false;
 
   let installMode: InstallMode = "published";
   let installDetail = "Installed torch-pyodide via micropip from published index.";
