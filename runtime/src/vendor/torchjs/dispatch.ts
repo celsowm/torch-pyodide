@@ -53,24 +53,27 @@ export function getOrCreatePipeline(
 }
 
 /**
- * Dispatch a compute shader with the given buffers.
+ * Dispatch a compute shader with the given buffers or explicit bind group entries.
+ * If buffers are provided as an array, sequential binding indices (0, 1, 2, ...) are assigned.
+ * For non-sequential binding indices, pass explicit GPUBindGroupEntry[].
  */
 export function dispatchCompute(
   pipeline: WebGPUComputePipeline,
-  buffers: WebGPUBuffer[],
+  buffersOrEntries: WebGPUBuffer[] | GPUBindGroupEntry[],
   workgroupCount: [number, number, number]
 ): void {
   const device = getDevice();
 
-  // Create bind group entries - must include size for wgpu-native compatibility
-  const bindGroupEntries = buffers.map((buffer, index) => ({
-    binding: index,
-    resource: { buffer, offset: 0, size: buffer.size },
-  }));
+  const entries: GPUBindGroupEntry[] = isBufferArray(buffersOrEntries)
+    ? (buffersOrEntries as WebGPUBuffer[]).map((buffer, index) => ({
+        binding: index,
+        resource: { buffer, offset: 0, size: buffer.size },
+      }))
+    : (buffersOrEntries as GPUBindGroupEntry[]);
 
   const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
-    entries: bindGroupEntries,
+    entries,
   });
 
   // Encode and submit
@@ -126,4 +129,8 @@ export function bindEntry(binding: number, buffer: WebGPUBuffer): GPUBindGroupEn
     binding,
     resource: { buffer, offset: 0, size: buffer.size },
   };
+}
+
+function isBufferArray(value: WebGPUBuffer[] | GPUBindGroupEntry[]): value is WebGPUBuffer[] {
+  return value.length === 0 || !('binding' in value[0]);
 }

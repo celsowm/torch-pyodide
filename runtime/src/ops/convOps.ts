@@ -83,9 +83,6 @@ export class ConvOps {
     const total = batch * inCh * inH * inW;
 
     const gradInput = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
-    // Dummy buffers for bindings not used by this entry point
-    const dummyGradWeight = createStorageBuffer(this.deviceMgr.device!, 4);
-    const dummyInput = createStorageBuffer(this.deviceMgr.device!, 4);
 
     const params = new Uint32Array([
       batch, inCh, outCh, inH, inW, outH, outW, kernelH, kernelW,
@@ -97,12 +94,16 @@ export class ConvOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
+    // conv2d_input_backward uses bindings: 0=grad_output, 1=weight, 2=grad_input, 3=params
     const pipeline = getOrCreatePipeline(CONV_BACKWARD_SHADER, "conv2d_input_backward");
-    dispatchCompute(pipeline, [gradOutput.buffer, weight.buffer, gradInput, paramBuffer, dummyGradWeight, dummyInput], calculateWorkgroups(total));
+    dispatchCompute(pipeline, [
+      { binding: 0, resource: { buffer: gradOutput.buffer, offset: 0, size: gradOutput.buffer.size } },
+      { binding: 1, resource: { buffer: weight.buffer, offset: 0, size: weight.buffer.size } },
+      { binding: 2, resource: { buffer: gradInput, offset: 0, size: gradInput.size } },
+      { binding: 3, resource: { buffer: paramBuffer, offset: 0, size: paramBuffer.size } },
+    ], calculateWorkgroups(total));
     await syncDevice();
     paramBuffer.destroy();
-    dummyGradWeight.destroy();
-    dummyInput.destroy();
     return this.deviceMgr.registerTensorAsHandle(gradInput, [batch, inCh, inH, inW], gradOutput.dtype as SupportedDType, total);
   }
 
@@ -129,9 +130,6 @@ export class ConvOps {
     const total = outCh * inCh * kernelH * kernelW;
 
     const gradWeight = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
-    // Dummy buffers for bindings not used by this entry point
-    const dummyGradInput = createStorageBuffer(this.deviceMgr.device!, 4);
-    const dummyWeight = createStorageBuffer(this.deviceMgr.device!, 4);
 
     const params = new Uint32Array([
       inputShape[0], inputShape[1], outCh, inputShape[2], inputShape[3], outH, outW, kernelH, kernelW,
@@ -143,12 +141,16 @@ export class ConvOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
+    // conv2d_weight_backward uses bindings: 0=grad_output, 3=params, 4=grad_weight, 5=input
     const pipeline = getOrCreatePipeline(CONV_BACKWARD_SHADER, "conv2d_weight_backward");
-    dispatchCompute(pipeline, [gradOutput.buffer, dummyWeight, dummyGradInput, paramBuffer, gradWeight, input.buffer], calculateWorkgroups(total));
+    dispatchCompute(pipeline, [
+      { binding: 0, resource: { buffer: gradOutput.buffer, offset: 0, size: gradOutput.buffer.size } },
+      { binding: 3, resource: { buffer: paramBuffer, offset: 0, size: paramBuffer.size } },
+      { binding: 4, resource: { buffer: gradWeight, offset: 0, size: gradWeight.size } },
+      { binding: 5, resource: { buffer: input.buffer, offset: 0, size: input.buffer.size } },
+    ], calculateWorkgroups(total));
     await syncDevice();
     paramBuffer.destroy();
-    dummyGradInput.destroy();
-    dummyWeight.destroy();
     return this.deviceMgr.registerTensorAsHandle(gradWeight, [outCh, inCh, kernelH, kernelW], gradOutput.dtype as SupportedDType, total);
   }
 
@@ -172,10 +174,6 @@ export class ConvOps {
     const total = outCh;
 
     const gradBias = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
-    // Dummy buffers for bindings not used by this entry point
-    const dummyWeight = createStorageBuffer(this.deviceMgr.device!, 4);
-    const dummyGradInput = createStorageBuffer(this.deviceMgr.device!, 4);
-    const dummyInput = createStorageBuffer(this.deviceMgr.device!, 4);
 
     const params = new Uint32Array([
       batch, inCh, outCh, inH, inW, outH, outW, 1, 1,
@@ -187,13 +185,15 @@ export class ConvOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
+    // conv2d_bias_backward uses bindings: 0=grad_output, 3=params, 4=grad_bias
     const pipeline = getOrCreatePipeline(CONV_BACKWARD_SHADER, "conv2d_bias_backward");
-    dispatchCompute(pipeline, [gradOutput.buffer, dummyWeight, dummyGradInput, paramBuffer, gradBias, dummyInput], calculateWorkgroups(total));
+    dispatchCompute(pipeline, [
+      { binding: 0, resource: { buffer: gradOutput.buffer, offset: 0, size: gradOutput.buffer.size } },
+      { binding: 3, resource: { buffer: paramBuffer, offset: 0, size: paramBuffer.size } },
+      { binding: 4, resource: { buffer: gradBias, offset: 0, size: gradBias.size } },
+    ], calculateWorkgroups(total));
     await syncDevice();
     paramBuffer.destroy();
-    dummyWeight.destroy();
-    dummyGradInput.destroy();
-    dummyInput.destroy();
     return this.deviceMgr.registerTensorAsHandle(gradBias, [outCh], gradOutput.dtype as SupportedDType, total);
   }
 }
