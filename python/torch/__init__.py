@@ -768,10 +768,6 @@ def det(x: Tensor) -> Tensor:
     return x.det()
 
 
-def triu(x: Tensor, diagonal: int = 0) -> Tensor:
-    return triu_from_tensor(x, diagonal)
-
-
 def triangular_solve(a: Tensor, b: Tensor, upper: bool = False) -> Tensor:
     return a.triangular_solve(b, upper=upper)
 
