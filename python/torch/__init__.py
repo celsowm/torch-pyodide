@@ -251,8 +251,8 @@ __all__ = [
 ]
 
 
-def tensor(data: object, dtype: str = "float32") -> Tensor:
-    return tensor_from_data(data, dtype=dtype)
+def tensor(data: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+    return tensor_from_data(data, dtype=dtype, requires_grad=requires_grad)
 
 
 def zeros(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
@@ -962,31 +962,7 @@ def scatter(tensor: Tensor, dim: int, index: Tensor, src: Tensor | float) -> Ten
 
 # ── Context managers ────────────────────────────────────────────
 
-class no_grad:
-    def __enter__(self) -> no_grad:
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        pass
-
-
-class inference_mode:
-    def __init__(self, mode: bool = True) -> None:
-        pass
-
-    def __enter__(self) -> inference_mode:
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        pass
-
-
-def set_grad_enabled(mode: bool) -> None:
-    pass
-
-
-def is_grad_enabled() -> bool:
-    return False
+from ._autograd import no_grad, inference_mode, set_grad_enabled, is_grad_enabled
 
 
 # ── Dtype constants ──────────────────────────────────────────────

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Sequence
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Callable, Sequence
 
 from ._runtime import _get_runtime, _run_js_awaitable
+
+if TYPE_CHECKING:
+    from ._autograd import _Node
 
 
 def _js_meta_to_tuple(meta: object) -> tuple[int, list[int], str]:
@@ -25,6 +28,11 @@ class Tensor:
     _id: int
     _shape: list[int]
     _dtype: str
+    _requires_grad: bool = False
+    _node: "_Node | None" = field(default=None, repr=False)
+    _backward_hooks: dict[int, Callable] = field(default_factory=dict, repr=False)
+    grad: "Tensor | None" = field(default=None, repr=False)
+    _retains_grad: bool = field(default=False, repr=False)
 
     @property
     def shape(self) -> tuple[int, ...]:
@@ -38,6 +46,55 @@ class Tensor:
     def ndim(self) -> int:
         return len(self._shape)
 
+    @property
+    def requires_grad(self) -> bool:
+        return self._requires_grad
+
+    @requires_grad.setter
+    def requires_grad(self, value: bool) -> None:
+        self._requires_grad = value
+
+    @property
+    def is_leaf(self) -> bool:
+        """Um tensor é leaf se não foi criado por uma operação (não tem _node)."""
+        return self._node is None
+
+    def register_hook(self, hook: Callable[["Tensor"], "Tensor | None"]) -> int:
+        """Registra um hook para ser chamado no gradiente durante backward().
+        
+        O hook recebe o gradiente e pode retornar um novo gradiente modificado
+        ou None para usar o gradiente original.
+        """
+        hook_id = id(hook)
+        self._backward_hooks[hook_id] = hook
+        return hook_id
+
+    def remove_hook(self, hook_id: int) -> None:
+        """Remove um hook registrado."""
+        self._backward_hooks.pop(hook_id, None)
+
+    def retain_grad(self) -> None:
+        """Faz com que gradientes de tensores não-leaf sejam retidos."""
+        self._retains_grad = True
+
+    def backward(
+        self,
+        gradient: "Tensor | None" = None,
+        retain_graph: bool = False,
+        create_graph: bool = False,
+        inputs: Sequence["Tensor"] | None = None,
+    ) -> None:
+        """Calcula gradientes via backpropagation.
+        
+        Args:
+            gradient: Gradiente inicial (default: ones_like para tensores escalares).
+            retain_graph: Se True, mantém o grafo para chamadas posteriores.
+            create_graph: Se True, cria grafo para gradientes de alta ordem.
+            inputs: Tensores específicos para calcular gradientes (opcional).
+        """
+        from ._autograd import _backward_from_tensor
+        _backward_from_tensor(self, gradient, retain_graph, create_graph)
+
     def to(self, dtype: str, device: object = None) -> "Tensor":
         if dtype is not None and dtype != self._dtype:
             from ._tensor import zeros_like_from_tensor
@@ -49,6 +106,15 @@ class Tensor:
         return self.add(0.0)
 
     def detach(self) -> "Tensor":
+        """Retorna um novo tensor desconectado do grafo computacional."""
+        t = Tensor(self._id, list(self._shape), self._dtype)
+        # Copia o ID mas não o node - fica desconectado do grafo
+        return t
+
+    def detach_(self) -> "Tensor":
+        """Desconecta este tensor do grafo computacional in-place."""
+        self._node = None
+        self.grad = None
         return self
 
     def contiguous(self) -> "Tensor":
@@ -171,9 +237,23 @@ class Tensor:
         return pow_from_tensors(self, other) if isinstance(other, Tensor) else pow_from_tensors(self, _scalar_to_tensor(float(other), self._dtype))
 
     def matmul(self, other: "Tensor") -> "Tensor":
+        from ._autograd import _Node, is_grad_enabled, _grad_matmul
+
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.matmul(self._id, other._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        requires_grad = is_grad_enabled() and (self._requires_grad or other._requires_grad)
+        if requires_grad:
+            result_tensor = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            node = _Node(
+                tensor=result_tensor,
+                grad_fn=lambda grad_out: _grad_matmul(grad_out, self, other),
+                parents=[self, other],
+            )
+            result_tensor._node = node
+            return result_tensor
+
         return Tensor(tensor_id, shape, dtype)
 
     def mm(self, other: "Tensor") -> "Tensor":
@@ -209,34 +289,95 @@ class Tensor:
 
     def add(self, other: "Tensor | float") -> "Tensor":
         from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
+        from ._autograd import _Node, is_grad_enabled, _grad_add
+
         runtime = _get_runtime()
-        b = other._id if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)._id
+        b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
+        b = b_tensor._id
         meta = _run_js_awaitable(runtime.add(self._id, b))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        # Registrar node no grafo se graduação estiver habilitada
+        requires_grad = is_grad_enabled() and (self._requires_grad or (isinstance(other, Tensor) and other._requires_grad))
+        if requires_grad:
+            result_tensor = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            node = _Node(
+                tensor=result_tensor,
+                grad_fn=lambda grad_out: _grad_add(grad_out, self, b_tensor),
+                parents=[self, b_tensor],
+            )
+            result_tensor._node = node
+            return result_tensor
+
         return Tensor(tensor_id, shape, dtype)
 
     def sub(self, other: "Tensor | float") -> "Tensor":
         from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
+        from ._autograd import _Node, is_grad_enabled, _grad_sub
+
         runtime = _get_runtime()
-        b = other._id if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)._id
+        b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
+        b = b_tensor._id
         meta = _run_js_awaitable(runtime.sub(self._id, b))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        requires_grad = is_grad_enabled() and (self._requires_grad or (isinstance(other, Tensor) and other._requires_grad))
+        if requires_grad:
+            result_tensor = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            node = _Node(
+                tensor=result_tensor,
+                grad_fn=lambda grad_out: _grad_sub(grad_out, self, b_tensor),
+                parents=[self, b_tensor],
+            )
+            result_tensor._node = node
+            return result_tensor
+
         return Tensor(tensor_id, shape, dtype)
 
     def mul(self, other: "Tensor | float") -> "Tensor":
         from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
+        from ._autograd import _Node, is_grad_enabled, _grad_mul
+
         runtime = _get_runtime()
-        b = other._id if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)._id
+        b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
+        b = b_tensor._id
         meta = _run_js_awaitable(runtime.mul(self._id, b))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        requires_grad = is_grad_enabled() and (self._requires_grad or (isinstance(other, Tensor) and other._requires_grad))
+        if requires_grad:
+            result_tensor = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            node = _Node(
+                tensor=result_tensor,
+                grad_fn=lambda grad_out: _grad_mul(grad_out, self, b_tensor),
+                parents=[self, b_tensor],
+            )
+            result_tensor._node = node
+            return result_tensor
+
         return Tensor(tensor_id, shape, dtype)
 
     def div(self, other: "Tensor | float") -> "Tensor":
         from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
+        from ._autograd import _Node, is_grad_enabled, _grad_div
+
         runtime = _get_runtime()
-        b = other._id if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)._id
+        b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
+        b = b_tensor._id
         meta = _run_js_awaitable(runtime.div(self._id, b))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        requires_grad = is_grad_enabled() and (self._requires_grad or (isinstance(other, Tensor) and other._requires_grad))
+        if requires_grad:
+            result_tensor = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            node = _Node(
+                tensor=result_tensor,
+                grad_fn=lambda grad_out: _grad_div(grad_out, self, b_tensor),
+                parents=[self, b_tensor],
+            )
+            result_tensor._node = node
+            return result_tensor
+
         return Tensor(tensor_id, shape, dtype)
 
     def lu(self) -> tuple["Tensor", "Tensor"]:
@@ -450,39 +591,81 @@ class Tensor:
         return ones_like_from_tensor(self)
 
     def relu(self) -> "Tensor":
+        from ._autograd import _Node, is_grad_enabled, _grad_relu
+
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.relu(self._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        if is_grad_enabled() and self._requires_grad:
+            result = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            result._node = _Node(result, lambda g: (_grad_relu(g, self),), [self])
+            return result
         return Tensor(tensor_id, shape, dtype)
 
     def abs(self) -> "Tensor":
+        from ._autograd import _Node, is_grad_enabled, _grad_abs
+
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.abs(self._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        if is_grad_enabled() and self._requires_grad:
+            result = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            result._node = _Node(result, lambda g: (_grad_abs(g, self),), [self])
+            return result
         return Tensor(tensor_id, shape, dtype)
 
     def sqrt(self) -> "Tensor":
+        from ._autograd import _Node, is_grad_enabled, _grad_sqrt
+
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.sqrt(self._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        if is_grad_enabled() and self._requires_grad:
+            result = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            result._node = _Node(result, lambda g: (_grad_sqrt(g, self),), [self])
+            return result
         return Tensor(tensor_id, shape, dtype)
 
     def exp(self) -> "Tensor":
+        from ._autograd import _Node, is_grad_enabled, _grad_exp
+
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.exp(self._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        if is_grad_enabled() and self._requires_grad:
+            result = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            result._node = _Node(result, lambda g: (_grad_exp(g, self),), [self])
+            return result
         return Tensor(tensor_id, shape, dtype)
 
     def log(self) -> "Tensor":
+        from ._autograd import _Node, is_grad_enabled, _grad_log
+
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.log(self._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        if is_grad_enabled() and self._requires_grad:
+            result = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            result._node = _Node(result, lambda g: (_grad_log(g, self),), [self])
+            return result
         return Tensor(tensor_id, shape, dtype)
 
     def neg(self) -> "Tensor":
+        from ._autograd import _Node, is_grad_enabled, _grad_neg
+
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.neg(self._id))
         tensor_id, shape, dtype = _js_meta_to_tuple(meta)
+
+        if is_grad_enabled() and self._requires_grad:
+            result = Tensor(tensor_id, shape, dtype, _requires_grad=True)
+            result._node = _Node(result, lambda g: (_grad_neg(g, self),), [self])
+            return result
         return Tensor(tensor_id, shape, dtype)
 
     def clamp(self, min: float, max: float) -> "Tensor":
@@ -942,13 +1125,14 @@ def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str = "
     return out
 
 
-def tensor_from_data(data: object, dtype: str = "float32") -> Tensor:
+def tensor_from_data(data: object, shape: Sequence[int] | None = None, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
     runtime = _get_runtime()
-    shape = _infer_shape(data)
+    if shape is None:
+        shape = _infer_shape(data)
     flat = _flatten(data)
     meta = _run_js_awaitable(runtime.tensorFromData(flat, shape, dtype))
-    tensor_id, shape, dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, shape, dtype)
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype, _requires_grad=requires_grad)
 
 
 def zeros_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
@@ -1436,51 +1620,100 @@ def ge_from_tensors(a: Tensor, b: Tensor) -> Tensor:
 
 
 def sum_dim_from_tensor(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_sum
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.sumDim(tensor._id, int(dim), keepdim))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and tensor._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_sum(g, tensor),), [tensor])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
 def sum_from_tensor(tensor: Tensor) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_sum
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.sum(tensor._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and tensor._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_sum(g, tensor),), [tensor])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
 def mean_from_tensor(tensor: Tensor) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_mean
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.mean(tensor._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and tensor._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_mean(g, tensor),), [tensor])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
 def mean_dim_from_tensor(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_mean
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.meanDim(tensor._id, int(dim), keepdim))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and tensor._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_mean(g, tensor),), [tensor])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
 def prod_from_tensor(tensor: Tensor) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_prod
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.prod(tensor._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and tensor._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_prod(g, tensor),), [tensor])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
 def min_from_tensor(tensor: Tensor) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_min
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.min(tensor._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and tensor._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_min(g, tensor),), [tensor])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
 def max_from_tensor(tensor: Tensor) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_max
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.max(tensor._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and tensor._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_max(g, tensor),), [tensor])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
