@@ -998,18 +998,12 @@ class Tensor:
     def sum(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
         if dim is not None:
             return sum_dim_from_tensor(self, dim, keepdim)
-        runtime = _get_runtime()
-        meta = _run_js_awaitable(runtime.sum(self._id))
-        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, out_shape, out_dtype)
+        return sum_from_tensor(self)
 
     def mean(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
         if dim is not None:
             return mean_dim_from_tensor(self, dim, keepdim)
-        runtime = _get_runtime()
-        meta = _run_js_awaitable(runtime.mean(self._id))
-        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, out_shape, out_dtype)
+        return mean_from_tensor(self)
 
     def prod(self) -> "Tensor":
         return prod_from_tensor(self)
