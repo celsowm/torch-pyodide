@@ -2,6 +2,15 @@ from __future__ import annotations
 
 from typing import Sequence
 
+# Import autograd FIRST - must be before any other imports that might trigger Torch runtime
+from .autograd import (
+    no_grad,
+    inference_mode,
+    set_grad_enabled,
+    is_grad_enabled,
+    grad,
+)
+
 from . import cuda
 from ._tensor import (
     Tensor,
@@ -996,9 +1005,8 @@ def scatter(tensor: Tensor, dim: int, index: Tensor, src: Tensor | float) -> Ten
     return scatter_from_tensor(tensor, dim, index, src)
 
 
-# ── Context managers ────────────────────────────────────────────
-
-from ._autograd import no_grad, inference_mode, set_grad_enabled, is_grad_enabled, grad
+# ── Context managers (imported at top of file) ──────────────────
+# no_grad, inference_mode, set_grad_enabled, is_grad_enabled, grad
 
 
 # ── Dtype constants ──────────────────────────────────────────────

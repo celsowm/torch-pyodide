@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Callable, Sequence
 from ._runtime import _get_runtime, _run_js_awaitable
 
 if TYPE_CHECKING:
-    from ._autograd import _Node
+    from .autograd import _Node
 
 
 def _js_meta_to_tuple(meta: object) -> tuple[int, list[int], str]:
@@ -97,7 +97,7 @@ class Tensor:
             create_graph: Se True, cria grafo para gradientes de alta ordem.
             inputs: Tensores específicos para calcular gradientes (opcional).
         """
-        from ._autograd import _backward_from_tensor
+        from .autograd import _backward_from_tensor
         _backward_from_tensor(self, gradient, retain_graph, create_graph)
 
     def to(self, dtype: str, device: object = None) -> "Tensor":
@@ -247,7 +247,7 @@ class Tensor:
         return pow_from_tensors(self, other) if isinstance(other, Tensor) else pow_from_tensors(self, _scalar_to_tensor(float(other), self._dtype))
 
     def matmul(self, other: "Tensor") -> "Tensor":
-        from ._autograd import _Node, is_grad_enabled, _grad_matmul
+        from .autograd import _Node, is_grad_enabled, _grad_matmul
 
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.matmul(self._id, other._id))
@@ -299,7 +299,7 @@ class Tensor:
 
     def add(self, other: "Tensor | float") -> "Tensor":
         from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
-        from ._autograd import _Node, is_grad_enabled, _grad_add
+        from .autograd import _Node, is_grad_enabled, _grad_add
 
         runtime = _get_runtime()
         b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
@@ -323,7 +323,7 @@ class Tensor:
 
     def sub(self, other: "Tensor | float") -> "Tensor":
         from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
-        from ._autograd import _Node, is_grad_enabled, _grad_sub
+        from .autograd import _Node, is_grad_enabled, _grad_sub
 
         runtime = _get_runtime()
         b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
@@ -346,7 +346,7 @@ class Tensor:
 
     def mul(self, other: "Tensor | float") -> "Tensor":
         from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
-        from ._autograd import _Node, is_grad_enabled, _grad_mul
+        from .autograd import _Node, is_grad_enabled, _grad_mul
 
         runtime = _get_runtime()
         b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
@@ -369,7 +369,7 @@ class Tensor:
 
     def div(self, other: "Tensor | float") -> "Tensor":
         from ._tensor import _get_runtime, _run_js_awaitable, _js_meta_to_tuple, Tensor, _scalar_to_tensor
-        from ._autograd import _Node, is_grad_enabled, _grad_div
+        from .autograd import _Node, is_grad_enabled, _grad_div
 
         runtime = _get_runtime()
         b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
@@ -601,7 +601,7 @@ class Tensor:
         return ones_like_from_tensor(self)
 
     def relu(self) -> "Tensor":
-        from ._autograd import _Node, is_grad_enabled, _grad_relu
+        from .autograd import _Node, is_grad_enabled, _grad_relu
 
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.relu(self._id))
@@ -614,7 +614,7 @@ class Tensor:
         return Tensor(tensor_id, shape, dtype)
 
     def abs(self) -> "Tensor":
-        from ._autograd import _Node, is_grad_enabled, _grad_abs
+        from .autograd import _Node, is_grad_enabled, _grad_abs
 
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.abs(self._id))
@@ -627,7 +627,7 @@ class Tensor:
         return Tensor(tensor_id, shape, dtype)
 
     def sqrt(self) -> "Tensor":
-        from ._autograd import _Node, is_grad_enabled, _grad_sqrt
+        from .autograd import _Node, is_grad_enabled, _grad_sqrt
 
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.sqrt(self._id))
@@ -640,7 +640,7 @@ class Tensor:
         return Tensor(tensor_id, shape, dtype)
 
     def exp(self) -> "Tensor":
-        from ._autograd import _Node, is_grad_enabled, _grad_exp
+        from .autograd import _Node, is_grad_enabled, _grad_exp
 
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.exp(self._id))
@@ -653,7 +653,7 @@ class Tensor:
         return Tensor(tensor_id, shape, dtype)
 
     def log(self) -> "Tensor":
-        from ._autograd import _Node, is_grad_enabled, _grad_log
+        from .autograd import _Node, is_grad_enabled, _grad_log
 
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.log(self._id))
@@ -666,7 +666,7 @@ class Tensor:
         return Tensor(tensor_id, shape, dtype)
 
     def neg(self) -> "Tensor":
-        from ._autograd import _Node, is_grad_enabled, _grad_neg
+        from .autograd import _Node, is_grad_enabled, _grad_neg
 
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.neg(self._id))
@@ -755,7 +755,7 @@ class Tensor:
         return Tensor(tensor_id, out_shape, out_dtype)
 
     def slice(self, dim: int, start: int | None = None, end: int | None = None, step: int = 1) -> "Tensor":
-        from ._autograd import _Node, is_grad_enabled, _grad_slice
+        from .autograd import _Node, is_grad_enabled, _grad_slice
 
         runtime = _get_runtime()
         resolved_start = start if start is not None else 0
@@ -1641,7 +1641,7 @@ def ge_from_tensors(a: Tensor, b: Tensor) -> Tensor:
 
 
 def sum_dim_from_tensor(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_sum
+    from .autograd import _Node, is_grad_enabled, _grad_sum
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.sumDim(tensor._id, int(dim), keepdim))
@@ -1655,7 +1655,7 @@ def sum_dim_from_tensor(tensor: Tensor, dim: int, keepdim: bool = False) -> Tens
 
 
 def sum_from_tensor(tensor: Tensor) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_sum
+    from .autograd import _Node, is_grad_enabled, _grad_sum
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.sum(tensor._id))
@@ -1669,7 +1669,7 @@ def sum_from_tensor(tensor: Tensor) -> Tensor:
 
 
 def mean_from_tensor(tensor: Tensor) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_mean
+    from .autograd import _Node, is_grad_enabled, _grad_mean
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.mean(tensor._id))
@@ -1683,7 +1683,7 @@ def mean_from_tensor(tensor: Tensor) -> Tensor:
 
 
 def mean_dim_from_tensor(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_mean
+    from .autograd import _Node, is_grad_enabled, _grad_mean
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.meanDim(tensor._id, int(dim), keepdim))
@@ -1697,7 +1697,7 @@ def mean_dim_from_tensor(tensor: Tensor, dim: int, keepdim: bool = False) -> Ten
 
 
 def prod_from_tensor(tensor: Tensor) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_prod
+    from .autograd import _Node, is_grad_enabled, _grad_prod
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.prod(tensor._id))
@@ -1711,7 +1711,7 @@ def prod_from_tensor(tensor: Tensor) -> Tensor:
 
 
 def min_from_tensor(tensor: Tensor) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_min
+    from .autograd import _Node, is_grad_enabled, _grad_min
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.min(tensor._id))
@@ -1725,7 +1725,7 @@ def min_from_tensor(tensor: Tensor) -> Tensor:
 
 
 def max_from_tensor(tensor: Tensor) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_max
+    from .autograd import _Node, is_grad_enabled, _grad_max
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.max(tensor._id))
@@ -1760,7 +1760,7 @@ def softmax_from_tensor(tensor: Tensor, dim: int = -1) -> Tensor:
 
 
 def log_softmax_from_tensor(tensor: Tensor, dim: int = -1) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_log_softmax
+    from .autograd import _Node, is_grad_enabled, _grad_log_softmax
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.logSoftmax(tensor._id, int(dim)))
@@ -1782,7 +1782,7 @@ def conv2d_from_tensors(
     dilation: Sequence[int] = (1,),
     groups: int = 1,
 ) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_conv2d
+    from .autograd import _Node, is_grad_enabled, _grad_conv2d
 
     runtime = _get_runtime()
     bias_list: list[float] | None = None
@@ -1876,7 +1876,7 @@ def nll_loss_from_tensor(
     input: Tensor,
     target: Tensor,
 ) -> Tensor:
-    from ._autograd import _Node, is_grad_enabled, _grad_nll_loss
+    from .autograd import _Node, is_grad_enabled, _grad_nll_loss
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.nllLoss(input._id, target._id))
