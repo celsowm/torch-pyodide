@@ -443,6 +443,24 @@ export class TorchPyodideRuntime {
     return this.reductionOps.nllLoss(inputId, targetsId);
   }
 
+  async logSoftmaxBackward(
+    gradOutputId: number,
+    softmaxId: number,
+    batchSize: number,
+    numClasses: number,
+  ): Promise<TensorHandle> {
+    return this.reductionOps.logSoftmaxBackward(gradOutputId, softmaxId, batchSize, numClasses);
+  }
+
+  async nllLossBackward(
+    targetsId: number,
+    batchSize: number,
+    numClasses: number,
+    scale?: number,
+  ): Promise<TensorHandle> {
+    return this.reductionOps.nllLossBackward(targetsId, batchSize, numClasses, scale);
+  }
+
   async eq(aId: number, bId: number): Promise<TensorHandle> {
     return this.compareOps.eq(aId, bId);
   }
@@ -616,6 +634,37 @@ export class TorchPyodideRuntime {
     groups: number,
   ): Promise<TensorHandle> {
     return this.convOps.conv2d(inputId, weightId, bias, stride, padding, dilation, groups);
+  }
+
+  async conv2dInputBackward(
+    gradOutputId: number,
+    weightId: number,
+    inputShape: number[],
+    gradOutputShape: number[],
+    stride: number[],
+    padding: number[],
+  ): Promise<TensorHandle> {
+    return this.convOps.conv2dInputBackward(gradOutputId, weightId, inputShape, gradOutputShape, stride, padding);
+  }
+
+  async conv2dWeightBackward(
+    gradOutputId: number,
+    inputId: number,
+    weightShape: number[],
+    gradOutputShape: number[],
+    inputShape: number[],
+    stride: number[],
+    padding: number[],
+  ): Promise<TensorHandle> {
+    return this.convOps.conv2dWeightBackward(gradOutputId, inputId, weightShape, gradOutputShape, inputShape, stride, padding);
+  }
+
+  async conv2dBiasBackward(
+    gradOutputId: number,
+    outCh: number,
+    gradOutputShape: number[],
+  ): Promise<TensorHandle> {
+    return this.convOps.conv2dBiasBackward(gradOutputId, outCh, gradOutputShape);
   }
 
   async maxPool2d(

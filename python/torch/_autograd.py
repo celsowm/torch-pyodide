@@ -521,12 +521,82 @@ def _grad_mse_loss(grad_output: Tensor, input_tensor: Tensor, target: Tensor) ->
 
 
 def _grad_nll_loss(grad_output: Tensor, input_tensor: Tensor, target: Tensor) -> Tensor | None:
-    """d/dinput nll_loss(input, target) = -one_hot(target)"""
+    """d/dinput nll_loss(input, target) = -1/batch_size at target index, 0 elsewhere."""
     if not input_tensor._requires_grad:
         return None
-    # Simplificado
-    from ._tensor import zeros_like_from_tensor
-    return zeros_like_from_tensor(input_tensor)
+    from ._tensor import nll_loss_backward_from_tensor, ones_from_tensor
+
+    batch_size = input_tensor.shape[0] if len(input_tensor.shape) > 0 else 1
+    num_classes = input_tensor.shape[-1] if len(input_tensor.shape) > 1 else 1
+
+    # Scale depends on reduction: for mean reduction, scale = 1/batch_size
+    # For sum reduction, scale = 1.0
+    scale = 1.0 / batch_size
+
+    grad_input = nll_loss_backward_from_tensors(target, batch_size, num_classes, scale)
+
+    # Multiply by grad_output (chain rule)
+    # If grad_output is scalar, broadcast it
+    if grad_output.shape == ():
+        scalar_val = grad_output.tolist()[0] if grad_output.tolist() else 1.0
+        from ._tensor import _scalar_to_tensor
+        grad_input = grad_input.mul(_scalar_to_tensor(scalar_val))
+    else:
+        grad_input = grad_input.mul(grad_output)
+
+    return grad_input
+
+
+def _grad_conv2d(
+    grad_output: Tensor,
+    input_tensor: Tensor,
+    weight_tensor: Tensor,
+    output_shape: tuple[int, ...],
+    params: tuple,
+) -> tuple[Tensor | None, ...]:
+    """Backward pass for conv2d.
+
+    Returns gradients for (input, weight) and optionally bias.
+    params = (stride, padding, dilation, groups, bias_tensor)
+    """
+    stride, padding, dilation, groups, bias_tensor = params
+
+    # Compute gradients using runtime-backed functions
+    grad_input = None
+    grad_weight = None
+    grad_bias = None
+
+    input_shape = tuple(input_tensor.shape)
+    grad_output_shape = tuple(grad_output.shape)
+    weight_shape = tuple(weight_tensor.shape)
+
+    out_ch = weight_shape[0] if len(weight_shape) > 0 else 1
+
+    # Gradient with respect to input
+    if input_tensor._requires_grad:
+        from ._tensor import conv2d_input_backward_from_tensors
+        grad_input = conv2d_input_backward_from_tensors(
+            grad_output, weight_tensor, input_shape, grad_output_shape,
+            stride, padding,
+        )
+
+    # Gradient with respect to weight
+    if weight_tensor._requires_grad:
+        from ._tensor import conv2d_weight_backward_from_tensors
+        grad_weight = conv2d_weight_backward_from_tensors(
+            grad_output, input_tensor, weight_shape, grad_output_shape,
+            input_shape, stride, padding,
+        )
+
+    # Gradient with respect to bias
+    if bias_tensor is not None and bias_tensor._requires_grad:
+        from ._tensor import conv2d_bias_backward_from_tensors
+        grad_bias = conv2d_bias_backward_from_tensors(
+            grad_output, out_ch, grad_output_shape,
+        )
+
+    # Return in order matching forward inputs: (input_grad, weight_grad, bias_grad)
+    return grad_input, grad_weight, grad_bias
 
 
 def _grad_max(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:

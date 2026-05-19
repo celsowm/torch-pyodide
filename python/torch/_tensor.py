@@ -1739,9 +1739,16 @@ def softmax_from_tensor(tensor: Tensor, dim: int = -1) -> Tensor:
 
 
 def log_softmax_from_tensor(tensor: Tensor, dim: int = -1) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_log_softmax
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.logSoftmax(tensor._id, int(dim)))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and tensor._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_log_softmax(g, tensor, dim),), [tensor])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
@@ -1754,13 +1761,12 @@ def conv2d_from_tensors(
     dilation: Sequence[int] = (1,),
     groups: int = 1,
 ) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_conv2d
+
     runtime = _get_runtime()
     bias_list: list[float] | None = None
-    bias_id: int | None = None
     if bias is not None:
         bias_list = bias.tolist()
-    else:
-        bias_id = None
     meta = _run_js_awaitable(runtime.conv2d(
         input._id, weight._id, bias_list,
         [int(s) for s in stride],
@@ -1769,6 +1775,25 @@ def conv2d_from_tensors(
         int(groups),
     ))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    needs_input_grad = input._requires_grad
+    needs_weight_grad = weight._requires_grad
+    needs_bias_grad = bias is not None and bias._requires_grad
+
+    if is_grad_enabled() and (needs_input_grad or needs_weight_grad or needs_bias_grad):
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=(needs_input_grad or needs_weight_grad or needs_bias_grad))
+        params = (tuple(stride), tuple(padding), tuple(dilation), int(groups), bias)
+
+        # Build parents list matching the order of gradients returned by _grad_conv2d
+        parents = [p for p in (input, weight, bias) if p is not None]
+        grad_indices = [i for i, p in enumerate((input, weight, bias)) if p is not None]
+
+        def _conv_grad_fn(g, inp=input, wt=weight, out_sh=out_shape, pr=params, gidx=grad_indices):
+            all_grads = _grad_conv2d(g, inp, wt, out_sh, pr)
+            return tuple(all_grads[i] for i in gidx)
+
+        result._node = _Node(result, _conv_grad_fn, parents)
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
@@ -1830,9 +1855,16 @@ def nll_loss_from_tensor(
     input: Tensor,
     target: Tensor,
 ) -> Tensor:
+    from ._autograd import _Node, is_grad_enabled, _grad_nll_loss
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.nllLoss(input._id, target._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and input._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_nll_loss(g, input, target),), [input])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
@@ -1871,6 +1903,106 @@ def layer_norm_from_tensor(
         weight._id if weight is not None else None,
         bias._id if bias is not None else None,
         float(eps),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+# ─── Backward ops (runtime-backed) ───────────────────────────────────────────
+
+def conv2d_input_backward_from_tensors(
+    grad_output: Tensor,
+    weight: Tensor,
+    input_shape: tuple[int, ...],
+    grad_output_shape: tuple[int, ...],
+    stride: tuple[int, int] = (1, 1),
+    padding: tuple[int, int] = (0, 0),
+) -> Tensor:
+    """Backward pass of conv2d with respect to the input."""
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.conv2dInputBackward(
+        grad_output._id,
+        weight._id,
+        list(input_shape),
+        list(grad_output_shape),
+        list(stride),
+        list(padding),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def conv2d_weight_backward_from_tensors(
+    grad_output: Tensor,
+    input: Tensor,
+    weight_shape: tuple[int, ...],
+    grad_output_shape: tuple[int, ...],
+    input_shape: tuple[int, ...],
+    stride: tuple[int, int] = (1, 1),
+    padding: tuple[int, int] = (0, 0),
+) -> Tensor:
+    """Backward pass of conv2d with respect to the weight."""
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.conv2dWeightBackward(
+        grad_output._id,
+        input._id,
+        list(weight_shape),
+        list(grad_output_shape),
+        list(input_shape),
+        list(stride),
+        list(padding),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def conv2d_bias_backward_from_tensors(
+    grad_output: Tensor,
+    out_ch: int,
+    grad_output_shape: tuple[int, ...],
+) -> Tensor:
+    """Backward pass of conv2d with respect to the bias."""
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.conv2dBiasBackward(
+        grad_output._id,
+        int(out_ch),
+        list(grad_output_shape),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def log_softmax_backward_from_tensors(
+    grad_output: Tensor,
+    softmax: Tensor,
+    batch_size: int,
+    num_classes: int,
+) -> Tensor:
+    """Backward pass of log_softmax."""
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.logSoftmaxBackward(
+        grad_output._id,
+        softmax._id,
+        int(batch_size),
+        int(num_classes),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def nll_loss_backward_from_tensors(
+    targets: Tensor,
+    batch_size: int,
+    num_classes: int,
+    scale: float = 1.0,
+) -> Tensor:
+    """Backward pass of NLL loss."""
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.nllLossBackward(
+        targets._id,
+        int(batch_size),
+        int(num_classes),
+        float(scale),
     ))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)

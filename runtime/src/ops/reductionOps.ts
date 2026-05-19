@@ -18,7 +18,9 @@ import {
   ELEMENTWISE_SHADER,
   UNARY_SHADER,
   LOG_SOFTMAX_SHADER,
+  LOG_SOFTMAX_BACKWARD_SHADER,
   NLL_LOSS_SHADER,
+  NLL_LOSS_BACKWARD_SHADER,
   createStorageBuffer,
   padShapeTo4,
 } from "./utils.js";
@@ -295,6 +297,58 @@ export class ReductionOps {
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
+  }
+
+  async logSoftmaxBackward(
+    gradOutputId: number,
+    softmaxId: number,
+    batchSize: number,
+    numClasses: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const gradOutput = this.deviceMgr.getTensorMeta(gradOutputId);
+    const total = batchSize * numClasses;
+
+    const gradInput = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
+
+    const dims = new Uint32Array([batchSize, numClasses, 0, 0]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({
+      size: dims.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+
+    const pipeline = getOrCreatePipeline(LOG_SOFTMAX_BACKWARD_SHADER, "log_softmax_backward");
+    dispatchCompute(pipeline, [gradOutput.buffer, this.deviceMgr.getTensorMeta(softmaxId).buffer, gradInput, dimsBuffer], calculateWorkgroups(total));
+    await syncDevice();
+    dimsBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(gradInput, [batchSize, numClasses], gradOutput.dtype as SupportedDType, total);
+  }
+
+  async nllLossBackward(
+    targetsId: number,
+    batchSize: number,
+    numClasses: number,
+    scale: number = 1.0,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const targets = this.deviceMgr.getTensorMeta(targetsId);
+    const total = batchSize * numClasses;
+
+    const gradInput = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
+
+    const params = new Float32Array([batchSize, numClasses, scale, 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+
+    const pipeline = getOrCreatePipeline(NLL_LOSS_BACKWARD_SHADER, "nll_loss_backward");
+    dispatchCompute(pipeline, [targets.buffer, gradInput, paramBuffer], calculateWorkgroups(total));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(gradInput, [batchSize, numClasses], "float32", total);
   }
 
   private async elementwiseOp(aId: number, bIdOrScalar: number, op: string): Promise<TensorHandle> {
