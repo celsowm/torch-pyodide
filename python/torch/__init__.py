@@ -843,7 +843,8 @@ def _einsum_two(a_idx: str, b_idx: str, output_eq: str, a: Tensor, b: Tensor) ->
         for d in reversed(sorted(sum_dims_list)):
             result = result.sum(dim=d)
         if output_eq:
-            perm = [all_dims_str.index(c) for c in output_eq if c in all_dims_str]
+            remaining_chars = "".join(c for c in all_dims_str if c not in sum_dims)
+            perm = [remaining_chars.index(c) for c in output_eq if c in remaining_chars]
             if perm:
                 result = result.permute(perm)
     else:
