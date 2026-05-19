@@ -265,19 +265,31 @@ def tensor(data: object, dtype: str = "float32", requires_grad: bool = False) ->
     return tensor_from_data(data, dtype=dtype, requires_grad=requires_grad)
 
 
-def zeros(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return zeros_from_shape(shape, dtype=dtype)
+def zeros(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
+    result = zeros_from_shape(shape, dtype=dtype)
+    if requires_grad:
+        result.requires_grad_()
+    return result
 
 
-def ones(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return ones_from_shape(shape, dtype=dtype)
+def ones(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
+    result = ones_from_shape(shape, dtype=dtype)
+    if requires_grad:
+        result.requires_grad_()
+    return result
 
-def rand(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return rand_from_shape(shape, dtype=dtype)
+def rand(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
+    result = rand_from_shape(shape, dtype=dtype)
+    if requires_grad:
+        result.requires_grad_()
+    return result
 
 
-def randn(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return randn_from_shape(shape, dtype=dtype)
+def randn(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
+    result = randn_from_shape(shape, dtype=dtype)
+    if requires_grad:
+        result.requires_grad_()
+    return result
 
 
 def manual_seed(seed: int) -> None:
@@ -300,8 +312,11 @@ def arange(
     return arange_from_values(start=start, end=end, step=step, dtype=dtype)
 
 
-def full(shape: int | Sequence[int], fill_value: float, dtype: str = "float32") -> Tensor:
-    return full_from_shape(shape=shape, fill_value=fill_value, dtype=dtype)
+def full(shape: int | Sequence[int], fill_value: float, dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
+    result = full_from_shape(shape=shape, fill_value=fill_value, dtype=dtype)
+    if requires_grad:
+        result.requires_grad_()
+    return result
 
 
 def full_like(input: Tensor, fill_value: float, dtype: str | None = None) -> Tensor:
@@ -316,8 +331,11 @@ def ones_like(input: Tensor, dtype: str | None = None) -> Tensor:
     return ones_like_from_tensor(input, dtype=dtype)
 
 
-def empty(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return empty_from_shape(shape, dtype=dtype)
+def empty(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
+    result = empty_from_shape(shape, dtype=dtype)
+    if requires_grad:
+        result.requires_grad_()
+    return result
 
 
 def empty_like(input: Tensor, dtype: str | None = None) -> Tensor:
