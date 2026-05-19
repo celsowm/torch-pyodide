@@ -87,12 +87,44 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: test-and-build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Download wheel artifact
-        uses: actions/download-artifact@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          name: python-wheel
-          path: python/dist/
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Auto-bump patch version
+        run: |
+          python -c "
+import re
+with open('python/pyproject.toml') as f:
+    content = f.read()
+version = re.search(r'^version = \"(\\d+\\.\\d+\\.)(\\d+)\"', content, re.M)
+major_minor = version.group(1)
+patch = int(version.group(2)) + 1
+content = content.replace(version.group(0), f'version = \"{major_minor}{patch}\"')
+with open('python/pyproject.toml', 'w') as f:
+    f.write(content)
+print(f'Bumped to {major_minor}{patch}')
+"
+
+      - name: Build wheel
+        run: python -m pip install --upgrade build && cd python && python -m build
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add python/pyproject.toml
+          git commit -m "Bump version to $(python -c "import re; print(re.search(r'^version = \"(.+?)\"', open('python/pyproject.toml').read(), re.M).group(1))")"
+          git push
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
