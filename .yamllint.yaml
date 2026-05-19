@@ -1,0 +1,17 @@
+---
+extends: default
+
+ignore: |
+  node_modules/
+  external/
+  .venv*/
+  __pycache__/
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  truthy:
+    allowed-values: ["true", "false", "on", "yes", "no"]
+  document-start:
+    present: true

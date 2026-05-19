@@ -1,4 +1,4 @@
-name: Publish Python Package
+---
 
 on:
   push:
@@ -52,41 +52,32 @@ jobs:
         run: npm run test:python
 
       - name: Build dist
-        run: |
+        run: >-
           cd python
-          python -m build
+          && python -m build
 
       - name: Smoke test wheel install
-        run: |
+        run: >-
           python -m venv .venv-wheel-smoke
-          . .venv-wheel-smoke/bin/activate
-          python -m pip install --upgrade pip
-          python -m pip install python/dist/*.whl
-          python -c "import torch; print(torch.__all__)"
+          && . .venv-wheel-smoke/bin/activate
+          && python -m pip install --upgrade pip
+          && python -m pip install python/dist/*.whl
+          && python -c "import torch; print(torch.__all__)"
 
       - name: Sanity check all torch submodules import
-        run: |
+        run: >-
           python -m venv .venv-sanity
-          . .venv-sanity/bin/activate
-          python -m pip install --upgrade pip
-          python -m pip install python/dist/*.whl
-          python -c "
-import torch
-import torch.autograd
-import torch.cuda
-import torch.distributions
-import torch.jit
-import torch.linalg
-import torch.nn
-import torch.nn.functional
-import torch.nn.init
-import torch.nn.utils
-import torch.nn.modules
-import torch.optim
-import torch.utils
-import torch.utils.data
-print('All submodules imported successfully')
-"
+          && . .venv-sanity/bin/activate
+          && python -m pip install --upgrade pip
+          && python -m pip install python/dist/*.whl
+          && python -c "import torch; import torch.autograd;
+          import torch.cuda; import torch.distributions;
+          import torch.jit; import torch.linalg;
+          import torch.nn; import torch.nn.functional;
+          import torch.nn.init; import torch.nn.utils;
+          import torch.nn.modules; import torch.optim;
+          import torch.utils; import torch.utils.data;
+          print('All submodules imported successfully')"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
