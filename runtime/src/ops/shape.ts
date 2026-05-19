@@ -1,8 +1,8 @@
-import { TensorMeta, SupportedDType, product } from "./types.js";
+import { TensorMeta, SupportedDType, product, dtypeBytes, f32ArrayToF16, f16ToF32Array } from "./types.js";
 
 export function assertDType(dtype: string) {
-  if (dtype !== "float32" && dtype !== "int32" && dtype !== "bool") {
-    throw new Error(`Unsupported dtype: ${dtype}. Supported dtypes: float32, int32, bool.`);
+  if (dtype !== "float32" && dtype !== "float16" && dtype !== "bfloat16" && dtype !== "int32" && dtype !== "bool") {
+    throw new Error(`Unsupported dtype: ${dtype}. Supported dtypes: float32, float16, bfloat16, int32, bool.`);
   }
 }
 
@@ -12,9 +12,53 @@ export function coerceScalarByDType(value: number, dtype: SupportedDType): numbe
   return value;
 }
 
+/** Encode a JS number array into an ArrayBuffer for the given dtype */
+export function encodeValuesByDType(values: number[], dtype: SupportedDType): ArrayBuffer {
+  if (dtype === "int32") {
+    const buf = new Int32Array(values);
+    return buf.buffer;
+  }
+  if (dtype === "bool") {
+    const buf = new Float32Array(values.map((v) => (v !== 0 ? 1 : 0)));
+    return buf.buffer;
+  }
+  if (dtype === "float16") {
+    const f32 = new Float32Array(values);
+    const f16 = f32ArrayToF16(f32);
+    return f16.buffer;
+  }
+  if (dtype === "bfloat16") {
+    // bfloat16: keep upper 16 bits of float32
+    const buf = new Uint16Array(values.length);
+    const f32 = new Float32Array(values);
+    const u32 = new Uint32Array(f32.buffer);
+    for (let i = 0; i < values.length; i++) {
+      buf[i] = (u32[i] >>> 16) & 0xFFFF;
+    }
+    return buf.buffer;
+  }
+  const buf = new Float32Array(values);
+  return buf.buffer;
+}
+
 export function decodeValuesByDType(buffer: ArrayBuffer, dtype: SupportedDType): number[] {
   if (dtype === "int32") return Array.from(new Int32Array(buffer));
   if (dtype === "bool") return Array.from(new Float32Array(buffer)).map((v) => (v !== 0 ? 1 : 0));
+  if (dtype === "float16") {
+    const f16 = new Uint16Array(buffer);
+    const f32 = f16ToF32Array(f16);
+    return Array.from(f32);
+  }
+  if (dtype === "bfloat16") {
+    // bfloat16: reconstruct from upper 16 bits
+    const bf16 = new Uint16Array(buffer);
+    const out = new Float32Array(bf16.length);
+    const outU32 = new Uint32Array(out.buffer);
+    for (let i = 0; i < bf16.length; i++) {
+      outU32[i] = bf16[i] << 16;
+    }
+    return Array.from(out);
+  }
   return Array.from(new Float32Array(buffer));
 }
 

@@ -1004,6 +1004,8 @@ from ._autograd import no_grad, inference_mode, set_grad_enabled, is_grad_enable
 # ── Dtype constants ──────────────────────────────────────────────
 
 float32 = "float32"
+float16 = "float16"
+bfloat16 = "bfloat16"
 float64 = "float64"
 int32 = "int32"
 int64 = "int64"

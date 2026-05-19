@@ -7,6 +7,7 @@ import {
 
 import { TensorMeta, TensorHandle, SupportedDType, cloneHandle, product } from "./types.js";
 import { decodeValuesByDType } from "./shape.js";
+import { dtypeBytes } from "./types.js";
 
 const LOST_RECOVERY_RETRIES = 3;
 const BACKOFF_BASE_MS = 200;
@@ -340,7 +341,7 @@ export class DeviceManager {
   }
 
   async readFromGPU(source: GPUBuffer, length: number, dtype: SupportedDType): Promise<number[]> {
-    const byteSize = length * 4;
+    const byteSize = length * dtypeBytes(dtype);
     const shadowId = this._bufferToShadow.get(source);
     const shadow = shadowId !== undefined ? this._shadowBuffers.get(shadowId) : undefined;
     // If device was recovered, shadow is more reliable than GPU read
