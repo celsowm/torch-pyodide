@@ -465,11 +465,27 @@ def _grad_select(grad_output: Tensor, input_tensor: Tensor, dim: int, index: int
     """d/dinput select(input, dim, index) = zeros_like(input); result[dim, index] = grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import zeros_like_from_tensor, fill_from_tensor
-    grad_input = zeros_like_from_tensor(input_tensor)
-    # Preencher a fatia selecionada com grad_output
-    # Simplificado: precisa de scatter_
-    return grad_input
+    from ._tensor import tensor_from_data, _flatten
+    d = dim if dim >= 0 else dim + input_tensor.ndim
+    in_shape = list(input_tensor._shape)
+    n = 1
+    for s in in_shape:
+        n *= s
+    flat_list = [0.0] * n
+    flat_out = _flatten(grad_output.tolist())
+    stride = 1
+    for s in reversed(in_shape[d+1:]):
+        stride *= s
+    outer = 1
+    for s in in_shape[:d]:
+        outer *= s
+    for o in range(outer):
+        for s in range(stride):
+            src_idx = o * (in_shape[d]) * stride + index * stride + s
+            dst_idx = o * stride + s
+            if src_idx < n and dst_idx < len(flat_out):
+                flat_list[src_idx] = flat_out[dst_idx]
+    return tensor_from_data(flat_list, in_shape, input_tensor.dtype)
 
 
 def _grad_slice(grad_output: Tensor, input_tensor: Tensor, dim: int, start: int, end: int, step: int = 1) -> Tensor | None:
@@ -609,22 +625,34 @@ def _grad_max(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     """d/dinput max(input) = one_hot(argmax(input)) * grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import zeros_like_from_tensor, argmax_from_tensor
-    idx = argmax_from_tensor(input_tensor)
-    grad_input = zeros_like_from_tensor(input_tensor)
-    # Simplificado: precisa scatter_
-    return grad_input
+    from ._tensor import tensor_from_data, _flatten
+    in_vals = _flatten(input_tensor.tolist())
+    grad_val = float(_flatten(grad_output.tolist())[0])
+    idx = max(range(len(in_vals)), key=lambda i: in_vals[i])
+    n = 1
+    for s in input_tensor._shape:
+        n *= s
+    flat = [0.0] * n
+    if 0 <= idx < n:
+        flat[idx] = grad_val
+    return tensor_from_data(flat, list(input_tensor._shape), input_tensor.dtype)
 
 
 def _grad_min(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     """d/dinput min(input) = one_hot(argmin(input)) * grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import zeros_like_from_tensor, argmin_from_tensor
-    idx = argmin_from_tensor(input_tensor)
-    grad_input = zeros_like_from_tensor(input_tensor)
-    # Simplificado: precisa scatter_
-    return grad_input
+    from ._tensor import tensor_from_data, _flatten
+    in_vals = _flatten(input_tensor.tolist())
+    grad_val = float(_flatten(grad_output.tolist())[0])
+    idx = min(range(len(in_vals)), key=lambda i: in_vals[i])
+    n = 1
+    for s in input_tensor._shape:
+        n *= s
+    flat = [0.0] * n
+    if 0 <= idx < n:
+        flat[idx] = grad_val
+    return tensor_from_data(flat, list(input_tensor._shape), input_tensor.dtype)
 
 
 def _grad_prod(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
@@ -719,18 +747,51 @@ def _grad_masked_select(grad_output: Tensor, input_tensor: Tensor, mask: Tensor)
     """d/dinput masked_select(input, mask) = zeros_like(input); result[mask] = grad_output"""
     if not input_tensor._requires_grad:
         return None
-    # Simplificado
-    from ._tensor import zeros_like_from_tensor
-    return zeros_like_from_tensor(input_tensor)
+    from ._tensor import tensor_from_data, _flatten
+    in_shape = list(input_tensor._shape)
+    n = 1
+    for s in in_shape:
+        n *= s
+    flat_list = [0.0] * n
+    mask_flat = _flatten(mask.tolist())
+    out_flat = _flatten(grad_output.tolist())
+    out_i = 0
+    for i, m in enumerate(mask_flat):
+        if m and out_i < len(out_flat):
+            flat_list[i] = out_flat[out_i]
+            out_i += 1
+    return tensor_from_data(flat_list, in_shape, input_tensor.dtype)
 
 
 def _grad_index_select(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Tensor) -> Tensor | None:
     """d/dinput index_select(input, dim, index) = zeros_like(input); result[dim, index] = grad_output"""
     if not input_tensor._requires_grad:
         return None
-    # Simplificado
-    from ._tensor import zeros_like_from_tensor
-    return zeros_like_from_tensor(input_tensor)
+    from ._tensor import tensor_from_data, _flatten
+    in_shape = list(input_tensor._shape)
+    d = dim if dim >= 0 else dim + len(in_shape)
+    n = 1
+    for s in in_shape:
+        n *= s
+    flat_list = [0.0] * n
+    idx_vals = _flatten(index.tolist())
+    out_flat = _flatten(grad_output.tolist())
+    stride = 1
+    for s in reversed(in_shape[d+1:]):
+        stride *= s
+    outer = 1
+    for s in in_shape[:d]:
+        outer *= s
+    chunk_size = stride
+    for i, pos in enumerate(idx_vals):
+        pos_i = int(pos)
+        for o in range(outer):
+            for s in range(chunk_size):
+                src_idx = o * in_shape[d] * stride + pos_i * stride + s
+                dst_idx = i * chunk_size + s + o * len(idx_vals) * chunk_size
+                if src_idx < n and dst_idx < len(out_flat):
+                    flat_list[src_idx] = out_flat[dst_idx]
+    return tensor_from_data(flat_list, in_shape, input_tensor.dtype)
 
 
 # ── torch.autograd.grad ──────────────────────────────────────────

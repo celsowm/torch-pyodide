@@ -47,6 +47,13 @@ class Tensor:
         return len(self._shape)
 
     @property
+    def numel(self) -> int:
+        n = 1
+        for s in self._shape:
+            n *= s
+        return n
+
+    @property
     def requires_grad(self) -> bool:
         return self._requires_grad
 
@@ -791,9 +798,16 @@ class Tensor:
         return Tensor(tensor_id, out_shape, out_dtype)
 
     def select(self, dim: int, index: int) -> "Tensor":
+        from .autograd import _Node, is_grad_enabled, _grad_select
+
         runtime = _get_runtime()
         meta = _run_js_awaitable(runtime.select(self._id, int(dim), int(index)))
         tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+        if is_grad_enabled() and self._requires_grad:
+            result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+            result._node = _Node(result, lambda g: (_grad_select(g, self, dim, index),), [self])
+            return result
         return Tensor(tensor_id, out_shape, out_dtype)
 
     def slice(self, dim: int, start: int | None = None, end: int | None = None, step: int = 1) -> "Tensor":
@@ -1503,9 +1517,16 @@ def expand_from_tensor(tensor: Tensor, shape: int | Sequence[int]) -> Tensor:
 
 
 def index_select_from_tensor(input: Tensor, dim: int, index: Tensor) -> Tensor:
+    from .autograd import _Node, is_grad_enabled, _grad_index_select
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.indexSelect(input._id, int(dim), index._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and input._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_index_select(g, input, dim, index),), [input])
+        return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
