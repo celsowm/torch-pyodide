@@ -12,6 +12,28 @@ from .autograd import (
 )
 
 from . import cuda
+from ._api_creation import (
+    arange,
+    empty,
+    empty_like,
+    eye,
+    full,
+    full_like,
+    linspace,
+    logspace,
+    manual_seed,
+    ones,
+    ones_like,
+    rand,
+    randint,
+    randn,
+    randperm,
+    seed,
+    tensor,
+    zeros,
+    zeros_like,
+)
+from ._einsum_impl import einsum
 from ._tensor import (
     Tensor,
     arange_from_values,
@@ -259,87 +281,6 @@ __all__ = [
     "distributions",
     "linalg",
 ]
-
-
-def tensor(data: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
-    return tensor_from_data(data, dtype=dtype, requires_grad=requires_grad)
-
-
-def zeros(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = zeros_from_shape(shape, dtype=dtype)
-    if requires_grad:
-        result.requires_grad_()
-    return result
-
-
-def ones(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = ones_from_shape(shape, dtype=dtype)
-    if requires_grad:
-        result.requires_grad_()
-    return result
-
-def rand(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = rand_from_shape(shape, dtype=dtype)
-    if requires_grad:
-        result.requires_grad_()
-    return result
-
-
-def randn(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = randn_from_shape(shape, dtype=dtype)
-    if requires_grad:
-        result.requires_grad_()
-    return result
-
-
-def manual_seed(seed: int) -> None:
-    _get_runtime().setSeed(seed)
-
-
-def seed() -> int:
-    import random
-    s = random.randint(0, 2**31 - 1)
-    manual_seed(s)
-    return s
-
-
-def arange(
-    start: float,
-    end: float | None = None,
-    step: float = 1.0,
-    dtype: str = "float32",
-) -> Tensor:
-    return arange_from_values(start=start, end=end, step=step, dtype=dtype)
-
-
-def full(shape: int | Sequence[int], fill_value: float, dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = full_from_shape(shape=shape, fill_value=fill_value, dtype=dtype)
-    if requires_grad:
-        result.requires_grad_()
-    return result
-
-
-def full_like(input: Tensor, fill_value: float, dtype: str | None = None) -> Tensor:
-    return full_like_from_tensor(input, fill_value=fill_value, dtype=dtype)
-
-
-def zeros_like(input: Tensor, dtype: str | None = None) -> Tensor:
-    return zeros_like_from_tensor(input, dtype=dtype)
-
-
-def ones_like(input: Tensor, dtype: str | None = None) -> Tensor:
-    return ones_like_from_tensor(input, dtype=dtype)
-
-
-def empty(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = empty_from_shape(shape, dtype=dtype)
-    if requires_grad:
-        result.requires_grad_()
-    return result
-
-
-def empty_like(input: Tensor, dtype: str | None = None) -> Tensor:
-    return empty_like_from_tensor(input, dtype=dtype)
 
 
 def add(a: Tensor, b: Tensor) -> Tensor:
@@ -802,115 +743,6 @@ def triangular_solve(a: Tensor, b: Tensor, upper: bool = False) -> Tensor:
     return a.triangular_solve(b, upper=upper)
 
 
-# ── Einsum ────────────────────────────────────────────────────────
-
-def einsum(equation: str, *operands: Tensor) -> Tensor:
-    """Einstein summation convention. Supports 1, 2, or 3+ operands."""
-    parts = equation.replace(" ", "").split("->")
-    input_eq = parts[0]
-    output_eq = parts[1] if len(parts) > 1 else ""
-    input_terms = input_eq.split(",")
-    ops = list(operands)
-
-    if len(input_terms) == 1:
-        return _einsum_single_op(input_terms[0], output_eq, ops[0])
-    elif len(input_terms) == 2:
-        return _einsum_two(input_terms[0], input_terms[1], output_eq, ops[0], ops[1])
-    else:
-        return _einsum_multi(input_terms, output_eq, ops)
-
-
-def _einsum_two(a_idx: str, b_idx: str, output_eq: str, a: Tensor, b: Tensor) -> Tensor:
-    sum_dims = set(a_idx) & set(b_idx) - set(output_eq)
-    if len(a_idx) == 2 and len(b_idx) == 2 and len(sum_dims) == 1:
-        sum_char = next(iter(sum_dims))
-        a_sum_pos = a_idx.index(sum_char)
-        b_sum_pos = b_idx.index(sum_char)
-        if a_sum_pos == 0:
-            a = a.transpose(0, 1)
-        if b_sum_pos == 1:
-            b = b.transpose(0, 1)
-        return a.matmul(b)
-    all_dims_str = "".join(dict.fromkeys(a_idx + b_idx))
-    a_shape_map = {c: a.shape[a_idx.index(c)] for c in a_idx}
-    b_shape_map = {c: b.shape[b_idx.index(c)] for c in b_idx}
-    a_exp = a.reshape([a_shape_map.get(c, 1) if c in a_idx else 1 for c in all_dims_str])
-    b_exp = b.reshape([b_shape_map.get(c, 1) if c in b_idx else 1 for c in all_dims_str])
-    expanded = a_exp * b_exp
-    sum_dims_list = [all_dims_str.index(c) for c in sum_dims]
-    if sum_dims_list:
-        result = expanded
-        for d in reversed(sorted(sum_dims_list)):
-            result = result.sum(dim=d)
-        if output_eq:
-            remaining_chars = "".join(c for c in all_dims_str if c not in sum_dims)
-            perm = [remaining_chars.index(c) for c in output_eq if c in remaining_chars]
-            if perm:
-                result = result.permute(perm)
-    else:
-        result = expanded
-    return result
-
-
-def _einsum_multi(input_terms: list[str], output_eq: str, ops: list[Tensor]) -> Tensor:
-    """3+ operands: contract pairs iteratively, then final reduce/permute."""
-    current_ops = [o for o in ops]
-    current_indices = [s for s in input_terms]
-
-    while len(current_ops) > 2:
-        # Contract first two ops
-        a_idx = current_indices[0]
-        b_idx = current_indices[1]
-        a_op = current_ops[0]
-        b_op = current_ops[1]
-        # Determine what dims to keep for intermediate
-        all_chars = "".join(dict.fromkeys(a_idx + b_idx))
-        common = set(a_idx) & set(b_idx)
-        remaining = set()
-        for idx in current_indices[2:]:
-            remaining.update(idx)
-        remaining.update(output_eq)
-        intermediate_chars = "".join(c for c in all_chars if c not in (common - remaining))
-        result = _einsum_two(a_idx, b_idx, intermediate_chars, a_op, b_op)
-        current_ops = [result] + current_ops[2:]
-        current_indices = [intermediate_chars] + current_indices[2:]
-
-    if len(current_ops) == 2:
-        result = _einsum_two(current_indices[0], current_indices[1], output_eq, current_ops[0], current_ops[1])
-    else:
-        result = current_ops[0]
-        final_idx = current_indices[0]
-        sum_chars = set(final_idx) - set(output_eq)
-        for c in sum_chars:
-            dim = final_idx.index(c)
-            result = result.sum(dim=dim)
-        final_idx = "".join(c for c in final_idx if c not in sum_chars)
-        if final_idx != output_eq and len(final_idx) == len(output_eq):
-            perm = [final_idx.index(c) for c in output_eq]
-            result = result.permute(perm)
-    return result
-
-
-def _einsum_single_op(input_str: str, output_str: str, x: Tensor) -> Tensor:
-    """Handle single operand einsum like 'ii->i' (diagonal) or 'ij->ji' (transpose)."""
-    if len(input_str) == 2 and len(output_str) == 2:
-        if input_str == output_str:
-            return x
-        # Transpose
-        perm = [input_str.index(c) for c in output_str]
-        return x.permute(perm)
-    if len(input_str) == 2 and len(output_str) == 1 and input_str[0] == input_str[1]:
-        # ii -> i: diagonal
-        n = x.shape[0]
-        vals = [x.tolist()[i * n + i] for i in range(n)]
-        from ._tensor import tensor_from_data
-        return tensor_from_data(vals, x.dtype)
-    if len(input_str) == 2 and len(output_str) == 0:
-        # ij -> : trace (sum of diagonal)
-        return x.sum()
-    return x
-
-
 # ── Save / Load ──────────────────────────────────────────────────
 
 def save(obj: object, f: str) -> None:
@@ -953,48 +785,6 @@ from torch.utils.data import (
     default_collate,
     default_convert,
 )
-
-
-# ── Creation ops ─────────────────────────────────────────────────
-
-def eye(n: int, m: int | None = None, dtype: str = "float32") -> Tensor:
-    rows = n
-    cols = m if m is not None else n
-    result = zeros([rows, cols], dtype=dtype)
-    min_dim = min(rows, cols)
-    for i in range(min_dim):
-        result[i, i] = 1.0
-    return result
-
-
-def randint(low: int, high: int | None = None, size: int | Sequence[int] | None = None, dtype: str = "int64") -> Tensor:
-    if high is None:
-        low, high = 0, low
-    if size is None:
-        size = [1]
-    if isinstance(size, int):
-        size = [size]
-    r = rand(list(size))
-    span = float(high - low)
-    scaled = r.mul(span).add(float(low))
-    return scaled.to(dtype)
-
-
-def randperm(n: int, dtype: str = "int64") -> Tensor:
-    r = rand([n])
-    _, indices = r.sort(dim=0)
-    return indices.to(dtype)
-
-
-def linspace(start: float, end: float, steps: int, dtype: str = "float32") -> Tensor:
-    if steps < 2:
-        return full([steps], start, dtype=dtype)
-    step = (end - start) / (steps - 1)
-    return arange(start=start, end=end + step * 0.5, step=step, dtype=dtype)
-
-
-def logspace(start: float, end: float, steps: int, dtype: str = "float32") -> Tensor:
-    return linspace(start, end, steps, dtype=dtype).pow(10.0)
 
 
 # ── Shape ops ────────────────────────────────────────────────────
