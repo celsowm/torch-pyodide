@@ -1375,7 +1375,7 @@ def maximum_from_tensors(a: Tensor, b: Tensor) -> Tensor:
     if is_grad_enabled() and (a._requires_grad or b._requires_grad):
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
         parents = [p for p in (a, b) if p._requires_grad]
-        result._node = _Node(result, lambda g: (_grad_maximum(g, a, b),), parents)
+        result._node = _Node(result, lambda g: _grad_maximum(g, a, b), parents)
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
@@ -1390,7 +1390,7 @@ def minimum_from_tensors(a: Tensor, b: Tensor) -> Tensor:
     if is_grad_enabled() and (a._requires_grad or b._requires_grad):
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
         parents = [p for p in (a, b) if p._requires_grad]
-        result._node = _Node(result, lambda g: (_grad_minimum(g, a, b),), parents)
+        result._node = _Node(result, lambda g: _grad_minimum(g, a, b), parents)
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
@@ -1490,7 +1490,7 @@ def where_from_tensors(condition: Tensor, x: Tensor, y: Tensor) -> Tensor:
     if is_grad_enabled() and (x._requires_grad or y._requires_grad):
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
         parents = [p for p in (x, y) if p._requires_grad]
-        result._node = _Node(result, lambda g: (_grad_where(g, condition, x, y),), parents)
+        result._node = _Node(result, lambda g: _grad_where(g, condition, x, y), parents)
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
@@ -1596,7 +1596,7 @@ def cat_from_tensors(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
     if is_grad_enabled() and any(t._requires_grad for t in tensors):
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
         parents = [t for t in tensors if t._requires_grad]
-        result._node = _Node(result, lambda g: (_grad_cat(g, tensors, dim),), parents)
+        result._node = _Node(result, lambda g: _grad_cat(g, tensors, dim), parents)
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
