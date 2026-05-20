@@ -20,9 +20,12 @@ with torch.no_grad():
     w2 = torch.randn((4, 5), requires_grad=True)
     out2 = x2.matmul(w2)
     print(f"out2.requires_grad: {out2.requires_grad}")
-    # This won't compute gradients
-    out2.sum().backward()
-    print(f"x2.grad after backward in no_grad: {x2.grad is not None}")
+    # backward() on a no_grad tensor raises RuntimeError (no grad_fn)
+    try:
+        out2.sum().backward()
+        print("ERROR: backward should have failed inside no_grad")
+    except RuntimeError as e:
+        print(f"Expected error: backward inside no_grad raises RuntimeError")
 
 # inference_mode: even stricter
 with torch.inference_mode():
