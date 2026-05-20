@@ -48,6 +48,11 @@
     { "id": "context_managers", "label": "Context: no_grad, inference_mode", "file": "examples/context_managers.py" },
     { "id": "distributions", "label": "Distributions: Normal, Uniform, Bernoulli", "file": "examples/distributions.py" },
     { "id": "data_loader", "label": "DataLoader: Samplers, ConcatDataset", "file": "examples/data_loader_advanced.py" },
-    { "id": "float16_bfloat16", "label": "dtypes: float16, bfloat16", "file": "examples/float16_bfloat16.py" }
+    { "id": "float16_bfloat16", "label": "dtypes: float16, bfloat16", "file": "examples/float16_bfloat16.py" },
+    { "id": "autograd_activations", "label": "Autograd: sigmoid, tanh, gelu...", "file": "examples/autograd_activations.py" },
+    { "id": "autograd_sort_topk", "label": "Autograd: Sort + Topk", "file": "examples/autograd_sort_topk.py" },
+    { "id": "autograd_maximum_minimum", "label": "Autograd: max/min elementwise", "file": "examples/autograd_maximum_minimum.py" },
+    { "id": "autograd_cumsum_cumprod", "label": "Autograd: cumsum, cumprod, tril...", "file": "examples/autograd_cumsum_cumprod.py" },
+    { "id": "autograd_cat_expand_where", "label": "Autograd: cat, expand, where", "file": "examples/autograd_cat_expand_where.py" }
   ]
 }
