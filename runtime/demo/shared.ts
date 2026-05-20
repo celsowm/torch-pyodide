@@ -118,11 +118,7 @@ async function installPublishedTorchPackage(pyodide: PyodideApi): Promise<void> 
   await pyodide.loadPackage("micropip");
   await pyodide.runPythonAsync(`
 import micropip
-try:
-    await micropip.uninstall("torch-pyodide")
-except Exception:
-    pass
-await micropip.install("torch-pyodide")
+await micropip.install("torch-pyodide", reinstall=True, verbose=True)
 `);
 }
 
