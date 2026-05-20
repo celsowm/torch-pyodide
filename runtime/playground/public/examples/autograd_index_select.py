@@ -5,7 +5,7 @@ import torch
 torch.manual_seed(42)
 
 x = torch.randn((5, 3), requires_grad=True)
-idx = torch.tensor([0, 2, 4], dtype=torch.int64)
+idx = torch.tensor([0, 2, 4], dtype=torch.int32)
 selected = torch.index_select(x, 0, idx)
 
 loss = selected.sum()

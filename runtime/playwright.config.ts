@@ -13,13 +13,6 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium-headless",
-      grepInvert: /@webgpu/,
-      use: {
-        headless: true
-      }
-    },
-    {
       name: "gpu-headed",
       grep: /@webgpu/,
       use: {

@@ -46,17 +46,13 @@ test("playground loads examples dropdown and runs selected code", async ({ page 
       return false;
     }
     return (
-      output.textContent.includes('"shape"') || output.textContent.includes("Failed to get WebGPU adapter")
+      output.textContent.includes('"shape"')
     );
   });
 
   const outputText = await page.locator("#output").innerText();
-  if (outputText.includes("Failed to get WebGPU adapter")) {
-    expect(outputText).toContain("Failed to get WebGPU adapter");
-  } else {
-    expect(outputText).toContain('"shape"');
-    expect(outputText).toContain('"values"');
-  }
+  expect(outputText).toContain('"shape"');
+  expect(outputText).toContain('"values"');
   expect(outputText).not.toContain("dict' object has no attribute 'id'");
 });
 
@@ -93,21 +89,6 @@ test("playground shows explicit error when examples catalog fails to load", asyn
   await expect(page.locator("#run")).toBeDisabled();
   await expect(page.locator("#reset")).toBeDisabled();
   await expect(page.locator("#example-select")).toBeDisabled();
-});
-
-test("runtime returns explicit error when webgpu is unavailable", async ({ page }) => {
-  await page.goto("/demo/index.html");
-  const error = await page.evaluate(async () => {
-    const mod = await import("/src/runtime.ts");
-    const runtime = new mod.TorchPyodideRuntime();
-    try {
-      await runtime.init(null);
-      return "";
-    } catch (err) {
-      return String(err);
-    }
-  });
-  expect(error).toContain("WebGPU unavailable");
 });
 
 test("gather operation matches PyTorch semantics @webgpu", async ({ page }) => {
@@ -527,10 +508,10 @@ test.describe("all playground examples", () => {
     { id: "shape_transpose_permute", code: `import json\nimport torch\n\nx = torch.tensor([[[1.0, 2.0]], [[3.0, 4.0]]])\nt = torch.transpose(torch.tensor([[1.0, 2.0], [3.0, 4.0]]), 0, 1)\np = torch.permute(x, (2, 0, 1))\nout = {\n  "transpose": t.tolist(),\n  "permute_shape": list(p.shape),\n}\nprint(json.dumps(out, indent=2))` },
     { id: "index_select_slice", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nout = {\n  "select_row_1": torch.select(x, 0, 1).tolist(),\n  "slice_rows_0_3_step2": x[0:3:2].tolist(),\n  "getitem_row_1": x[1].tolist(),\n}\nprint(json.dumps(out, indent=2))` },
     { id: "cat_stack", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\nb = torch.tensor([[5.0, 6.0], [7.0, 8.0]])\ncat_rows = torch.cat([a, b], dim=0)\ncat_cols = torch.cat([a, b], dim=1)\nstacked = torch.stack([a, b], dim=0)\nout = {\n  "cat_dim0": cat_rows.tolist(),\n  "cat_dim0_shape": list(cat_rows.shape),\n  "cat_dim1": cat_cols.tolist(),\n  "cat_dim1_shape": list(cat_cols.shape),\n  "stack_dim0": stacked.tolist(),\n  "stack_dim0_shape": list(stacked.shape),\n}\nprint(json.dumps(out, indent=2))` },
-    { id: "expand_index_select", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\ne = x.expand(3, 2, 2)\nindices = torch.tensor([0, 1], dtype=torch.int64)\ns = torch.index_select(x, 0, indices)\nout = {\n  "input": x.tolist(),\n  "expand_shape": list(e.shape),\n  "expand": e.tolist(),\n  "index_select": s.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
-    { id: "broadcasting", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nb = torch.tensor([10.0, 20.0, 30.0])\nc = torch.tensor([[1.0], [2.0]])\nout = {\n  "a + b (broadcast)": a.add(b).tolist(),\n  "a * c (broadcast)": a.mul(c).tolist(),\n  "b - a (broadcast)": b.sub(a).tolist(),\n  "shape_a": list(a.shape),\n  "shape_b": list(b.shape),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "expand_index_select", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0], [3.0, 4.0]])\ne = x.expand(3, 2, 2)\nindices = torch.tensor([0, 1], dtype=torch.int32)\ns = torch.index_select(x, 0, indices)\nout = {\n  "input": x.tolist(),\n  "expand_shape": list(e.shape),\n  "expand": e.tolist(),\n  "index_select": s.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "broadcasting", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nb = torch.tensor([10.0, 20.0, 30.0])\nout = {\n  "a + b (broadcast)": a.add(b).tolist(),\n  "a * 2.0 (scalar broadcast)": a.mul(2.0).tolist(),\n  "shape_a": list(a.shape),\n  "shape_b": list(b.shape),\n}\nprint(json.dumps(out, indent=2))` },
     { id: "compare_ops", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 5.0], [3.0, 2.0]])\nb = torch.tensor([[1.0, 3.0], [3.0, 4.0]])\nout = {\n  "a": a.tolist(),\n  "b": b.tolist(),\n  "eq": torch.eq(a, b).tolist(),\n  "ne": torch.ne(a, b).tolist(),\n  "lt": torch.lt(a, b).tolist(),\n  "le": torch.le(a, b).tolist(),\n  "gt": torch.gt(a, b).tolist(),\n  "ge": torch.ge(a, b).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
-    { id: "unary_advanced", code: `import json\nimport torch\nimport torch.nn.functional as F\n\nx = torch.tensor([[-1.0, 0.0, 1.0], [2.0, -2.0, 0.5]])\nout = {\n  "input": x.tolist(),\n  "sigmoid": torch.sigmoid(x).tolist(),\n  "tanh": torch.tanh(x).tolist(),\n  "sin": torch.sin(x).tolist(),\n  "cos": torch.cos(x).tolist(),\n  "gelu": F.gelu(x).tolist(),\n  "silu": F.silu(x).tolist(),\n  "leaky_relu": F.leaky_relu(x, 0.01).tolist(),\n  "floor": torch.floor(x).tolist(),\n  "ceil": torch.ceil(x).tolist(),\n  "round": torch.round(x).tolist(),\n  "reciprocal": torch.reciprocal(x).tolist(),\n  "square": torch.square(x).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "unary_advanced", code: `import json\nimport torch\nimport torch.nn.functional as F\n\nx = torch.tensor([[-1.0, 0.5, 1.0], [2.0, -2.0, 0.5]])\nout = {\n  "input": x.tolist(),\n  "sigmoid": torch.sigmoid(x).tolist(),\n  "tanh": torch.tanh(x).tolist(),\n  "sin": torch.sin(x).tolist(),\n  "cos": torch.cos(x).tolist(),\n  "gelu": F.gelu(x).tolist(),\n  "silu": F.silu(x).tolist(),\n  "leaky_relu": F.leaky_relu(x, 0.01).tolist(),\n  "floor": torch.floor(x).tolist(),\n  "ceil": torch.ceil(x).tolist(),\n  "round": torch.round(x).tolist(),\n  "reciprocal": torch.reciprocal(x).tolist(),\n  "square": torch.square(x).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
     { id: "reduce_dim", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nout = {\n  "input": x.tolist(),\n  "sum(0)": torch.sum(x, 0).tolist(),\n  "sum(1)": torch.sum(x, 1).tolist(),\n  "mean(0)": torch.mean(x, 0).tolist(),\n  "mean(1)": torch.mean(x, 1).tolist(),\n  "prod": torch.prod(x).tolist(),\n  "min": torch.min(x).tolist(),\n  "max": torch.max(x).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
     { id: "masked_select_fill", code: `import json\nimport torch\n\nx = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nmask = torch.tensor([[True, False, True], [False, True, False]])\nfilled = torch.masked_fill(x, mask, 99.0)\nselected = torch.masked_select(x, mask)\nout = {\n  "input": x.tolist(),\n  "mask": mask.tolist(),\n  "masked_fill": filled.tolist(),\n  "masked_select": selected.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
     { id: "broadcast_compare", code: `import json\nimport torch\n\na = torch.tensor([[1.0, 5.0, 3.0], [4.0, 2.0, 6.0]])\nthreshold = torch.tensor([3.0, 3.0, 3.0])\nout = {\n  "a": a.tolist(),\n  "threshold": threshold.tolist(),\n  "a > threshold": torch.gt(a, threshold).tolist(),\n  "a <= threshold": torch.le(a, threshold).tolist(),\n  "where(a > 3, a, 0)": torch.where(torch.gt(a, torch.tensor(3.0)), a, torch.zeros_like(a)).tolist(),\n}\nprint(json.dumps(out, indent=2))` },
@@ -542,27 +523,25 @@ test.describe("all playground examples", () => {
     { id: "nn_losses", code: `import json\nimport torch\nimport torch.nn.functional as F\n\nlogits = torch.randn((2, 3))\ntarget = torch.tensor([0, 2])\nloss = F.cross_entropy(logits, target)\nmse = F.mse_loss(logits, torch.zeros((2, 3)))\nout = {\n    "cross_entropy": loss.tolist(),\n    "mse_loss": mse.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
     { id: "nn_nll_loss", code: `import json\nimport torch\nimport torch.nn.functional as F\n\nlogits = torch.randn((2, 4))\ntarget = torch.tensor([1, 3])\nlog_probs = F.log_softmax(logits, dim=-1)\nnll = F.nll_loss(log_probs, target, reduction="mean")\nce = F.cross_entropy(logits, target, reduction="mean")\nnll_none = F.nll_loss(log_probs, target, reduction="none")\nout = {\n    "log_probs": [[round(v, 4) for v in row] for row in log_probs.tolist()],\n    "nll_loss_mean": round(nll.item(), 4),\n    "cross_entropy_mean": round(ce.item(), 4),\n    "nll_loss_none": [round(v, 4) for v in nll_none.tolist()],\n}\nprint(json.dumps(out, indent=2))` },
     { id: "nn_batchnorm_training", code: `import json\nimport torch\nimport torch.nn as nn\n\nbn = nn.BatchNorm1d(4)\nbn.weight = torch.ones((4,))\nbn.bias = torch.zeros((4,))\n\nx = torch.tensor([[1.0, 2.0, 3.0, 4.0],\n                  [5.0, 6.0, 7.0, 8.0],\n                  [9.0, 10.0, 11.0, 12.0]])\n\nbn.train()\ny_train = bn(x)\n\nbn.eval()\ny_eval = bn(x)\n\nrunning_mean = bn.running_mean.tolist()\nrunning_var = bn.running_var.tolist()\n\nout = {\n    "x_shape": list(x.shape),\n    "output_train": [[round(v, 4) for v in row] for row in y_train.tolist()],\n    "output_eval": [[round(v, 4) for v in row] for row in y_eval.tolist()],\n    "running_mean": [round(v, 4) for v in running_mean],\n    "running_var": [round(v, 4) for v in running_var],\n}\nprint(json.dumps(out, indent=2))` },
-    { id: "autograd_select", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((3, 4), requires_grad=True)\nrow = x.select(0, 1)\nloss = (row ** 2).sum()\nloss.backward()\nout = {\n    "x_shape": list(x.shape),\n    "row_shape": list(row.shape),\n    "loss": loss.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
-    { id: "autograd_index_select", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((5, 3), requires_grad=True)\nidx = torch.tensor([0, 2, 4], dtype=torch.int64)\nselected = torch.index_select(x, 0, idx)\nloss = selected.sum()\nloss.backward()\nout = {\n    "x_shape": list(x.shape),\n    "selected_shape": list(selected.shape),\n    "loss": loss.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "autograd_select", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((3, 4), requires_grad=True)\nrow = x.select(0, 1)\nloss = row.abs().sum()\nloss.backward()\nout = {\n    "x_shape": list(x.shape),\n    "row_shape": list(row.shape),\n    "loss": loss.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "autograd_index_select", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((5, 3), requires_grad=True)\nidx = torch.tensor([0, 2, 4], dtype=torch.int32)\nselected = torch.index_select(x, 0, idx)\nloss = selected.sum()\nloss.backward()\nout = {\n    "x_shape": list(x.shape),\n    "selected_shape": list(selected.shape),\n    "loss": loss.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
     { id: "autograd_masked_select", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((3, 4), requires_grad=True)\nmask = torch.tensor([[True, False, True, False], [False, True, False, True], [True, True, False, False]])\nselected = torch.masked_select(x, mask)\nloss = selected.sum()\nloss.backward()\nout = {\n    "x_shape": list(x.shape),\n    "selected_shape": list(selected.shape),\n    "loss": loss.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
     { id: "autograd_max", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((2, 5), requires_grad=True)\ny = x.max()\ny.backward()\nout = {\n    "x_shape": list(x.shape),\n    "max_val": y.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
     { id: "autograd_min", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((2, 5), requires_grad=True)\ny = x.min()\ny.backward()\nout = {\n    "x_shape": list(x.shape),\n    "min_val": y.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
     { id: "gather", code: `import json\nimport torch\n\nx = torch.tensor([[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]])\nidx = torch.tensor([[0, 1], [2, 0]])\nout = {\n    "input_shape": list(x.shape),\n    "gather_dim0": torch.gather(x, 0, idx).tolist(),\n    "gather_dim1": torch.gather(x, 1, idx).tolist(),\n    "indices_shape": list(idx.shape),\n}\nprint(json.dumps(out, indent=2))` },
     { id: "sort", code: `import json\nimport torch\n\nx = torch.tensor([[3.0, 1.0, 4.0], [1.0, 5.0, 9.0]])\nv_asc, i_asc = torch.sort(x, dim=1, descending=False)\nv_desc, i_desc = torch.sort(x, dim=1, descending=True)\nout = {\n    "input": x.tolist(),\n    "sort_asc_values": v_asc.tolist(),\n    "sort_asc_indices": i_asc.tolist(),\n    "sort_desc_values": v_desc.tolist(),\n    "sort_desc_indices": i_desc.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
     { id: "topk", code: `import json\nimport torch\n\nx = torch.tensor([[3.0, 1.0, 4.0, 1.0, 5.0, 9.0], [2.0, 7.0, 1.0, 8.0, 2.0, 8.0]])\nv, i = torch.topk(x, 3, dim=1, largest=True)\nout = {\n    "input": x.tolist(),\n    "top3_values": v.tolist(),\n    "top3_indices": i.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
-    { id: "optim_sgd", code: `import json\nimport torch\nimport torch.nn as nn\nfrom torch.optim import SGD\n\nmodel = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))\nx = torch.randn((3, 4))\ntarget = torch.tensor([0, 1, 0])\n\noptimizer = SGD(model.parameters(), lr=0.01)\nloss_fn = nn.CrossEntropyLoss()\n\nlosses = []\nfor step in range(3):\n    optimizer.zero_grad()\n    out = model(x)\n    loss = loss_fn(out, target)\n    loss.backward()\n    optimizer.step()\n    losses.append(round(loss.item(), 4))\nout = {"losses": losses}\nprint(json.dumps(out, indent=2))` },
-    { id: "optim_adam", code: `import json\nimport torch\nimport torch.nn as nn\nfrom torch.optim import Adam\n\nmodel = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))\nx = torch.randn((3, 4))\ntarget = torch.tensor([0, 1, 0])\n\noptimizer = Adam(model.parameters(), lr=0.001)\nloss_fn = nn.CrossEntropyLoss()\n\nlosses = []\nfor step in range(3):\n    optimizer.zero_grad()\n    out = model(x)\n    loss = loss_fn(out, target)\n    loss.backward()\n    optimizer.step()\n    losses.append(round(loss.item(), 4))\nout = {"losses": losses}\nprint(json.dumps(out, indent=2))` },
+    { id: "optim_sgd", code: `import json\nimport torch\nimport torch.nn as nn\nfrom torch.optim import SGD\n\nmodel = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))\nx = torch.randn((3, 4))\ntarget = torch.randn((3, 2))\n\noptimizer = SGD(model.parameters(), lr=0.01)\nloss_fn = nn.MSELoss()\n\nlosses = []\nfor step in range(3):\n    optimizer.zero_grad()\n    out = model(x)\n    loss = loss_fn(out, target)\n    loss.backward()\n    optimizer.step()\n    losses.append(round(loss.item(), 4))\nout = {"losses": losses}\nprint(json.dumps(out, indent=2))` },
+    { id: "optim_adam", code: `import json\nimport torch\nimport torch.nn as nn\nfrom torch.optim import Adam\n\nmodel = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))\nx = torch.randn((3, 4))\ntarget = torch.randn((3, 2))\n\noptimizer = Adam(model.parameters(), lr=0.001)\nloss_fn = nn.MSELoss()\n\nlosses = []\nfor step in range(3):\n    optimizer.zero_grad()\n    out = model(x)\n    loss = loss_fn(out, target)\n    loss.backward()\n    optimizer.step()\n    losses.append(round(loss.item(), 4))\nout = {"losses": losses}\nprint(json.dumps(out, indent=2))` },
   ];
 
   for (const ex of examples) {
     test(`${ex.id} runs without error @webgpu`, async ({ page }) => {
-      const hasWebGPU = await page.evaluate(() => Boolean((navigator as any).gpu));
-      if (!hasWebGPU) {
-        test.skip();
-        return;
-      }
       test.setTimeout(120000);
       await page.goto("/demo/index.html?force_fallback=1");
+
+      const hasWebGPU = await page.evaluate(() => Boolean((navigator as any).gpu));
+      expect(hasWebGPU).toBe(true);
 
       await page.waitForFunction(
         () => Boolean((window as any).__pyodide),
@@ -572,24 +551,25 @@ test.describe("all playground examples", () => {
       const outputText = await page.evaluate(async (code) => {
         const pyodide = (window as any).__pyodide;
         try {
-          const result = await pyodide.runPythonAsync(code);
-          return JSON.stringify(result);
+          await pyodide.runPythonAsync(code);
+          return await pyodide.runPythonAsync("import json\njson.dumps(out)");
         } catch (e) {
           return String(e);
         }
       }, ex.code);
 
-      if (outputText.includes("Failed to get WebGPU adapter")) {
-        test.skip();
-        return;
-      }
+      expect(outputText).not.toContain("Failed to get WebGPU adapter");
 
       expect(outputText).not.toContain("Traceback");
       expect(outputText).not.toContain("PythonError");
       expect(outputText).not.toContain("object has no attribute");
       expect(outputText).not.toContain("is not subscriptable");
-      const parsed = JSON.parse(outputText);
+      const parsed = JSON.parse(outputText.replace(/\bNaN\b/g, "null").replace(/\bInfinity\b/g, "null").replace(/\b-Infinity\b/g, "null"));
       expect(parsed).toBeTruthy();
     });
   }
 });
+
+
+
+

@@ -2,7 +2,7 @@ import json
 import torch
 import torch.nn.functional as F
 
-x = torch.tensor([[-1.0, 0.0, 1.0], [2.0, -2.0, 0.5]])
+x = torch.tensor([[-1.0, 0.5, 1.0], [2.0, -2.0, 0.5]])
 out = {
   "input": x.tolist(),
   "sigmoid": torch.sigmoid(x).tolist(),

@@ -253,39 +253,39 @@ class Tensor:
     def __neg__(self) -> "Tensor":
         return self.neg()
 
-    def __lt__(self, other: "Tensor | float") -> "Tensor":
+    def __lt__(self, other: "Tensor | float | int | bool") -> "Tensor":
         from ._tensor import eq_from_tensors, ne_from_tensors, lt_from_tensors, le_from_tensors, gt_from_tensors, ge_from_tensors
-        if isinstance(other, float):
+        if isinstance(other, (float, int, bool)):
             other = _scalar_to_tensor(other, self._dtype)
         return lt_from_tensors(self, other)
 
-    def __le__(self, other: "Tensor | float") -> "Tensor":
+    def __le__(self, other: "Tensor | float | int | bool") -> "Tensor":
         from ._tensor import le_from_tensors
-        if isinstance(other, float):
+        if isinstance(other, (float, int, bool)):
             other = _scalar_to_tensor(other, self._dtype)
         return le_from_tensors(self, other)
 
-    def __gt__(self, other: "Tensor | float") -> "Tensor":
+    def __gt__(self, other: "Tensor | float | int | bool") -> "Tensor":
         from ._tensor import gt_from_tensors
-        if isinstance(other, float):
+        if isinstance(other, (float, int, bool)):
             other = _scalar_to_tensor(other, self._dtype)
         return gt_from_tensors(self, other)
 
-    def __ge__(self, other: "Tensor | float") -> "Tensor":
+    def __ge__(self, other: "Tensor | float | int | bool") -> "Tensor":
         from ._tensor import ge_from_tensors
-        if isinstance(other, float):
+        if isinstance(other, (float, int, bool)):
             other = _scalar_to_tensor(other, self._dtype)
         return ge_from_tensors(self, other)
 
-    def __eq__(self, other: "Tensor | float") -> "Tensor":
+    def __eq__(self, other: "Tensor | float | int | bool") -> "Tensor":
         from ._tensor import eq_from_tensors
-        if isinstance(other, float):
+        if isinstance(other, (float, int, bool)):
             other = _scalar_to_tensor(other, self._dtype)
         return eq_from_tensors(self, other)
 
-    def __ne__(self, other: "Tensor | float") -> "Tensor":
+    def __ne__(self, other: "Tensor | float | int | bool") -> "Tensor":
         from ._tensor import ne_from_tensors
-        if isinstance(other, float):
+        if isinstance(other, (float, int, bool)):
             other = _scalar_to_tensor(other, self._dtype)
         return ne_from_tensors(self, other)
 
@@ -1162,11 +1162,7 @@ def _scalar_to_tensor(value: float, dtype: str = "float32") -> Tensor:
     # Put the value in
     meta2 = _run_js_awaitable(runtime.fill(t_id, float(value)))
     t_id2, _, _ = _js_meta_to_tuple(meta2)
-    t = Tensor.__new__(Tensor)
-    t._id = t_id2
-    t._shape = [1]
-    t._dtype = dtype
-    return t
+    return Tensor(t_id2, [1], dtype)
 
 
 def _infer_shape(data: object) -> list[int]:

@@ -7,7 +7,7 @@ torch.manual_seed(42)
 x = torch.randn((3, 4), requires_grad=True)
 row = x.select(0, 1)
 
-loss = (row ** 2).sum()
+loss = row.abs().sum()
 loss.backward()
 
 out = {

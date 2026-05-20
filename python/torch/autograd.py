@@ -557,14 +557,16 @@ def _grad_nll_loss(grad_output: Tensor, input_tensor: Tensor, target: Tensor) ->
 
     grad_input = nll_loss_backward_from_tensors(target, batch_size, num_classes, scale)
 
-    # Multiply by grad_output (chain rule)
-    # If grad_output is scalar, broadcast it
+    # Multiply by grad_output (chain rule), handling scalar or per-sample reductions.
     if grad_output.shape == ():
         scalar_val = grad_output.tolist()[0] if grad_output.tolist() else 1.0
         from ._tensor import _scalar_to_tensor
         grad_input = grad_input.mul(_scalar_to_tensor(scalar_val))
     else:
-        grad_input = grad_input.mul(grad_output)
+        grad_scale = grad_output
+        while len(grad_scale.shape) < len(grad_input.shape):
+            grad_scale = grad_scale.unsqueeze(-1)
+        grad_input = grad_input.mul(grad_scale)
 
     return grad_input
 
