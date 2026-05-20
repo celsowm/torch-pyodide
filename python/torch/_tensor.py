@@ -1146,199 +1146,111 @@ class Tensor:
         raise TypeError(f"Tensor indexing supports only int, slice, tuple, or bool Tensor in MVP.")
 
 
+from .tensor_shape_utils import (
+    _flatten_out as _shape_flatten_out,
+    _scalar_to_tensor as _shape_scalar_to_tensor,
+    _infer_shape as _shape_infer_shape,
+    _flatten as _shape_flatten,
+    _normalize_shape as _shape_normalize_shape,
+    _normalize_shape_from_args as _shape_normalize_shape_from_args,
+    _coerce_out_value as _shape_coerce_out_value,
+    _reshape_flat_values as _shape_reshape_flat_values,
+)
+
+
 def _flatten_out(data: object) -> list[float]:
-    if isinstance(data, list):
-        out: list[float] = []
-        for item in data:
-            out.extend(_flatten_out(item))
-        return out
-    return [float(data)]
+    return _shape_flatten_out(data)
 
 
 def _scalar_to_tensor(value: float, dtype: str = "float32") -> Tensor:
-    runtime = _get_runtime()
-    meta = _run_js_awaitable(runtime.zeros([1], dtype))
-    t_id, _, _ = _js_meta_to_tuple(meta)
-    # Put the value in
-    meta2 = _run_js_awaitable(runtime.fill(t_id, float(value)))
-    t_id2, _, _ = _js_meta_to_tuple(meta2)
-    return Tensor(t_id2, [1], dtype)
+    return _shape_scalar_to_tensor(value, dtype)
 
 
 def _infer_shape(data: object) -> list[int]:
-    if not isinstance(data, list):
-        return []
-    if len(data) == 0:
-        return [0]
-    first_shape = _infer_shape(data[0])
-    for item in data[1:]:
-        if _infer_shape(item) != first_shape:
-            raise ValueError("tensor() expects a rectangular nested list.")
-    return [len(data), *first_shape]
+    return _shape_infer_shape(data)
 
 
 def _flatten(data: object) -> list[float]:
-    if isinstance(data, list):
-        out: list[float] = []
-        for item in data:
-            out.extend(_flatten(item))
-        return out
-    return [float(data)]  # type: ignore[arg-type]
+    return _shape_flatten(data)
 
 
 def _normalize_shape(shape: int | Sequence[int]) -> list[int]:
-    if isinstance(shape, int):
-        if shape < 0:
-            raise ValueError("shape values must be >= 0")
-        return [shape]
-
-    normalized = [int(v) for v in shape]
-    if any(v < 0 for v in normalized):
-        raise ValueError("shape values must be >= 0")
-    return normalized
+    return _shape_normalize_shape(shape)
 
 
 def _normalize_shape_from_args(shape: Sequence[int]) -> list[int]:
-    if len(shape) == 1 and isinstance(shape[0], (list, tuple)):
-        return _normalize_shape(shape[0])
-    return _normalize_shape([int(v) for v in shape])
+    return _shape_normalize_shape_from_args(shape)
 
 
 def _coerce_out_value(value: float, dtype: str) -> object:
-    if dtype == "bool":
-        return bool(value)
-    if dtype == "int32":
-        return int(value)
-    return float(value)
+    return _shape_coerce_out_value(value, dtype)
 
 
 def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str = "float32") -> object:
-    if len(shape) == 0:
-        return _coerce_out_value(float(flat[0]), dtype) if flat else _coerce_out_value(0.0, dtype)
-    if len(shape) == 1:
-        width = int(shape[0])
-        return [_coerce_out_value(float(v), dtype) for v in flat[:width]]
-    stride = 1
-    for dim in shape[1:]:
-        stride *= int(dim)
-    width = int(shape[0])
-    out: list[object] = []
-    for i in range(width):
-        start = i * stride
-        out.append(_reshape_flat_values(flat[start : start + stride], shape[1:], dtype))
-    return out
+    return _shape_reshape_flat_values(flat, shape, dtype)
+
+from .tensor_factories_ops import (
+    tensor_from_data as _fact_tensor_from_data,
+    zeros_from_shape as _fact_zeros_from_shape,
+    ones_from_shape as _fact_ones_from_shape,
+    rand_from_shape as _fact_rand_from_shape,
+    randn_from_shape as _fact_randn_from_shape,
+    arange_from_values as _fact_arange_from_values,
+    full_from_shape as _fact_full_from_shape,
+    full_like_from_tensor as _fact_full_like_from_tensor,
+    zeros_like_from_tensor as _fact_zeros_like_from_tensor,
+    ones_like_from_tensor as _fact_ones_like_from_tensor,
+    empty_like_from_tensor as _fact_empty_like_from_tensor,
+    empty_from_shape as _fact_empty_from_shape,
+)
 
 
 def tensor_from_data(data: object, shape: Sequence[int] | None = None, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
-    runtime = _get_runtime()
-    if shape is None:
-        shape = _infer_shape(data)
-    flat = _flatten(data)
-    meta = _run_js_awaitable(runtime.tensorFromData(flat, shape, dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype, _requires_grad=requires_grad)
+    return _fact_tensor_from_data(data, shape, dtype, requires_grad)
 
 
 def zeros_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    runtime = _get_runtime()
-    normalized = _normalize_shape(shape)
-    meta = _run_js_awaitable(runtime.zeros(normalized, dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_zeros_from_shape(shape, dtype)
 
 
 def ones_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    runtime = _get_runtime()
-    normalized = _normalize_shape(shape)
-    meta = _run_js_awaitable(runtime.ones(normalized, dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_ones_from_shape(shape, dtype)
 
 
 def rand_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    runtime = _get_runtime()
-    normalized = _normalize_shape(shape)
-    meta = _run_js_awaitable(runtime.rand(normalized, dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_rand_from_shape(shape, dtype)
 
 
 def randn_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    runtime = _get_runtime()
-    normalized = _normalize_shape(shape)
-    meta = _run_js_awaitable(runtime.randn(normalized, dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_randn_from_shape(shape, dtype)
 
 
 def arange_from_values(start: float, end: float | None = None, step: float = 1.0, dtype: str = "float32") -> Tensor:
-    runtime = _get_runtime()
-    if end is None:
-        resolved_start = 0.0
-        resolved_end = float(start)
-    else:
-        resolved_start = float(start)
-        resolved_end = float(end)
-    meta = _run_js_awaitable(runtime.arange(resolved_start, resolved_end, float(step), dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_arange_from_values(start, end, step, dtype)
 
 
 def full_from_shape(shape: int | Sequence[int], fill_value: float, dtype: str = "float32") -> Tensor:
-    runtime = _get_runtime()
-    normalized = _normalize_shape(shape)
-    meta = _run_js_awaitable(runtime.full(normalized, float(fill_value), dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_full_from_shape(shape, fill_value, dtype)
 
 
 def full_like_from_tensor(tensor: Tensor, fill_value: float, dtype: str | None = None) -> Tensor:
-    runtime = _get_runtime()
-    if dtype is None:
-        meta = _run_js_awaitable(runtime.fullLike(tensor._id, float(fill_value)))
-    else:
-        meta = _run_js_awaitable(runtime.fullLike(tensor._id, float(fill_value), dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_full_like_from_tensor(tensor, fill_value, dtype)
 
 
 def zeros_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
-    runtime = _get_runtime()
-    if dtype is None:
-        meta = _run_js_awaitable(runtime.zerosLike(tensor._id))
-    else:
-        meta = _run_js_awaitable(runtime.zerosLike(tensor._id, dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_zeros_like_from_tensor(tensor, dtype)
 
 
 def ones_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
-    runtime = _get_runtime()
-    if dtype is None:
-        meta = _run_js_awaitable(runtime.onesLike(tensor._id))
-    else:
-        meta = _run_js_awaitable(runtime.onesLike(tensor._id, dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_ones_like_from_tensor(tensor, dtype)
 
 
 def empty_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
-    runtime = _get_runtime()
-    if dtype is None:
-        meta = _run_js_awaitable(runtime.emptyLike(tensor._id))
-    else:
-        meta = _run_js_awaitable(runtime.emptyLike(tensor._id, dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+    return _fact_empty_like_from_tensor(tensor, dtype)
 
 
 def empty_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    runtime = _get_runtime()
-    normalized = _normalize_shape(shape)
-    meta = _run_js_awaitable(runtime.empty(normalized, dtype))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
-
+    return _fact_empty_from_shape(shape, dtype)
 
 def pow_from_tensors(a: Tensor, b: Tensor) -> Tensor:
     from .autograd import _Node, is_grad_enabled, _grad_pow

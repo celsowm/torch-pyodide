@@ -8,6 +8,8 @@ import {
 import { TensorMeta, TensorHandle, SupportedDType, cloneHandle, product } from "./types.js";
 import { decodeValuesByDType } from "./shape.js";
 import { dtypeBytes } from "./types.js";
+import { TensorRegistry } from "./tensorRegistry.js";
+import { PipelineCache } from "./pipelineCache.js";
 
 const LOST_RECOVERY_RETRIES = 3;
 const BACKOFF_BASE_MS = 200;
@@ -35,12 +37,6 @@ interface ShadowBuffer {
   size: number;
 }
 
-interface PipelineCacheEntry {
-  pipeline: GPUComputePipeline;
-  shader: string;
-  entryPoint: string;
-}
-
 export class DeviceManager {
   private _device: GPUDevice | null = null;
   private _adapter: GPUAdapter | null = null;
@@ -50,8 +46,7 @@ export class DeviceManager {
   private _lostHandler: ((ev: GPUDeviceLostInfo) => void) | null = null;
 
   // Pipeline cache — keyed by shader+entrypoint
-  private _pipelines = new Map<string, PipelineCacheEntry>();
-  private _shaderModules = new Map<string, GPUShaderModule>();
+  private _pipelineCache = new PipelineCache();
 
   // Shadow copies for device recovery
   private _shadowBuffers = new Map<number, ShadowBuffer>();
@@ -64,9 +59,7 @@ export class DeviceManager {
   private _frameDepth = 0;
 
   // Tensor registry
-  private _tensors = new Map<number, TensorMeta>();
-  private _nextTensorId = 1;
-  private _allocatedBytes = 0;
+  private _tensorRegistry = new TensorRegistry();
 
   // Generation counter — increments on each recovery so readers know device changed
   private _deviceGeneration = 0;
@@ -77,7 +70,7 @@ export class DeviceManager {
   get device(): GPUDevice | null { return this._device; }
   get adapter(): GPUAdapter | null { return this._adapter; }
   get initialized(): boolean { return this._initialized; }
-  get tensors(): Map<number, TensorMeta> { return this._tensors; }
+  get tensors(): Map<number, TensorMeta> { return this._tensorRegistry.all(); }
 
   isAvailable(): boolean {
     return Boolean(globalThis.navigator?.gpu);
@@ -104,12 +97,12 @@ export class DeviceManager {
 
   async memoryAllocated(): Promise<number> {
     await this.ensureReady();
-    return this._allocatedBytes;
+    return this._tensorRegistry.memoryAllocated();
   }
 
   async memoryReserved(): Promise<number> {
     await this.ensureReady();
-    return this._allocatedBytes;
+    return this._tensorRegistry.memoryAllocated();
   }
 
   async ensureReady(gpuProvider?: GPU | null): Promise<GPUDevice> {
@@ -148,8 +141,7 @@ export class DeviceManager {
       this._adapter = null;
       this._initialized = false;
       this._initPromise = null;
-      this._pipelines.clear();
-      this._shaderModules.clear();
+      this._pipelineCache.clear();
 
       await withRetry("device recovery", async () => {
         await initWebGPU();
@@ -181,21 +173,7 @@ export class DeviceManager {
 
   getOrCreatePipeline(shaderCode: string, entryPoint: string): GPUComputePipeline {
     if (!this._device) throw new Error("Device not initialized");
-    const key = `${shaderCode.length}:${entryPoint}`;
-    const cached = this._pipelines.get(key);
-    if (cached) return cached.pipeline;
-
-    let module = this._shaderModules.get(shaderCode);
-    if (!module) {
-      module = this._device.createShaderModule({ code: shaderCode });
-      this._shaderModules.set(shaderCode, module);
-    }
-    const pipeline = this._device.createComputePipeline({
-      layout: "auto",
-      compute: { module, entryPoint },
-    });
-    this._pipelines.set(key, { pipeline, shader: shaderCode, entryPoint });
-    return pipeline;
+    return this._pipelineCache.getOrCreate(this._device, shaderCode, entryPoint);
   }
 
   // ── Batch frame ──────────────────────────────────────────────
@@ -322,8 +300,7 @@ export class DeviceManager {
             this._initialized = false;
             this._device = null;
             this._initPromise = null;
-            this._pipelines.clear();
-            this._shaderModules.clear();
+            this._pipelineCache.clear();
             if (this._adapter) {
               await initWebGPU();
               this._device = getDevice() as GPUDevice;
@@ -392,8 +369,7 @@ export class DeviceManager {
     this._adapter = null;
     this._initialized = false;
     this._initPromise = null;
-    this._pipelines.clear();
-    this._shaderModules.clear();
+    this._pipelineCache.clear();
     await withRetry("forced recovery", async () => {
       await initWebGPU();
       this._device = getDevice() as GPUDevice;
@@ -422,47 +398,38 @@ export class DeviceManager {
   // ── Tensor registry ─────────────────────────────────────────
 
   nextTensorId(): number {
-    return this._nextTensorId++;
+    return this._tensorRegistry.nextTensorId();
   }
 
   allocateBytes(bytes: number): void {
-    this._allocatedBytes += bytes;
+    this._tensorRegistry.allocateBytes(bytes);
   }
 
   deallocateBytes(bytes: number): void {
-    this._allocatedBytes = Math.max(0, this._allocatedBytes - bytes);
+    this._tensorRegistry.deallocateBytes(bytes);
   }
 
   getTensorMeta(id: number): TensorMeta {
-    const meta = this._tensors.get(id);
-    if (!meta) throw new Error(`Unknown tensor id: ${id}.`);
-    return meta;
+    return this._tensorRegistry.getTensorMeta(id);
   }
 
   registerTensor(buffer: GPUBuffer, shape: number[], dtype: string, length: number): number {
-    const id = this.nextTensorId();
-    const bytes = buffer.size;
-    const meta: TensorMeta = { id, buffer, shape: [...shape], dtype, length, bytes };
-    this._tensors.set(id, meta);
-    this._allocatedBytes += bytes;
-    return id;
+    return this._tensorRegistry.registerTensor(buffer, shape, dtype, length);
   }
 
   /** Register a tensor buffer and return a TensorHandle (for public API consumption). */
   registerTensorAsHandle(buffer: GPUBuffer, shape: number[], dtype: string, length: number): TensorHandle {
-    const id = this.registerTensor(buffer, shape, dtype, length);
-    return cloneHandle(this._tensors.get(id)!);
+    return this._tensorRegistry.registerTensorAsHandle(buffer, shape, dtype, length);
   }
 
   destroyTensor(id: number): void {
-    const meta = this._tensors.get(id);
+    const meta = this.tensors.get(id);
     if (!meta) return;
     const shadowId = this._bufferToShadow.get(meta.buffer);
     if (shadowId !== undefined) this.discardShadow(shadowId);
     this.forgetBuffer(meta.buffer);
     try { meta.buffer.destroy(); } catch { /* device may be gone */ }
-    this.deallocateBytes(meta.bytes);
-    this._tensors.delete(id);
+    this._tensorRegistry.deleteTensor(id);
   }
 
   tensorHandle(meta: TensorMeta): { id: number; shape: number[]; dtype: string } {
