@@ -1,0 +1,804 @@
+[
+  {
+    "id": "tensor_basics",
+    "label": "Tensor Basics + CUDA Info",
+    "success": true,
+    "output": "{\n  \"shape\": [\n    2,\n    2\n  ],\n  \"values\": [\n    [\n      4.0,\n      6.0\n    ],\n    [\n      8.0,\n      10.0\n    ]\n  ],\n  \"sum\": 28.0,\n  \"mean\": 7.0,\n  \"cuda_available\": true,\n  \"cuda_device_count\": 1\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      },
+      {
+        "type": "warning",
+        "text": "The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\tensor_basics.png",
+    "status": "OK"
+  },
+  {
+    "id": "matmul_relu",
+    "label": "Matmul + ReLU",
+    "success": true,
+    "output": "{\n  \"shape\": [\n    2,\n    2\n  ],\n  \"values\": [\n    [\n      0.0,\n      3.0\n    ],\n    [\n      0.0,\n      7.0\n    ]\n  ],\n  \"sum\": 10.0\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\matmul_relu.png",
+    "status": "OK"
+  },
+  {
+    "id": "reshape_transpose",
+    "label": "Reshape + Transpose",
+    "success": true,
+    "output": "{\n  \"transpose\": [\n    [\n      1.0,\n      3.0\n    ],\n    [\n      2.0,\n      4.0\n    ]\n  ],\n  \"reshape\": [\n    1.0,\n    3.0,\n    2.0,\n    4.0\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\reshape_transpose.png",
+    "status": "OK"
+  },
+  {
+    "id": "rand_tensor",
+    "label": "Random Tensor (rand)",
+    "success": true,
+    "output": "{\n  \"shape\": [\n    2,\n    3\n  ],\n  \"values\": [\n    [\n      0.6328800320625305,\n      0.7644166946411133,\n      0.38355278968811035\n    ],\n    [\n      0.35107022523880005,\n      0.10101797431707382,\n      0.848677396774292\n    ]\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\rand_tensor.png",
+    "status": "OK"
+  },
+  {
+    "id": "clamp_values",
+    "label": "Clamp Values",
+    "success": true,
+    "output": "{\n  \"input\": [\n    [\n      -1.0,\n      0.20000000298023224,\n      0.800000011920929\n    ],\n    [\n      1.5,\n      2.0,\n      -0.30000001192092896\n    ]\n  ],\n  \"clamped\": [\n    [\n      0.0,\n      0.20000000298023224,\n      0.800000011920929\n    ],\n    [\n      1.0,\n      1.0,\n      0.0\n    ]\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\clamp_values.png",
+    "status": "OK"
+  },
+  {
+    "id": "where_select",
+    "label": "Where Selection",
+    "success": true,
+    "output": "{\n  \"condition\": [\n    [\n      1.0,\n      0.0\n    ],\n    [\n      0.0,\n      1.0\n    ]\n  ],\n  \"x\": [\n    [\n      10.0,\n      20.0\n    ],\n    [\n      30.0,\n      40.0\n    ]\n  ],\n  \"y\": [\n    [\n      1.0,\n      2.0\n    ],\n    [\n      3.0,\n      4.0\n    ]\n  ],\n  \"where\": [\n    [\n      10.0,\n      2.0\n    ],\n    [\n      3.0,\n      40.0\n    ]\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\where_select.png",
+    "status": "OK"
+  },
+  {
+    "id": "argmax_argmin",
+    "label": "Argmax + Argmin",
+    "success": true,
+    "output": "{\n  \"input\": [\n    [\n      1.0,\n      3.0,\n      2.0\n    ],\n    [\n      9.0,\n      0.5,\n      7.0\n    ]\n  ],\n  \"argmax\": [\n    1,\n    1\n  ],\n  \"argmin\": [\n    0,\n    0\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\argmax_argmin.png",
+    "status": "OK"
+  },
+  {
+    "id": "randn_tensor",
+    "label": "Random Normal (randn)",
+    "success": true,
+    "output": "{\n  \"shape\": [\n    2,\n    4\n  ],\n  \"values\": [\n    [\n      0.5373907685279846,\n      0.6376011371612549,\n      0.9680914878845215,\n      -1.086953043937683\n    ],\n    [\n      1.935395359992981,\n      0.4681268632411957,\n      0.4213690459728241,\n      -0.8157293796539307\n    ]\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\randn_tensor.png",
+    "status": "OK"
+  },
+  {
+    "id": "arange_int32",
+    "label": "Arange Int32",
+    "success": true,
+    "output": "{\n  \"dtype\": \"int32\",\n  \"values\": [\n    1065353216,\n    1077936128,\n    1084227584,\n    1088421888,\n    1091567616\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\arange_int32.png",
+    "status": "OK"
+  },
+  {
+    "id": "full_and_full_like",
+    "label": "Full + Full Like",
+    "success": true,
+    "output": "{\n  \"full\": [\n    [\n      1088421888,\n      1088421888\n    ],\n    [\n      1088421888,\n      1088421888\n    ]\n  ],\n  \"full_dtype\": \"int32\",\n  \"full_like\": [\n    [\n      9.0,\n      9.0\n    ],\n    [\n      9.0,\n      9.0\n    ]\n  ],\n  \"full_like_dtype\": \"float32\"\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\full_and_full_like.png",
+    "status": "OK"
+  },
+  {
+    "id": "unary_abs_neg",
+    "label": "Unary Abs + Neg",
+    "success": true,
+    "output": "{\n  \"input\": [\n    [\n      -1.0,\n      2.0\n    ],\n    [\n      -3.0,\n      4.0\n    ]\n  ],\n  \"abs\": [\n    [\n      1.0,\n      2.0\n    ],\n    [\n      3.0,\n      4.0\n    ]\n  ],\n  \"neg\": [\n    [\n      1.0,\n      -2.0\n    ],\n    [\n      3.0,\n      -4.0\n    ]\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\unary_abs_neg.png",
+    "status": "OK"
+  },
+  {
+    "id": "unary_sqrt_exp_log",
+    "label": "Unary Sqrt + Exp + Log",
+    "success": true,
+    "output": "{\n  \"sqrt\": [\n    [\n      1.0,\n      2.0\n    ],\n    [\n      3.0,\n      4.0\n    ]\n  ],\n  \"exp\": [\n    [\n      1.0,\n      2.7182817459106445\n    ],\n    [\n      7.389056205749512,\n      1.0\n    ]\n  ],\n  \"log\": [\n    [\n      0.0,\n      1.0\n    ],\n    [\n      2.0,\n      0.0\n    ]\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\unary_sqrt_exp_log.png",
+    "status": "OK"
+  },
+  {
+    "id": "shape_flatten_squeeze",
+    "label": "Shape Flatten + Squeeze",
+    "success": true,
+    "output": "{\n  \"input_shape\": [\n    2,\n    2,\n    1\n  ],\n  \"flatten_1_2\": [\n    [\n      1.0,\n      2.0\n    ],\n    [\n      3.0,\n      4.0\n    ]\n  ],\n  \"squeeze_all_shape\": [\n    2,\n    2\n  ],\n  \"unsqueeze_dim0_shape\": [\n    1,\n    2\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\shape_flatten_squeeze.png",
+    "status": "OK"
+  },
+  {
+    "id": "shape_transpose_permute",
+    "label": "Shape Transpose + Permute",
+    "success": true,
+    "output": "{\n  \"transpose\": [\n    [\n      1.0,\n      3.0\n    ],\n    [\n      2.0,\n      4.0\n    ]\n  ],\n  \"permute_shape\": [\n    2,\n    2,\n    1\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\shape_transpose_permute.png",
+    "status": "OK"
+  },
+  {
+    "id": "index_select_slice",
+    "label": "Index Select + Slice",
+    "success": true,
+    "output": "{\n  \"select_row_1\": [\n    3.0,\n    4.0\n  ],\n  \"slice_rows_0_3_step2\": [\n    [\n      1.0,\n      2.0\n    ],\n    [\n      5.0,\n      6.0\n    ]\n  ],\n  \"getitem_row_1\": [\n    3.0,\n    4.0\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\index_select_slice.png",
+    "status": "OK"
+  },
+  {
+    "id": "cat_stack",
+    "label": "Cat + Stack",
+    "success": true,
+    "output": "{\n  \"cat_dim0\": [\n    [\n      1.0,\n      2.0\n    ],\n    [\n      3.0,\n      4.0\n    ],\n    [\n      5.0,\n      6.0\n    ],\n    [\n      7.0,\n      8.0\n    ]\n  ],\n  \"cat_dim0_shape\": [\n    4,\n    2\n  ],\n  \"cat_dim1\": [\n    [\n      1.0,\n      2.0,\n      5.0,\n      6.0\n    ],\n    [\n      3.0,\n      4.0,\n      7.0,\n      8.0\n    ]\n  ],\n  \"cat_dim1_shape\": [\n    2,\n    4\n  ],\n  \"stack_dim0\": [\n    [\n      [\n        1.0,\n        2.0\n      ],\n      [\n        3.0,\n        4.0\n      ]\n    ],\n    [\n      [\n        5.0,\n        6.0\n      ],\n      [\n        7.0,\n        8.0\n      ]\n    ]\n  ],\n  \"stack_dim0_sh",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\cat_stack.png",
+    "status": "OK"
+  },
+  {
+    "id": "expand_index_select",
+    "label": "Expand + Index Select",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 6, in <module>\n  File \"/lib/python3.13/site-packages/torch/__init__.py\", line 265, in tensor\n    return tensor_from_data(data, dtype=dtype, requires_grad=requires_grad)\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 1241, in tensor_from_da",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\expand_index_select.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "broadcasting",
+    "label": "Broadcasting",
+    "success": true,
+    "output": "{\n  \"a + b (broadcast)\": [\n    [\n      11.0,\n      22.0,\n      33.0\n    ],\n    [\n      14.0,\n      25.0,\n      36.0\n    ]\n  ],\n  \"a * c (broadcast)\": [\n    [\n      1.0,\n      2.0,\n      3.0\n    ],\n    [\n      8.0,\n      10.0,\n      12.0\n    ]\n  ],\n  \"b - a (broadcast)\": [\n    [\n      9.0,\n      18.0,\n      27.0\n    ],\n    [\n      6.0,\n      15.0,\n      24.0\n    ]\n  ],\n  \"shape_a\": [\n    2,\n    3\n  ],\n  \"shape_b\": [\n    3\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\broadcasting.png",
+    "status": "OK"
+  },
+  {
+    "id": "compare_ops",
+    "label": "Compare Ops",
+    "success": true,
+    "output": "{\n  \"a\": [\n    [\n      1.0,\n      5.0\n    ],\n    [\n      3.0,\n      2.0\n    ]\n  ],\n  \"b\": [\n    [\n      1.0,\n      3.0\n    ],\n    [\n      3.0,\n      4.0\n    ]\n  ],\n  \"eq\": [\n    [\n      true,\n      false\n    ],\n    [\n      true,\n      false\n    ]\n  ],\n  \"ne\": [\n    [\n      false,\n      true\n    ],\n    [\n      false,\n      true\n    ]\n  ],\n  \"lt\": [\n    [\n      false,\n      false\n    ],\n    [\n      false,\n      true\n    ]\n  ],\n  \"le\": [\n    [\n      true,\n      false\n    ],\n    [\n      true,\n      true\n    ]\n  ],\n  \"gt\": [\n    [\n      false,\n      true\n    ],\n    [\n      false,\n      false\n    ]\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\compare_ops.png",
+    "status": "OK"
+  },
+  {
+    "id": "unary_advanced",
+    "label": "Unary Advanced",
+    "success": true,
+    "output": "{\n  \"input\": [\n    [\n      -1.0,\n      0.0,\n      1.0\n    ],\n    [\n      2.0,\n      -2.0,\n      0.5\n    ]\n  ],\n  \"sigmoid\": [\n    [\n      0.2689414322376251,\n      0.5,\n      0.7310585975646973\n    ],\n    [\n      0.8807970881462097,\n      0.11920292675495148,\n      0.622459352016449\n    ]\n  ],\n  \"tanh\": [\n    [\n      -0.7616009712219238,\n      0.0,\n      0.7616009712219238\n    ],\n    [\n      0.9640293121337891,\n      -0.9640293121337891,\n      0.4621148109436035\n    ]\n  ],\n  \"sin\": [\n    [\n      -0.8414708971977234,\n      0.0,\n      0.8414708971977234\n    ],\n    [\n      0.9092973470687866,\n   ",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\unary_advanced.png",
+    "status": "OK"
+  },
+  {
+    "id": "reduce_dim",
+    "label": "Reduction by dim",
+    "success": true,
+    "output": "{\n  \"input\": [\n    [\n      1.0,\n      2.0,\n      3.0\n    ],\n    [\n      4.0,\n      5.0,\n      6.0\n    ]\n  ],\n  \"sum(0)\": [\n    1.0,\n    2.0,\n    0.0\n  ],\n  \"sum(1)\": [\n    1.0,\n    2.0\n  ],\n  \"mean(0)\": [\n    1.0,\n    2.0,\n    0.0\n  ],\n  \"mean(1)\": [\n    1.0,\n    2.0\n  ],\n  \"prod\": 720.0,\n  \"min\": 1.0,\n  \"max\": 6.0\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\reduce_dim.png",
+    "status": "OK"
+  },
+  {
+    "id": "masked_select_fill",
+    "label": "Masked Select + Fill",
+    "success": true,
+    "output": "{\n  \"input\": [\n    [\n      1.0,\n      2.0,\n      3.0\n    ],\n    [\n      4.0,\n      5.0,\n      6.0\n    ]\n  ],\n  \"mask\": [\n    [\n      1.0,\n      0.0,\n      1.0\n    ],\n    [\n      0.0,\n      1.0,\n      0.0\n    ]\n  ],\n  \"masked_fill\": [\n    [\n      99.0,\n      2.0,\n      99.0\n    ],\n    [\n      4.0,\n      99.0,\n      6.0\n    ]\n  ],\n  \"masked_select\": [\n    0.0,\n    0.0,\n    0.0\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      },
+      {
+        "type": "warning",
+        "text": "Number of entries (4) did not match the expected number of entries (5) for [BindGroupLayoutInternal (unlabeled)].\nExpected layout: [{ binding: 0, visibility: ShaderStage::Compute, buffer: {type: BufferBindingType::ReadOnlyStorage, minBindingSize: 4, hasDynamicOffset: 0} }, { binding: 1, visibility: ShaderStage::Compute, buffer: {type: BufferBindingType::ReadOnlyStorage, minBindingSize: 4, hasDynamicOffset: 0} }, { binding: 2, visibility: ShaderStage::Compute, buffer: {type: BufferBindingType::St"
+      },
+      {
+        "type": "warning",
+        "text": "[Invalid BindGroup (unlabeled)] is invalid due to a previous error.\n - While encoding [ComputePassEncoder (unlabeled)].SetBindGroup(0, [Invalid BindGroup (unlabeled)], 0, ...).\n - While finishing [CommandEncoder (unlabeled)].\n"
+      },
+      {
+        "type": "warning",
+        "text": "[Invalid CommandBuffer] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer]])\n"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\masked_select_fill.png",
+    "status": "OK"
+  },
+  {
+    "id": "broadcast_compare",
+    "label": "Broadcast + Compare",
+    "success": true,
+    "output": "{\n  \"a\": [\n    [\n      1.0,\n      5.0,\n      3.0\n    ],\n    [\n      4.0,\n      2.0,\n      6.0\n    ]\n  ],\n  \"threshold\": [\n    3.0,\n    3.0,\n    3.0\n  ],\n  \"a > threshold\": [\n    [\n      false,\n      true,\n      false\n    ],\n    [\n      true,\n      false,\n      true\n    ]\n  ],\n  \"a <= threshold\": [\n    [\n      true,\n      false,\n      true\n    ],\n    [\n      false,\n      true,\n      false\n    ]\n  ],\n  \"where(a > 3, a, 0)\": [\n    [\n      0.0,\n      5.0,\n      0.0\n    ],\n    [\n      4.0,\n      0.0,\n      6.0\n    ]\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\broadcast_compare.png",
+    "status": "OK"
+  },
+  {
+    "id": "reduce_dim_keepdim",
+    "label": "Reduction keepdim",
+    "success": true,
+    "output": "{\n  \"input_shape\": [\n    2,\n    3\n  ],\n  \"sum(0, keepdim)\": [\n    [\n      1.0,\n      2.0,\n      0.0\n    ]\n  ],\n  \"sum(0, keepdim)_shape\": [\n    1,\n    3\n  ],\n  \"mean(1, keepdim)\": [\n    [\n      1.0\n    ],\n    [\n      2.0\n    ]\n  ],\n  \"mean(1, keepdim)_shape\": [\n    2,\n    1\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\reduce_dim_keepdim.png",
+    "status": "OK"
+  },
+  {
+    "id": "nn_linear_relu",
+    "label": "nn Linear + ReLU",
+    "success": true,
+    "output": "{\n  \"shape\": [\n    3,\n    2\n  ],\n  \"values\": [\n    [\n      0.236726775765419,\n      0.010961323976516724\n    ],\n    [\n      0.39658334851264954,\n      0.12167356163263321\n    ],\n    [\n      0.34512197971343994,\n      0.18874491751194\n    ]\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\nn_linear_relu.png",
+    "status": "OK"
+  },
+  {
+    "id": "nn_conv2d",
+    "label": "nn Conv2d",
+    "success": true,
+    "output": "{\n  \"shape\": [\n    2,\n    4,\n    4,\n    4\n  ],\n  \"sum\": -0.14665666222572327\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\nn_conv2d.png",
+    "status": "OK"
+  },
+  {
+    "id": "nn_batchnorm",
+    "label": "nn BatchNorm1d",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 7, in <module>\n  File \"/lib/python3.13/site-packages/torch/nn/modules.py\", line 48, in __call__\n    return self.forward(*args, **kwargs)  # type: ignore\n           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python3.13/site-packages/torch/nn/modules.py\", ",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\nn_batchnorm.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "nn_pooling",
+    "label": "nn MaxPool2d + AvgPool2d",
+    "success": true,
+    "output": "{\n  \"max_pool_shape\": [\n    1,\n    2,\n    4,\n    4\n  ],\n  \"avg_pool_shape\": [\n    1,\n    2,\n    4,\n    4\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\nn_pooling.png",
+    "status": "OK"
+  },
+  {
+    "id": "nn_losses",
+    "label": "nn Losses",
+    "success": true,
+    "output": "{\n  \"cross_entropy\": -0.23355847597122192,\n  \"mse_loss\": 1.0775154829025269\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\nn_losses.png",
+    "status": "OK"
+  },
+  {
+    "id": "nn_nll_loss",
+    "label": "NLL Loss + Cross Entropy",
+    "success": true,
+    "output": "{\n  \"log_probs\": [\n    [\n      -0.6427,\n      -0.7463,\n      -0.682,\n      1.2412\n    ],\n    [\n      -1.7392,\n      -0.5156,\n      -0.1161,\n      0.6523\n    ]\n  ],\n  \"nll_loss_mean\": 0,\n  \"cross_entropy_mean\": 0,\n  \"nll_loss_none\": [\n    0.0,\n    0.0\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\nn_nll_loss.png",
+    "status": "OK"
+  },
+  {
+    "id": "nn_batchnorm_training",
+    "label": "BatchNorm Training vs Eval",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 16, in <module>\n  File \"/lib/python3.13/site-packages/torch/nn/modules.py\", line 48, in __call__\n    return self.forward(*args, **kwargs)  # type: ignore\n           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python3.13/site-packages/torch/nn/modules.py\",",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\nn_batchnorm_training.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "autograd_basic",
+    "label": "Autograd: Backprop",
+    "success": true,
+    "output": "{\n  \"loss\": 164.0,\n  \"a.grad\": [\n    [\n      6.0,\n      10.0\n    ],\n    [\n      14.0,\n      18.0\n    ]\n  ],\n  \"b.grad\": [\n    [\n      6.0,\n      10.0\n    ],\n    [\n      14.0,\n      18.0\n    ]\n  ],\n  \"grad_check\": \"OK\"\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_basic.png",
+    "status": "OK"
+  },
+  {
+    "id": "autograd_conv2d",
+    "label": "Autograd: Conv2d Backward",
+    "success": true,
+    "output": "{\n  \"output_shape\": [\n    1,\n    1,\n    5,\n    5\n  ],\n  \"loss\": 44.59001541137695,\n  \"weight_grad_shape\": [\n    1,\n    1,\n    3,\n    3\n  ],\n  \"weight_grad_sum\": 44.59001159667969,\n  \"bias_grad\": [\n    25.0\n  ],\n  \"input_grad_shape\": [\n    1,\n    1,\n    5,\n    5\n  ]\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_conv2d.png",
+    "status": "OK"
+  },
+  {
+    "id": "autograd_nll",
+    "label": "Autograd: NLL Loss Backward",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 17, in <module>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 117, in backward\n    _backward_from_tensor(self, gradient, retain_graph, create_graph)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/lib/python",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_nll.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "autograd_slice",
+    "label": "Autograd: Slice Backward",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 16, in <module>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 117, in backward\n    _backward_from_tensor(self, gradient, retain_graph, create_graph)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/lib/python",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_slice.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "autograd_select",
+    "label": "Autograd: Select Backward",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 11, in <module>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 117, in backward\n    _backward_from_tensor(self, gradient, retain_graph, create_graph)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/lib/python",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_select.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "autograd_index_select",
+    "label": "Autograd: Index Select Backward",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 8, in <module>\n  File \"/lib/python3.13/site-packages/torch/__init__.py\", line 265, in tensor\n    return tensor_from_data(data, dtype=dtype, requires_grad=requires_grad)\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 1241, in tensor_from_da",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_index_select.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "autograd_masked_select",
+    "label": "Autograd: Masked Select Backward",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 20, in <module>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 290, in __ne__\n    return ne_from_tensors(self, other)\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 1821, in ne_from_tensors\n    meta = _run_js_awaitable(runti",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      },
+      {
+        "type": "warning",
+        "text": "Number of entries (4) did not match the expected number of entries (5) for [BindGroupLayoutInternal (unlabeled)].\nExpected layout: [{ binding: 0, visibility: ShaderStage::Compute, buffer: {type: BufferBindingType::ReadOnlyStorage, minBindingSize: 4, hasDynamicOffset: 0} }, { binding: 1, visibility: ShaderStage::Compute, buffer: {type: BufferBindingType::ReadOnlyStorage, minBindingSize: 4, hasDynamicOffset: 0} }, { binding: 2, visibility: ShaderStage::Compute, buffer: {type: BufferBindingType::St"
+      },
+      {
+        "type": "warning",
+        "text": "[Invalid BindGroup (unlabeled)] is invalid due to a previous error.\n - While encoding [ComputePassEncoder (unlabeled)].SetBindGroup(0, [Invalid BindGroup (unlabeled)], 0, ...).\n - While finishing [CommandEncoder (unlabeled)].\n"
+      },
+      {
+        "type": "warning",
+        "text": "[Invalid CommandBuffer] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer]])\n"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_masked_select.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "autograd_max",
+    "label": "Autograd: Max Backward",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 15, in <module>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 290, in __ne__\n    return ne_from_tensors(self, other)\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 1821, in ne_from_tensors\n    meta = _run_js_awaitable(runti",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_max.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "autograd_min",
+    "label": "Autograd: Min Backward",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 15, in <module>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 290, in __ne__\n    return ne_from_tensors(self, other)\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 1821, in ne_from_tensors\n    meta = _run_js_awaitable(runti",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_min.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "training_linear",
+    "label": "Training: Linear Regression (SGD)",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 22, in <module>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 117, in backward\n    _backward_from_tensor(self, gradient, retain_graph, create_graph)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/lib/python",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\training_linear.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "training_classification",
+    "label": "Training: Classification (Adam)",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 31, in <module>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 117, in backward\n    _backward_from_tensor(self, gradient, retain_graph, create_graph)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/lib/python",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\training_classification.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "padding_modes",
+    "label": "Padding: reflect, replicate, circular",
+    "success": true,
+    "output": "{\n  \"original_shape\": [\n    2,\n    3\n  ],\n  \"constant_shape\": [\n    4,\n    5\n  ],\n  \"constant_values\": [\n    [\n      0.0,\n      0.0,\n      0.0,\n      0.0,\n      0.0\n    ],\n    [\n      0.0,\n      1.0,\n      2.0,\n      3.0,\n      0.0\n    ],\n    [\n      0.0,\n      4.0,\n      5.0,\n      6.0,\n      0.0\n    ],\n    [\n      0.0,\n      0.0,\n      0.0,\n      0.0,\n      0.0\n    ]\n  ],\n  \"reflect_shape\": [\n    4,\n    5\n  ],\n  \"reflect_values\": [\n    [\n      5.0,\n      4.0,\n      0.0,\n      0.0,\n      0.0\n    ],\n    [\n      2.0,\n      1.0,\n      2.0,\n      3.0,\n      2.0\n    ],\n    [\n      5.0,\n      4.0,\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\padding_modes.png",
+    "status": "OK"
+  },
+  {
+    "id": "einsum_multi",
+    "label": "Einsum: 3+ operands",
+    "success": true,
+    "output": "{\n  \"three_matrix_shape\": [\n    2,\n    5\n  ],\n  \"three_matrix_manual_match\": true,\n  \"four_matrix_shape\": [\n    2,\n    2\n  ],\n  \"four_matrix_manual_match\": true,\n  \"batched_shape\": [\n    2,\n    3,\n    5\n  ],\n  \"status\": \"OK\"\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\einsum_multi.png",
+    "status": "OK"
+  },
+  {
+    "id": "context_managers",
+    "label": "Context: no_grad, inference_mode",
+    "success": true,
+    "output": "x.grad after normal backward: True\nout2.requires_grad: False\nExpected error: backward inside no_grad raises RuntimeError\ninference_mode result shape: [3, 5]\nw_copy.requires_grad in no_grad: False\n{\n  \"status\": \"OK\",\n  \"no_grad_works\": true,\n  \"inference_mode_works\": true\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\context_managers.png",
+    "status": "OK"
+  },
+  {
+    "id": "distributions",
+    "label": "Distributions",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 10, in <module>\n  File \"/lib/python3.13/site-packages/torch/distributions/__init__.py\", line 32, in log_prob\n    return -((value - self.loc) ** 2) / (2.0 * var) - log_scale - math.log(math.sqrt(2.0 * math.pi))\n             ~~~~~~~~~~~~~~~~~~~^^~~\n  File ",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\distributions.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "data_loader",
+    "label": "DataLoader: Samplers, ConcatDataset",
+    "success": true,
+    "output": "ConcatDataset length: 5\nBatch 0: x=[[3.0], [1.0]], y=[[30.0], [10.0]]\nBatch 1: x=[[2.0], [5.0]], y=[[20.0], [50.0]]\nBatch 2: x=[[4.0]], y=[[40.0]]\nSubset length: 3\nSubset batch: [[1.0]]\nSubset batch: [[3.0]]\nSubset batch: [[5.0]]\n{\n  \"concat_len\": 5,\n  \"sub_len\": 3,\n  \"status\": \"OK\"\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\data_loader.png",
+    "status": "OK"
+  },
+  {
+    "id": "float16_bfloat16",
+    "label": "dtypes: float16, bfloat16",
+    "success": true,
+    "output": "float32 dtype: float32\nfloat16 dtype: float16\nbfloat16 dtype: bfloat16\nfloat16 after add: float16\nafter .half(): float16\nafter .bfloat16(): bfloat16\n{\n  \"float32_values\": [\n    [\n      1.5,\n      2.700000047683716\n    ],\n    [\n      3.0999999046325684,\n      4.900000095367432\n    ]\n  ],\n  \"float16_values\": [\n    [\n      0.0,\n      1.9375\n    ],\n    [\n      -19.203125,\n      2.0859375\n    ]\n  ],\n  \"bfloat16_values\": [\n    [\n      0.0,\n      1.5\n    ],\n    [\n      -107479040.0,\n      2.6875\n    ]\n  ],\n  \"f16_dtype\": \"float16\",\n  \"bf16_dtype\": \"bfloat16\",\n  \"status\": \"OK\"\n}\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\float16_bfloat16.png",
+    "status": "OK"
+  },
+  {
+    "id": "autograd_activations",
+    "label": "Autograd: sigmoid, tanh, gelu...",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 14, in <module>\n  File \"<exec>\", line 12, in <lambda>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 919, in softmax\n    return softmax_from_tensor(self, dim)\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 1984, in softmax_f",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_activations.png",
+    "status": "ERROR"
+  },
+  {
+    "id": "autograd_sort_topk",
+    "label": "Autograd: Sort + Topk",
+    "success": true,
+    "output": "sorted values: [1.0, 2.0, 3.0, 5.0, 4.0]\nsorted indices: [1.0, 2.0, 0.0, 3.0, 4.0]\ntopk values: [1.0, 1.0, 1.0]\ntopk indices: [1.0, 1.0, 1.0]\ngrad: [0.0, 3.0, 0.0, 0.0, 0.0]\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_sort_topk.png",
+    "status": "OK"
+  },
+  {
+    "id": "autograd_maximum_minimum",
+    "label": "Autograd: max/min elementwise",
+    "success": true,
+    "output": "maximum: [4.0, 5.0, 6.0, 2.0]\nminimum: [1.0, 2.0, 3.0, 1.0]\ngrad_a: [1.0, 1.0, 1.0, 1.0]\ngrad_b: [1.0, 1.0, 1.0, 1.0]\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_maximum_minimum.png",
+    "status": "OK"
+  },
+  {
+    "id": "autograd_cumsum_cumprod",
+    "label": "Autograd: cumsum, cumprod, tril...",
+    "success": true,
+    "output": "cumsum: [0.0, 0.0, 0.0, 0.0]\ncumprod: [0.0, 0.0, 0.0, 0.0]\ngrad: [2.0, 2.0, 2.0, 2.0]\ntril: [[1.0, 2.0], [3.0, 4.0]]\ntriu: [[1.0, 2.0], [3.0, 4.0]]\ngrad 2d: [[2.0, 2.0], [2.0, 2.0]]\n",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      },
+      {
+        "type": "warning",
+        "text": "[Buffer (unlabeled)] usage (Storage(read-write)|Storage(read-only)) includes writable usage and another usage in the same synchronization scope.\n - While validating compute pass usage.\n - While finishing [CommandEncoder (unlabeled)].\n"
+      },
+      {
+        "type": "warning",
+        "text": "[Invalid CommandBuffer] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer]])\n"
+      },
+      {
+        "type": "warning",
+        "text": "[Buffer (unlabeled)] usage (Storage(read-write)|Storage(read-only)) includes writable usage and another usage in the same synchronization scope.\n - While validating compute pass usage.\n - While finishing [CommandEncoder (unlabeled)].\n"
+      },
+      {
+        "type": "warning",
+        "text": "[Invalid CommandBuffer] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer]])\n"
+      },
+      {
+        "type": "warning",
+        "text": "[Buffer (unlabeled)] usage (Storage(read-write)|Storage(read-only)) includes writable usage and another usage in the same synchronization scope.\n - While validating compute pass usage.\n - While finishing [CommandEncoder (unlabeled)].\n"
+      },
+      {
+        "type": "warning",
+        "text": "[Invalid CommandBuffer] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer]])\n"
+      },
+      {
+        "type": "warning",
+        "text": "[Buffer (unlabeled)] usage (Storage(read-write)|Storage(read-only)) includes writable usage and another usage in the same synchronization scope.\n - While validating compute pass usage.\n - While finishing [CommandEncoder (unlabeled)].\n"
+      },
+      {
+        "type": "warning",
+        "text": "[Invalid CommandBuffer] is invalid due to a previous error.\n - While calling [Queue].Submit([[Invalid CommandBuffer]])\n"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_cumsum_cumprod.png",
+    "status": "OK"
+  },
+  {
+    "id": "autograd_cat_expand_where",
+    "label": "Autograd: cat, expand, where",
+    "success": false,
+    "output": "ERROR:\nPythonError: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 13, in <module>\n  File \"/lib/python3.13/site-packages/torch/_tensor.py\", line 117, in backward\n    _backward_from_tensor(self, gradient, retain_graph, create_graph)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/lib/python",
+    "consoleMessages": [
+      {
+        "type": "log",
+        "text": "[torch-pyodide] WebGPU active: True"
+      }
+    ],
+    "screenshot": "C:\\Users\\celso\\Documents\\projetos\\torch-pyodide\\runtime\\playground\\screenshots\\autograd_cat_expand_where.png",
+    "status": "ERROR"
+  }
+]
