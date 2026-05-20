@@ -538,15 +538,15 @@ def _reduce_broadcast(grad: Tensor, target_shape: Sequence[int]) -> Tensor:
     grad_ndim = len(result._shape)
     target_ndim = len(target_shape)
 
-    # Adicionar dimensões à frente se necessário
+    # Adicionar dimensões à frente se necessário (dim 0)
     if grad_ndim > target_ndim:
         for _ in range(grad_ndim - target_ndim):
-            result = result.sum()
+            result = result.sum(dim=0)
 
-    # Somar ao longo das dimensões expandidas
+    # Somar ao longo das dimensões expandidas (onde target_shape[i] == 1)
     for i in range(target_ndim):
         if target_shape[i] == 1 and result._shape[i] != 1:
-            result = result.sum()  # simplificado; precisa sum ao longo da dim
+            result = result.sum(dim=i, keepdim=True)
 
     # Reshape para target_shape
     if result._shape != target_shape:
