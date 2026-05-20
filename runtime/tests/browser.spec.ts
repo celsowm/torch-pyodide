@@ -110,6 +110,227 @@ test("runtime returns explicit error when webgpu is unavailable", async ({ page 
   expect(error).toContain("WebGPU unavailable");
 });
 
+test("gather operation matches PyTorch semantics @webgpu", async ({ page }) => {
+  await page.goto("/demo/index.html");
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const result = await page.evaluate(async () => {
+    const mod = await import("/src/runtime.ts");
+    const rt = new mod.TorchPyodideRuntime();
+    await rt.init();
+
+    // 1D gather: basic sanity test first
+    const input1d = await rt.tensorFromData([10, 20, 30, 40], [4], "float32");
+    const idx1d = await rt.tensorFromData([3, 1, 0], [3], "int32");
+    const out1d = await rt.gather(input1d.id, 0, idx1d.id);
+    const out1dData = await rt.toList(out1d.id);
+
+    // 2D gather: dim=0, input[3,2], indices[2,2]
+    const input = await rt.tensorFromData([10, 20, 30, 40, 50, 60], [3, 2], "float32");
+    const idx = await rt.tensorFromData([0, 1, 2, 0], [2, 2], "int32");
+    const out = await rt.gather(input.id, 0, idx.id);
+
+    // 2D gather: dim=1, input[2,3], indices[2,2]
+    const input2 = await rt.tensorFromData([1, 2, 3, 4, 5, 6], [2, 3], "float32");
+    const idx2 = await rt.tensorFromData([0, 2, 1, 0], [2, 2], "int32");
+    const out2 = await rt.gather(input2.id, 1, idx2.id);
+
+    // 1D gather
+    const input3 = await rt.tensorFromData([10, 20, 30, 40], [4], "float32");
+    const idx3 = await rt.tensorFromData([3, 1, 0], [3], "int32");
+    const out3 = await rt.gather(input3.id, 0, idx3.id);
+
+    const result = {
+      out1dData,
+      out: await rt.toList(out.id),
+      outShape: out.shape,
+      out2: await rt.toList(out2.id),
+      out2Shape: out2.shape,
+      out3: await rt.toList(out3.id),
+      out3Shape: out3.shape,
+    };
+
+    await rt.destroy(input1d.id);
+    await rt.destroy(idx1d.id);
+    await rt.destroy(out1d.id);
+    await rt.destroy(input.id);
+    await rt.destroy(idx.id);
+    await rt.destroy(out.id);
+    await rt.destroy(input2.id);
+    await rt.destroy(idx2.id);
+    await rt.destroy(out2.id);
+    await rt.destroy(input3.id);
+    await rt.destroy(idx3.id);
+    await rt.destroy(out3.id);
+
+    return result;
+  });
+
+  // 1D gather: output[i] = input[indices[i]]
+  expect(result.out1dData).toEqual([40, 20, 10]);
+
+  // gather dim=0: output[i,j] = input[indices[i,j], j]
+  // input=[10,20,30,40,50,60] shape=[3,2]
+  // indices=[[0,1],[2,0]] -> output=[[10,40],[50,20]]
+  expect(result.out).toEqual([10, 40, 50, 20]);
+  expect(result.outShape).toEqual([2, 2]);
+
+  // gather dim=1: output[i,j] = input[i, indices[i,j]]
+  // input=[1,2,3,4,5,6] shape=[2,3]
+  // indices=[[0,2],[1,0]] -> output=[[1,3],[5,4]]
+  expect(result.out2).toEqual([1, 3, 5, 4]);
+  expect(result.out2Shape).toEqual([2, 2]);
+
+  // 1D gather: output[i] = input[indices[i]]
+  expect(result.out3).toEqual([40, 20, 10]);
+  expect(result.out3Shape).toEqual([3]);
+});
+
+test("sort operation via GPU bitonic sort @webgpu", async ({ page }) => {
+  await page.goto("/demo/index.html");
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const result = await page.evaluate(async () => {
+    const mod = await import("/src/runtime.ts");
+    const rt = new mod.TorchPyodideRuntime();
+    await rt.init();
+
+    // 1D sort
+    const x1d = await rt.tensorFromData([3, 1, 4, 1, 5, 9], [6], "float32");
+    const [v1d, i1d] = await rt.sort(x1d.id, 0);
+
+    // 2D sort along dim=1 (sort each row)
+    const x2d = await rt.tensorFromData([3, 1, 4, 1, 5, 9], [2, 3], "float32");
+    const [v2d, i2d] = await rt.sort(x2d.id, 1);
+
+    const result = {
+      v1d: await rt.toList(v1d.id),
+      i1d: await rt.toList(i1d.id),
+      v2d: await rt.toList(v2d.id),
+      i2d: await rt.toList(i2d.id),
+      v1dShape: v1d.shape,
+      v2dShape: v2d.shape,
+    };
+
+    await rt.destroy(x1d.id);
+    await rt.destroy(v1d.id);
+    await rt.destroy(i1d.id);
+    await rt.destroy(x2d.id);
+    await rt.destroy(v2d.id);
+    await rt.destroy(i2d.id);
+
+    return result;
+  });
+
+  // 1D ascending: [1, 1, 3, 4, 5, 9]; indices: [1, 3, 0, 2, 4, 5]
+  expect(result.v1d).toEqual([1, 1, 3, 4, 5, 9]);
+  expect(result.v1dShape).toEqual([6]);
+
+  // 2D sort each row ascending along dim=1
+  // Row 0: [3,1,4] -> [1,3,4]; Row 1: [1,5,9] -> [1,5,9]
+  expect(result.v2d.slice(0, 3)).toEqual([1, 3, 4]);
+  expect(result.v2d.slice(3, 6)).toEqual([1, 5, 9]);
+  expect(result.v2dShape).toEqual([2, 3]);
+});
+
+test("SGD optimizer training loop @webgpu", async ({ page }) => {
+  await page.goto("/demo/index.html?force_fallback=1");
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const code = `
+import json
+import torch
+import torch.nn as nn
+from torch.optim import SGD
+
+model = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))
+torch.manual_seed(42)
+nn.init.xavier_uniform_(model[0].weight)
+nn.init.xavier_uniform_(model[2].weight)
+
+x = torch.randn((3, 4))
+target = torch.randn((3, 2))
+
+optimizer = SGD(model.parameters(), lr=0.01)
+loss_fn = nn.MSELoss()
+
+losses = []
+for step in range(3):
+    optimizer.zero_grad()
+    out = model(x)
+    loss = loss_fn(out, target)
+    loss.backward()
+    optimizer.step()
+    losses.append(round(loss.item(), 4))
+
+out = {"losses": losses, "loss_decreased": losses[-1] < losses[0]}
+print(json.dumps(out))
+`;
+
+  const raw = await page.evaluate(async (code) => {
+    const pyodide = (window as any).__pyodide;
+    await pyodide.runPythonAsync(code);
+    return await pyodide.runPythonAsync("json.dumps(out)");
+  }, code);
+
+  const result = JSON.parse(raw);
+  expect(result.loss_decreased).toBe(true);
+  expect(result.losses.length).toBe(3);
+});
+
+test("Adam optimizer training loop @webgpu", async ({ page }) => {
+  await page.goto("/demo/index.html?force_fallback=1");
+  await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
+    timeout: 120000
+  });
+
+  const code = `
+import json
+import torch
+import torch.nn as nn
+from torch.optim import Adam
+
+model = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))
+torch.manual_seed(42)
+nn.init.xavier_uniform_(model[0].weight)
+nn.init.xavier_uniform_(model[2].weight)
+
+x = torch.randn((3, 4))
+target = torch.randn((3, 2))
+
+optimizer = Adam(model.parameters(), lr=0.001)
+loss_fn = nn.MSELoss()
+
+losses = []
+for step in range(3):
+    optimizer.zero_grad()
+    out = model(x)
+    loss = loss_fn(out, target)
+    loss.backward()
+    optimizer.step()
+    losses.append(round(loss.item(), 4))
+
+out = {"losses": losses, "loss_decreased": losses[-1] < losses[0]}
+print(json.dumps(out))
+`;
+
+  const raw = await page.evaluate(async (code) => {
+    const pyodide = (window as any).__pyodide;
+    await pyodide.runPythonAsync(code);
+    return await pyodide.runPythonAsync("json.dumps(out)");
+  }, code);
+
+  const result = JSON.parse(raw);
+  expect(result.loss_decreased).toBe(true);
+  expect(result.losses.length).toBe(3);
+});
+
 test("run_sync entrypoint error is explicit when executed from synchronous runPython", async ({ page }) => {
   await page.goto("/demo/index.html");
   await page.waitForFunction(() => Boolean((window as any).__torchMvpStatus), null, {
@@ -326,6 +547,11 @@ test.describe("all playground examples", () => {
     { id: "autograd_masked_select", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((3, 4), requires_grad=True)\nmask = torch.tensor([[True, False, True, False], [False, True, False, True], [True, True, False, False]])\nselected = torch.masked_select(x, mask)\nloss = selected.sum()\nloss.backward()\nout = {\n    "x_shape": list(x.shape),\n    "selected_shape": list(selected.shape),\n    "loss": loss.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
     { id: "autograd_max", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((2, 5), requires_grad=True)\ny = x.max()\ny.backward()\nout = {\n    "x_shape": list(x.shape),\n    "max_val": y.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
     { id: "autograd_min", code: `import json\nimport torch\n\ntorch.manual_seed(42)\nx = torch.randn((2, 5), requires_grad=True)\ny = x.min()\ny.backward()\nout = {\n    "x_shape": list(x.shape),\n    "min_val": y.tolist(),\n    "x.grad_nonzero": bool((x.grad != 0).any()) if x.grad is not None else False,\n    "x.grad_shape": list(x.grad.shape) if x.grad is not None else None,\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "gather", code: `import json\nimport torch\n\nx = torch.tensor([[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]])\nidx = torch.tensor([[0, 1], [2, 0]])\nout = {\n    "input_shape": list(x.shape),\n    "gather_dim0": torch.gather(x, 0, idx).tolist(),\n    "gather_dim1": torch.gather(x, 1, idx).tolist(),\n    "indices_shape": list(idx.shape),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "sort", code: `import json\nimport torch\n\nx = torch.tensor([[3.0, 1.0, 4.0], [1.0, 5.0, 9.0]])\nv_asc, i_asc = torch.sort(x, dim=1, descending=False)\nv_desc, i_desc = torch.sort(x, dim=1, descending=True)\nout = {\n    "input": x.tolist(),\n    "sort_asc_values": v_asc.tolist(),\n    "sort_asc_indices": i_asc.tolist(),\n    "sort_desc_values": v_desc.tolist(),\n    "sort_desc_indices": i_desc.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "topk", code: `import json\nimport torch\n\nx = torch.tensor([[3.0, 1.0, 4.0, 1.0, 5.0, 9.0], [2.0, 7.0, 1.0, 8.0, 2.0, 8.0]])\nv, i = torch.topk(x, 3, dim=1, largest=True)\nout = {\n    "input": x.tolist(),\n    "top3_values": v.tolist(),\n    "top3_indices": i.tolist(),\n}\nprint(json.dumps(out, indent=2))` },
+    { id: "optim_sgd", code: `import json\nimport torch\nimport torch.nn as nn\nfrom torch.optim import SGD\n\nmodel = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))\nx = torch.randn((3, 4))\ntarget = torch.tensor([0, 1, 0])\n\noptimizer = SGD(model.parameters(), lr=0.01)\nloss_fn = nn.CrossEntropyLoss()\n\nlosses = []\nfor step in range(3):\n    optimizer.zero_grad()\n    out = model(x)\n    loss = loss_fn(out, target)\n    loss.backward()\n    optimizer.step()\n    losses.append(round(loss.item(), 4))\nout = {"losses": losses}\nprint(json.dumps(out, indent=2))` },
+    { id: "optim_adam", code: `import json\nimport torch\nimport torch.nn as nn\nfrom torch.optim import Adam\n\nmodel = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))\nx = torch.randn((3, 4))\ntarget = torch.tensor([0, 1, 0])\n\noptimizer = Adam(model.parameters(), lr=0.001)\nloss_fn = nn.CrossEntropyLoss()\n\nlosses = []\nfor step in range(3):\n    optimizer.zero_grad()\n    out = model(x)\n    loss = loss_fn(out, target)\n    loss.backward()\n    optimizer.step()\n    losses.append(round(loss.item(), 4))\nout = {"losses": losses}\nprint(json.dumps(out, indent=2))` },
   ];
 
   for (const ex of examples) {

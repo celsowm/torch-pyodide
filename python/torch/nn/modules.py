@@ -19,9 +19,12 @@ class Module:
         self._modules = {}
         self.training = True
 
-    def register_parameter(self, name: str, param: Tensor | None) -> None:
+    def register_parameter(self, name: str, param: Tensor | None) -> Tensor | None:
         if param is not None:
+            if not isinstance(param, Parameter):
+                param = Parameter(param)
             self._parameters[name] = param
+        return param
 
     def register_module(self, name: str, module: Module) -> None:
         self._modules[name] = module
@@ -49,7 +52,7 @@ class Module:
 
     def __setattr__(self, name: str, value: object) -> None:
         if isinstance(value, Tensor):
-            self.register_parameter(name, value)
+            value = self.register_parameter(name, value)
         elif isinstance(value, Module):
             self.register_module(name, value)
         super().__setattr__(name, value)
@@ -174,10 +177,20 @@ class Parameter(Tensor):
         if isinstance(data, list):
             import torch
             data = torch.tensor(data, dtype=dtype)
-        instance = super().__new__(cls, data._id, list(data.shape), data.dtype)
+        instance = object.__new__(cls)
+        instance._id = data._id
+        instance._shape = list(data.shape)
+        instance._dtype = data.dtype
         instance._requires_grad = requires_grad
+        instance._node = None
+        instance._backward_hooks = {}
+        instance.grad = None
+        instance._retains_grad = False
         instance._data = data
         return instance
+
+    def __init__(self, data=None, requires_grad=True, dtype="float32"):
+        pass
 
     def __repr__(self) -> str:
         return f"Parameter containing:\n{super().__repr__()}"

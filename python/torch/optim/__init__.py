@@ -123,10 +123,8 @@ class SGD(Optimizer):
                 
                 # Update: p = p - lr * grad
                 update = grad.mul(lr)
-                # Criar novo tensor com o valor atualizado
-                # Usamos sub_ in-place se disponível, ou criamos novo tensor
-                p._id = p.sub(update)._id
-                p._shape = p.sub(update)._shape
+                new_p = p.sub(update)
+                p._set(new_p)
         return loss
 
 
@@ -221,8 +219,8 @@ class Adam(Optimizer):
                 update = exp_avg.div(denom).mul(step_size)
                 
                 # Aplicar update
-                p._id = p.sub(update)._id
-                p._shape = p.sub(update)._shape
+                new_p = p.sub(update)
+                p._set(new_p)
         return loss
 
 
@@ -273,8 +271,8 @@ class AdamW(Optimizer):
                 
                 # Weight decay desacoplado (aplicado diretamente, não no gradiente)
                 if weight_decay != 0:
-                    p._id = p.sub(p.mul(weight_decay * lr))._id
-                    p._shape = p.sub(p.mul(weight_decay * lr))._shape
+                    new_p = p.sub(p.mul(weight_decay * lr))
+                    p._set(new_p)
                 
                 # Mesmo lógica do Adam para momentos
                 if id(p) not in self.state:
@@ -311,8 +309,8 @@ class AdamW(Optimizer):
                 step_size = lr / bias_correction1
                 update = exp_avg.div(denom).mul(step_size)
                 
-                p._id = p.sub(update)._id
-                p._shape = p.sub(update)._shape
+                new_p = p.sub(update)
+                p._set(new_p)
         return loss
 
 
@@ -394,6 +392,6 @@ class RMSprop(Optimizer):
                     update = grad.div(denom)
                 
                 update = update.mul(lr)
-                p._id = p.sub(update)._id
-                p._shape = p.sub(update)._shape
+                new_p = p.sub(update)
+                p._set(new_p)
         return loss

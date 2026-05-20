@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 from typing import TYPE_CHECKING, Callable, Sequence
 
 if TYPE_CHECKING:
@@ -791,6 +793,42 @@ def _grad_index_select(grad_output: Tensor, input_tensor: Tensor, dim: int, inde
                 dst_idx = i * chunk_size + s + o * len(idx_vals) * chunk_size
                 if src_idx < n and dst_idx < len(out_flat):
                     flat_list[src_idx] = out_flat[dst_idx]
+    return tensor_from_data(flat_list, in_shape, input_tensor.dtype)
+
+
+def _grad_gather(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Tensor) -> Tensor | None:
+    """d/dinput gather(input, dim, index) = zeros_like(input); result[index[i,...], ...] += grad_output[i,...]"""
+    if not input_tensor._requires_grad:
+        return None
+    from ._tensor import tensor_from_data, _flatten
+    in_shape = list(input_tensor._shape)
+    d = dim if dim >= 0 else dim + len(in_shape)
+    n = math.prod(in_shape)
+    flat_list = [0.0] * n
+    idx_vals = _flatten(index.tolist())
+    out_flat = _flatten(grad_output.tolist())
+
+    strides = [1] * len(in_shape)
+    for i in range(len(in_shape) - 2, -1, -1):
+        strides[i] = strides[i + 1] * in_shape[i + 1]
+
+    out_shape = list(index._shape)
+    out_strides = [1] * len(out_shape)
+    for i in range(len(out_shape) - 2, -1, -1):
+        out_strides[i] = out_strides[i + 1] * out_shape[i + 1]
+
+    for i in range(len(out_flat)):
+        remaining = i
+        src_linear = 0
+        for dim_idx in range(len(out_shape) - 1, -1, -1):
+            coord = remaining % out_shape[dim_idx]
+            remaining //= out_shape[dim_idx]
+            if dim_idx == d:
+                src_linear += int(idx_vals[i]) * strides[dim_idx]
+            else:
+                src_linear += coord * strides[dim_idx]
+        if 0 <= src_linear < n:
+            flat_list[src_linear] += out_flat[i]
     return tensor_from_data(flat_list, in_shape, input_tensor.dtype)
 
 

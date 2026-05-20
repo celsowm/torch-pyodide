@@ -15,11 +15,13 @@ import {
   SLICE_BACKWARD_SHADER,
   EXPAND_SHADER,
   EXPAND_BROADCAST_SHADER,
+  GATHER_SHADER,
   INDEX_SELECT_SHADER,
   TRIL_SHADER,
   TRIU_SHADER,
   FLIP_SHADER,
   REPEAT_SHADER,
+  SORT_SHADER,
   normalizeDim,
   computeStrides,
   normalizeSliceStart,
@@ -442,6 +444,35 @@ export class ShapeOps {
     return this.deviceMgr.registerTensorAsHandle(out, outShape, meta.dtype, outLength);
   }
 
+  async gather(tensorId: number, dim: number, indicesId: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const indices = this.deviceMgr.getTensorMeta(indicesId);
+    const rank = meta.shape.length;
+    if (rank > 4) throw new Error("gather supports only up to 4D tensors.");
+    const d = normalizeDim(dim, rank);
+    const outLength = indices.length;
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
+
+    const strides = computeStrides(meta.shape);
+    const inShapes = padShapeTo4Left(meta.shape);
+    const paddedStrides = padShapeTo4Left(strides);
+    const outShapes = padShapeTo4Left(indices.shape);
+
+    const params = new Uint32Array([
+      d, rank, outLength, 0,
+      inShapes[0], paddedStrides[0], inShapes[1], paddedStrides[1],
+      inShapes[2], paddedStrides[2], inShapes[3], paddedStrides[3],
+      outShapes[0], outShapes[1], outShapes[2], outShapes[3],
+    ]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
+    const pipeline = getOrCreatePipeline(GATHER_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, indices.buffer, out, paramBuffer], calculateWorkgroups(outLength));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [...indices.shape], meta.dtype, outLength);
+  }
+
   private async transpose2dImpl(meta: TensorMeta): Promise<TensorHandle> {
     const [rows, cols] = meta.shape;
     const out = createStorageBuffer(this.deviceMgr.device!, meta.bytes);
@@ -452,5 +483,32 @@ export class ShapeOps {
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, [cols, rows], meta.dtype, rows * cols);
+  }
+
+  async sort(tensorId: number, dim: number): Promise<TensorHandle[]> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const rank = meta.shape.length;
+    const d = normalizeDim(dim, rank);
+    const segSize = meta.shape[d]!;
+    const strides = computeStrides(meta.shape);
+    const segStride = strides[d]!;
+    const outerStride = segStride * segSize;
+    const numSegments = meta.length / segSize;
+
+    const values = createStorageBuffer(this.deviceMgr.device!, meta.bytes);
+    const indices = createStorageBuffer(this.deviceMgr.device!, meta.bytes);
+
+    const params = new Uint32Array([segSize, numSegments, segStride, outerStride]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
+    const pipeline = getOrCreatePipeline(SORT_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, values, indices, paramBuffer], [numSegments, 1, 1]);
+    await syncDevice();
+    paramBuffer.destroy();
+
+    return [
+      this.deviceMgr.registerTensorAsHandle(values, [...meta.shape], meta.dtype, meta.length),
+      this.deviceMgr.registerTensorAsHandle(indices, [...meta.shape], "int64", meta.length),
+    ];
   }
 }

@@ -68,6 +68,8 @@ import SELECT_SHADER from './select.wgsl';
 import LEAKY_RELU_SHADER from './leaky_relu.wgsl';
 import EXPAND_BROADCAST_SHADER from './expand_broadcast.wgsl';
 import REPEAT_SHADER from './repeat.wgsl';
+import GATHER_SHADER from './gather.wgsl';
+import SORT_SHADER from './sort.wgsl';
 
 export {
   ELEMENTWISE_SHADER,
@@ -134,4 +136,6 @@ export {
   LEAKY_RELU_SHADER,
   EXPAND_BROADCAST_SHADER,
   REPEAT_SHADER,
+  GATHER_SHADER,
+  SORT_SHADER,
 };

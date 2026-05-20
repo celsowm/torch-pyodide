@@ -592,16 +592,28 @@ class Tensor:
     def ne(self, other: "Tensor") -> "Tensor":
         return ne_from_tensors(self, other)
 
-    def gt(self, other: "Tensor") -> "Tensor":
+    def gt(self, other: "Tensor | int | float") -> "Tensor":
+        import torch as _torch
+        if not isinstance(other, Tensor):
+            other = _torch.tensor(other, dtype=self._dtype)
         return gt_from_tensors(self, other)
 
-    def lt(self, other: "Tensor") -> "Tensor":
+    def lt(self, other: "Tensor | int | float") -> "Tensor":
+        import torch as _torch
+        if not isinstance(other, Tensor):
+            other = _torch.tensor(other, dtype=self._dtype)
         return lt_from_tensors(self, other)
 
-    def ge(self, other: "Tensor") -> "Tensor":
+    def ge(self, other: "Tensor | int | float") -> "Tensor":
+        import torch as _torch
+        if not isinstance(other, Tensor):
+            other = _torch.tensor(other, dtype=self._dtype)
         return ge_from_tensors(self, other)
 
-    def le(self, other: "Tensor") -> "Tensor":
+    def le(self, other: "Tensor | int | float") -> "Tensor":
+        import torch as _torch
+        if not isinstance(other, Tensor):
+            other = _torch.tensor(other, dtype=self._dtype)
         return le_from_tensors(self, other)
 
     def isinf(self) -> "Tensor":
@@ -1039,17 +1051,29 @@ class Tensor:
     def ne(self, other: "Tensor") -> "Tensor":
         return ne_from_tensors(self, other)
 
-    def lt(self, other: "Tensor") -> "Tensor":
-        return lt_from_tensors(self, other)
-
-    def le(self, other: "Tensor") -> "Tensor":
-        return le_from_tensors(self, other)
-
-    def gt(self, other: "Tensor") -> "Tensor":
+    def gt(self, other: "Tensor | int | float") -> "Tensor":
+        import torch as _torch
+        if not isinstance(other, Tensor):
+            other = _torch.tensor(other, dtype=self._dtype)
         return gt_from_tensors(self, other)
 
-    def ge(self, other: "Tensor") -> "Tensor":
+    def lt(self, other: "Tensor | int | float") -> "Tensor":
+        import torch as _torch
+        if not isinstance(other, Tensor):
+            other = _torch.tensor(other, dtype=self._dtype)
+        return lt_from_tensors(self, other)
+
+    def ge(self, other: "Tensor | int | float") -> "Tensor":
+        import torch as _torch
+        if not isinstance(other, Tensor):
+            other = _torch.tensor(other, dtype=self._dtype)
         return ge_from_tensors(self, other)
+
+    def le(self, other: "Tensor | int | float") -> "Tensor":
+        import torch as _torch
+        if not isinstance(other, Tensor):
+            other = _torch.tensor(other, dtype=self._dtype)
+        return le_from_tensors(self, other)
 
     def sum(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
         if dim is not None:
@@ -1404,70 +1428,51 @@ def where_from_tensors(condition: Tensor, x: Tensor, y: Tensor) -> Tensor:
 
 
 def topk_from_tensor(tensor: Tensor, k: int, dim: int = -1, largest: bool = True) -> tuple[Tensor, Tensor]:
+    if k <= 0:
+        raise ValueError(f"k must be positive, got {k}")
     d = dim if dim >= 0 else dim + len(tensor._shape)
     size = tensor._shape[d]
     if k >= size:
-        indices_np = list(range(size))
-        values = tensor
-    else:
-        flat = tensor.tolist()
-        flat_list: list[float] = _flatten_out(flat)
-        shape = list(tensor._shape)
-        step = product(shape[d + 1:]) if d + 1 < len(shape) else 1
-        outer = product(shape[:d]) if d > 0 else 1
-        all_indices: list[list[int]] = []
-        all_values: list[float] = []
-        for o in range(outer):
-            base = o * shape[d] * step
-            for s in range(step):
-                idx = base + s
-                col_vals = [(flat_list[idx + i * step], i) for i in range(shape[d])]
-                col_vals.sort(key=lambda x: x[0], reverse=largest)
-                topk_vals = col_vals[:k]
-                for v, i in topk_vals:
-                    all_values.append(v)
-                    all_indices.append(i)
-        out_shape = list(shape)
-        out_shape[d] = k
-        values = tensor_from_data(all_values, out_shape, tensor._dtype)
-        index_data = [x[0] for x in all_indices]
-    indices = tensor_from_data(index_data, out_shape, "int64")
-    return values, indices
+        return tensor, tensor_from_data(list(range(size)), list(tensor._shape), "int64")
+    descending = largest
+    values, indices = sort_from_tensor(tensor, d, descending)
+    # Slice first k along dim d
+    shape = list(values._shape)
+    shape[d] = k
+    values_meta = _run_js_awaitable(_get_runtime().slice(values._id, int(d), 0, int(k), 1))
+    indices_meta = _run_js_awaitable(_get_runtime().slice(indices._id, int(d), 0, int(k), 1))
+    values_id, values_shape, values_dtype = _js_meta_to_tuple(values_meta)
+    indices_id, indices_shape, indices_dtype = _js_meta_to_tuple(indices_meta)
+    return Tensor(values_id, values_shape, values_dtype), Tensor(indices_id, indices_shape, indices_dtype)
 
 
 def sort_from_tensor(tensor: Tensor, dim: int = -1, descending: bool = False) -> tuple[Tensor, Tensor]:
-    return topk_from_tensor(tensor, tensor._shape[dim if dim >= 0 else dim + len(tensor._shape)], dim, descending)
+    runtime = _get_runtime()
+    handles = _run_js_awaitable(runtime.sort(tensor._id, int(dim)))
+    tensors = _js_handle_array_to_tensors(handles)
+    values, indices = tensors[0], tensors[1]
+    if descending:
+        values_meta = _run_js_awaitable(runtime.flip(values._id, [int(dim)]))
+        indices_meta = _run_js_awaitable(runtime.flip(indices._id, [int(dim)]))
+        values_id, values_shape, values_dtype = _js_meta_to_tuple(values_meta)
+        indices_id, indices_shape, indices_dtype = _js_meta_to_tuple(indices_meta)
+        values = Tensor(values_id, values_shape, values_dtype)
+        indices = Tensor(indices_id, indices_shape, indices_dtype)
+    return values, indices
 
 
 def gather_from_tensor(tensor: Tensor, dim: int, index: Tensor) -> Tensor:
-    d = dim if dim >= 0 else dim + len(tensor._shape)
-    src = tensor.tolist()
-    src_flat: list[float] = _flatten_out(src)
-    idx = index.tolist()
-    idx_flat: list[float] = _flatten_out(idx)
-    out_shape = list(index._shape)
-    step = product(tensor._shape[d + 1:]) if d + 1 < len(tensor._shape) else 1
-    result: list[float] = []
-    for i in range(product(out_shape)):
-        # Map linear index i to multi-dim, compute source position
-        remaining = i
-        src_linear = 0
-        mult = 1
-        for dim_idx in range(len(out_shape) - 1, -1, -1):
-            coord = remaining % out_shape[dim_idx]
-            remaining //= out_shape[dim_idx]
-            if dim_idx == d:
-                # Gather: use index value
-                idx_idx = i  # this needs proper mapping, simplified for dim=1
-                actual_idx = int(idx_flat[min(i, len(idx_flat) - 1)])
-                src_linear = actual_idx * step + (i % step) if d == 1 else actual_idx
-            else:
-                src_linear += coord * mult if d == 1 else coord
-            mult *= tensor._shape[dim_idx]
-        # Major simplification: just use index flat as direct source index
-        src_idx = min(int(idx_flat[min(i, len(idx_flat) - 1)]), len(src_flat) - 1)
-        result.append(src_flat[src_idx])
-    return tensor_from_data(result, out_shape, tensor._dtype)
+    from .autograd import _Node, is_grad_enabled, _grad_gather
+
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.gather(tensor._id, int(dim), index._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and tensor._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        result._node = _Node(result, lambda g: (_grad_gather(g, tensor, dim, index),), [tensor])
+        return result
+    return Tensor(tensor_id, out_shape, out_dtype)
 
 
 def scatter_from_tensor(tensor: Tensor, dim: int, index: Tensor, src: Tensor | float) -> Tensor:

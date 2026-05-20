@@ -568,6 +568,14 @@ export class TorchPyodideRuntime {
     return this.shapeOps.indexSelect(tensorId, dim, indicesId);
   }
 
+  async gather(tensorId: number, dim: number, indicesId: number): Promise<TensorHandle> {
+    return this.shapeOps.gather(tensorId, dim, indicesId);
+  }
+
+  async sort(tensorId: number, dim: number): Promise<TensorHandle[]> {
+    return this.shapeOps.sort(tensorId, dim);
+  }
+
   async tril(tensorId: number, diagonal = 0): Promise<TensorHandle> {
     return this.shapeOps.tril(tensorId, diagonal);
   }
