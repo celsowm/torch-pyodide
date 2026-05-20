@@ -14,6 +14,7 @@ import {
   SLICE_SHADER,
   SLICE_BACKWARD_SHADER,
   EXPAND_SHADER,
+  EXPAND_BROADCAST_SHADER,
   INDEX_SELECT_SHADER,
   TRIL_SHADER,
   TRIU_SHADER,
@@ -290,16 +291,21 @@ export class ShapeOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const outLength = product(shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const outShape = padShapeTo4(shape);
-    const strides = computeStrides(meta.shape);
-    const broadcastStrides = meta.shape.map((s, i) => (s === 1 ? 0 : strides[i]!));
+
+    const rankDiff = shape.length - meta.shape.length;
+    const paddedShape = [...new Array(rankDiff).fill(1), ...meta.shape];
+    const strides = computeStrides(paddedShape);
+    const broadcastStrides = paddedShape.map((s, i) => (s === 1 ? 0 : strides[i]!));
+    const outShapePadded = padShapeTo4(shape);
     const bsPadded = padShapeTo4(broadcastStrides);
-    const params = new Uint32Array([
-      outShape[0], outShape[1], outShape[2], outShape[3],
+
+    const paramsData = new Uint32Array([
+      outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
       bsPadded[0], bsPadded[1], bsPadded[2], bsPadded[3],
+      shape.length, outLength, 0, 0,
     ]);
-    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 32);
-    const pipeline = getOrCreatePipeline(EXPAND_SHADER, "main");
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, paramsData, 48);
+    const pipeline = getOrCreatePipeline(EXPAND_BROADCAST_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();

@@ -341,7 +341,10 @@ export class DeviceManager {
   }
 
   async readFromGPU(source: GPUBuffer, length: number, dtype: SupportedDType): Promise<number[]> {
-    const byteSize = length * dtypeBytes(dtype);
+    // All GPU buffers store data as Float32Array regardless of dtype;
+    // bool tensors are stored as f32 (0.0/1.0), so read 4 bytes per element.
+    const elementBytes = dtype === "bool" ? 4 : dtypeBytes(dtype);
+    const byteSize = length * elementBytes;
     const shadowId = this._bufferToShadow.get(source);
     const shadow = shadowId !== undefined ? this._shadowBuffers.get(shadowId) : undefined;
     // If device was recovered, shadow is more reliable than GPU read
