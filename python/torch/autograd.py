@@ -548,13 +548,11 @@ def _grad_nll_loss(grad_output: Tensor, input_tensor: Tensor, target: Tensor) ->
     """d/dinput nll_loss(input, target) = -1/batch_size at target index, 0 elsewhere."""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import nll_loss_backward_from_tensor, ones_from_tensor
+    from ._tensor import nll_loss_backward_from_tensors
 
     batch_size = input_tensor.shape[0] if len(input_tensor.shape) > 0 else 1
     num_classes = input_tensor.shape[-1] if len(input_tensor.shape) > 1 else 1
 
-    # Scale depends on reduction: for mean reduction, scale = 1/batch_size
-    # For sum reduction, scale = 1.0
     scale = 1.0 / batch_size
 
     grad_input = nll_loss_backward_from_tensors(target, batch_size, num_classes, scale)
@@ -830,6 +828,97 @@ def _grad_gather(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Ten
         if 0 <= src_linear < n:
             flat_list[src_linear] += out_flat[i]
     return tensor_from_data(flat_list, in_shape, input_tensor.dtype)
+
+
+def _grad_topk(grad_output: Tensor, input_tensor: Tensor, dim: int, k: int, descending: bool) -> Tensor | None:
+    """d/dinput topk(input) = scatter grad_output back to full shape at topk indices."""
+    if not input_tensor._requires_grad:
+        return None
+    from ._tensor import sort_from_tensor
+    _, indices = sort_from_tensor(input_tensor, dim, descending)
+    n = 1
+    for s in input_tensor._shape:
+        n *= s
+    from ._tensor import tensor_from_data, _flatten
+    flat = [0.0] * n
+    idx_flat = _flatten(indices.tolist())
+    out_flat = _flatten(grad_output.tolist())
+    for i in range(min(len(idx_flat), len(out_flat))):
+        pos = int(idx_flat[i])
+        if 0 <= pos < n:
+            flat[pos] += out_flat[i]
+    return tensor_from_data(flat, list(input_tensor._shape), input_tensor.dtype)
+
+
+def _grad_sort(grad_output: Tensor, input_tensor: Tensor, dim: int, descending: bool) -> Tensor | None:
+    """d/dinput sort(input) = scatter grad_output back to original positions."""
+    if not input_tensor._requires_grad:
+        return None
+    from ._tensor import sort_from_tensor
+    _, indices = sort_from_tensor(input_tensor, dim, descending)
+    n = 1
+    for s in input_tensor._shape:
+        n *= s
+    from ._tensor import tensor_from_data, _flatten
+    flat = [0.0] * n
+    idx_flat = _flatten(indices.tolist())
+    out_flat = _flatten(grad_output.tolist())
+    for i in range(min(len(idx_flat), len(out_flat))):
+        pos = int(idx_flat[i])
+        if 0 <= pos < n:
+            flat[pos] += out_flat[i]
+    return tensor_from_data(flat, list(input_tensor._shape), input_tensor.dtype)
+
+
+def _grad_scatter_(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Tensor, src: Tensor | float) -> Tensor | None:
+    """d/dinput scatter_(input) = scatter grad_output back (gradient flows through unchanged positions)."""
+    if not input_tensor._requires_grad:
+        return None
+    from ._tensor import tensor_from_data, _flatten
+    in_shape = list(input_tensor._shape)
+    n = 1
+    for s in in_shape:
+        n *= s
+    flat = [0.0] * n
+    out_flat = _flatten(grad_output.tolist())
+    idx_flat = _flatten(index.tolist())
+    mask = [True] * n
+    for i in range(len(idx_flat)):
+        pos = int(idx_flat[i])
+        if 0 <= pos < n:
+            mask[pos] = False
+    for i in range(n):
+        if mask[i] and i < len(out_flat):
+            flat[i] = out_flat[i]
+        elif not mask[i]:
+            flat[i] = out_flat[i]
+    return tensor_from_data(flat, in_shape, input_tensor.dtype)
+
+
+def _grad_maximum(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None, Tensor | None]:
+    """d/da max(a,b) = grad * (a >= b), d/db max(a,b) = grad * (b > a)"""
+    grad_a = None
+    grad_b = None
+    if a._requires_grad:
+        mask = a.ge(b).to(a._dtype)
+        grad_a = grad_output.mul(mask)
+    if b._requires_grad:
+        mask = b.gt(a).to(b._dtype)
+        grad_b = grad_output.mul(mask)
+    return grad_a, grad_b
+
+
+def _grad_minimum(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None, Tensor | None]:
+    """d/da min(a,b) = grad * (a <= b), d/db min(a,b) = grad * (b < a)"""
+    grad_a = None
+    grad_b = None
+    if a._requires_grad:
+        mask = a.le(b).to(a._dtype)
+        grad_a = grad_output.mul(mask)
+    if b._requires_grad:
+        mask = b.lt(a).to(b._dtype)
+        grad_b = grad_output.mul(mask)
+    return grad_a, grad_b
 
 
 # ── torch.autograd.grad ──────────────────────────────────────────

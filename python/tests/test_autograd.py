@@ -209,7 +209,6 @@ class FakeRuntime:
         self._ensure_ready()
         inp = self.store[input_id]
         w = self.store[weight_id]
-        # Simplified: output shape for conv2d
         batch, in_ch, in_h, in_w = inp["shape"]
         out_ch, _, kh, kw = w["shape"]
         s_h, s_w = stride[0], stride[1] if len(stride) > 1 else stride[0]
@@ -218,6 +217,256 @@ class FakeRuntime:
         out_w = (in_w + 2 * p_w - kw) // s_w + 1
         total = batch * out_ch * out_h * out_w
         return self._new([batch, out_ch, out_h, out_w], [0.5] * total, "float32")
+
+    def sigmoid(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        result = [1.0 / (1.0 + math.exp(-v)) for v in vals]
+        return self._new(list(self.store[tensor_id]["shape"]), result, self.store[tensor_id]["dtype"])
+
+    def tanh(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        result = [math.tanh(v) for v in vals]
+        return self._new(list(self.store[tensor_id]["shape"]), result, self.store[tensor_id]["dtype"])
+
+    def gelu(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        result = [0.5 * v * (1.0 + math.erf(v / math.sqrt(2.0))) for v in vals]
+        return self._new(list(self.store[tensor_id]["shape"]), result, self.store[tensor_id]["dtype"])
+
+    def silu(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        result = [v / (1.0 + math.exp(-v)) for v in vals]
+        return self._new(list(self.store[tensor_id]["shape"]), result, self.store[tensor_id]["dtype"])
+
+    def leakyRelu(self, tensor_id: int, alpha: float = 0.01) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        result = [v if v >= 0 else alpha * v for v in vals]
+        return self._new(list(self.store[tensor_id]["shape"]), result, self.store[tensor_id]["dtype"])
+
+    def expand(self, tensor_id: int, shape: list[int]) -> dict[str, object]:
+        self._ensure_ready()
+        original = self.store[tensor_id]["values"]
+        total = max(1, math.prod(shape))
+        result = []
+        for i in range(total):
+            result.append(original[i % len(original)])
+        return self._new(shape, result, self.store[tensor_id]["dtype"])
+
+    def where(self, cond_id: int, x_id: int, y_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        cond = self.store[cond_id]["values"]
+        xv = self.store[x_id]["values"]
+        yv = self.store[y_id]["values"]
+        result = [xv[i] if bool(cond[i]) else yv[i] for i in range(len(xv))]
+        return self._new(list(self.store[x_id]["shape"]), result, self.store[x_id]["dtype"])
+
+    def cat(self, ids: list[int], dim: int) -> dict[str, object]:
+        self._ensure_ready()
+        all_vals = []
+        for tid in ids:
+            all_vals.extend(self.store[tid]["values"])
+        shape = list(self.store[ids[0]]["shape"])
+        total_vals = sum(len(self.store[tid]["values"]) for tid in ids)
+        new_shape = shape.copy()
+        if dim < 0:
+            dim += len(shape)
+        if dim < len(shape):
+            new_shape[dim] = total_vals // max(1, math.prod(shape[:dim] + shape[dim+1:]))
+        return self._new(new_shape, all_vals, self.store[ids[0]]["dtype"])
+
+    def cumsum(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        result = []
+        s = 0.0
+        for v in vals:
+            s += v
+            result.append(s)
+        return self._new(list(self.store[tensor_id]["shape"]), result, self.store[tensor_id]["dtype"])
+
+    def cumprod(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        result = []
+        p = 1.0
+        for v in vals:
+            p *= v
+            result.append(p)
+        return self._new(list(self.store[tensor_id]["shape"]), result, self.store[tensor_id]["dtype"])
+
+    def tril(self, tensor_id: int, diagonal: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        shape = self.store[tensor_id]["shape"]
+        result = list(vals)
+        if len(shape) == 2:
+            rows, cols = shape
+            for r in range(rows):
+                for c in range(cols):
+                    if c > r + diagonal:
+                        result[r * cols + c] = 0.0
+        return self._new(shape, result, self.store[tensor_id]["dtype"])
+
+    def triu(self, tensor_id: int, diagonal: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        shape = self.store[tensor_id]["shape"]
+        result = list(vals)
+        if len(shape) == 2:
+            rows, cols = shape
+            for r in range(rows):
+                for c in range(cols):
+                    if c < r + diagonal:
+                        result[r * cols + c] = 0.0
+        return self._new(shape, result, self.store[tensor_id]["dtype"])
+
+    def flip(self, tensor_id: int, dims: list[int]) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        return self._new(list(self.store[tensor_id]["shape"]), list(reversed(vals)), self.store[tensor_id]["dtype"])
+
+    def maskedSelect(self, tensor_id: int, mask_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        mask = self.store[mask_id]["values"]
+        result = [v for v, m in zip(vals, mask) if bool(m)]
+        return self._new([len(result)], result, self.store[tensor_id]["dtype"])
+
+    def maskedFill(self, tensor_id: int, mask_id: int, value: float) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        mask = self.store[mask_id]["values"]
+        result = [value if bool(m) else v for v, m in zip(vals, mask)]
+        return self._new(list(self.store[tensor_id]["shape"]), result, self.store[tensor_id]["dtype"])
+
+    def maximum(self, a: int, b: int) -> dict[str, object]:
+        self._ensure_ready()
+        va = self.store[a]["values"]
+        vb = self.store[b]["values"]
+        result = [max(x, y) for x, y in zip(va, vb)]
+        return self._new(list(self.store[a]["shape"]), result, self.store[a]["dtype"])
+
+    def minimum(self, a: int, b: int) -> dict[str, object]:
+        self._ensure_ready()
+        va = self.store[a]["values"]
+        vb = self.store[b]["values"]
+        result = [min(x, y) for x, y in zip(va, vb)]
+        return self._new(list(self.store[a]["shape"]), result, self.store[a]["dtype"])
+
+    def sort(self, tensor_id: int, dim: int) -> list[dict[str, object]]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        indexed = sorted(enumerate(vals), key=lambda x: x[1])
+        sorted_vals = [v for _, v in indexed]
+        sorted_idxs = [float(i) for i, _ in indexed]
+        shape = list(self.store[tensor_id]["shape"])
+        dtype = self.store[tensor_id]["dtype"]
+        m1 = self._new(shape, sorted_vals, dtype)
+        m2 = self._new(shape, sorted_idxs, "int64")
+        return [m1, m2]
+
+    def slice(self, tensor_id: int, dim: int, start: int, end: int, step: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        shape = list(self.store[tensor_id]["shape"])
+        sliced = vals[start:end:step]
+        new_shape = shape.copy()
+        if dim < len(new_shape):
+            new_shape[dim] = len(sliced) // max(1, math.prod(new_shape[:dim] + new_shape[dim+1:]))
+        return self._new(new_shape, sliced, self.store[tensor_id]["dtype"])
+
+    def sign(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        result = [1.0 if v > 0 else (-1.0 if v < 0 else 0.0) for v in vals]
+        return self._new(list(self.store[tensor_id]["shape"]), result, self.store[tensor_id]["dtype"])
+
+    def gt(self, a: int, b: int) -> dict[str, object]:
+        self._ensure_ready()
+        va = self.store[a]["values"]
+        vb = self.store[b]["values"] if b in self.store else [float(b)]
+        result = [1.0 if x > y else 0.0 for x, y in zip(va, vb * len(va))]
+        return self._new(list(self.store[a]["shape"]), result, "float32")
+
+    def lt(self, a: int, b: int) -> dict[str, object]:
+        self._ensure_ready()
+        va = self.store[a]["values"]
+        vb = self.store[b]["values"] if b in self.store else [float(b)]
+        result = [1.0 if x < y else 0.0 for x, y in zip(va, vb * len(va))]
+        return self._new(list(self.store[a]["shape"]), result, "float32")
+
+    def ge(self, a: int, b: int) -> dict[str, object]:
+        self._ensure_ready()
+        va = self.store[a]["values"]
+        vb = self.store[b]["values"] if b in self.store else [float(b)]
+        result = [1.0 if x >= y else 0.0 for x, y in zip(va, vb * len(va))]
+        return self._new(list(self.store[a]["shape"]), result, "float32")
+
+    def le(self, a: int, b: int) -> dict[str, object]:
+        self._ensure_ready()
+        va = self.store[a]["values"]
+        vb = self.store[b]["values"] if b in self.store else [float(b)]
+        result = [1.0 if x <= y else 0.0 for x, y in zip(va, vb * len(va))]
+        return self._new(list(self.store[a]["shape"]), result, "float32")
+
+    def clone(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        return self._new(list(self.store[tensor_id]["shape"]), list(self.store[tensor_id]["values"]), self.store[tensor_id]["dtype"])
+
+    def to(self, tensor_id: int, dtype: str) -> dict[str, object]:
+        self._ensure_ready()
+        return self._new(list(self.store[tensor_id]["shape"]), list(self.store[tensor_id]["values"]), dtype)
+
+    def pow(self, a: int, b: int) -> dict[str, object]:
+        self._ensure_ready()
+        va = self.store[a]["values"]
+        vb = self.store[b]["values"] if b in self.store else [float(b)]
+        result = [x ** y for x, y in zip(va, vb * len(va))]
+        return self._new(list(self.store[a]["shape"]), result, self.store[a]["dtype"])
+
+    def prod(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        p = 1.0
+        for v in vals:
+            p *= v
+        return self._new([1], [p], self.store[tensor_id]["dtype"])
+
+    def reshape(self, tensor_id: int, shape: list[int]) -> dict[str, object]:
+        self._ensure_ready()
+        return self._new(shape, list(self.store[tensor_id]["values"]), self.store[tensor_id]["dtype"])
+
+    def transpose(self, tensor_id: int, dim0: int, dim1: int) -> dict[str, object]:
+        self._ensure_ready()
+        return self._new(list(reversed(self.store[tensor_id]["shape"])), list(self.store[tensor_id]["values"]), self.store[tensor_id]["dtype"])
+
+    def squeeze(self, tensor_id: int) -> dict[str, object]:
+        self._ensure_ready()
+        shape = [s for s in self.store[tensor_id]["shape"] if s != 1]
+        if not shape:
+            shape = [1]
+        return self._new(shape, list(self.store[tensor_id]["values"]), self.store[tensor_id]["dtype"])
+
+    def select(self, tensor_id: int, dim: int, index: int) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        return self._new([1], [vals[index] if index < len(vals) else 0.0], self.store[tensor_id]["dtype"])
+
+    def sliceBackward(self, grad_output_id: int, input_shape: list[int],
+                      sliced_shape: list[int], dim: int, start: int, step: int) -> dict[str, object]:
+        self._ensure_ready()
+        total = math.prod(input_shape)
+        return self._new(list(input_shape), [0.0] * total, "float32")
+
+    def fill(self, tensor_id: int, value: float) -> dict[str, object]:
+        self._ensure_ready()
+        vals = self.store[tensor_id]["values"]
+        return self._new(list(self.store[tensor_id]["shape"]), [value] * len(vals), self.store[tensor_id]["dtype"])
 
 
 def test_conv2d_backward_functions_exist():
@@ -233,7 +482,7 @@ def test_conv2d_backward_functions_exist():
     assert callable(conv2d_weight_backward_from_tensors)
     assert callable(conv2d_bias_backward_from_tensors)
 
-    print("✓ test_conv2d_backward_functions_exist passed")
+    print("[OK] test_conv2d_backward_functions_exist passed")
 
 
 def test_nll_loss_backward_functions_exist():
@@ -242,7 +491,7 @@ def test_nll_loss_backward_functions_exist():
 
     assert callable(nll_loss_backward_from_tensors)
 
-    print("✓ test_nll_loss_backward_functions_exist passed")
+    print("[OK] test_nll_loss_backward_functions_exist passed")
 
 
 def test_log_softmax_backward_functions_exist():
@@ -251,23 +500,23 @@ def test_log_softmax_backward_functions_exist():
 
     assert callable(log_softmax_backward_from_tensors)
 
-    print("✓ test_log_softmax_backward_functions_exist passed")
+    print("[OK] test_log_softmax_backward_functions_exist passed")
 
 
 @pytest.fixture
-def fake_runtime(monkeypatch):
+def fake_runtime():
     """Fixture para injetar FakeRuntime nos testes."""
     fake = FakeRuntime()
-    monkeypatch.setattr(tensor_mod, "_get_runtime", lambda: fake)
-    monkeypatch.setattr(tensor_mod, "_run_js_awaitable", lambda value: value)
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
     return fake
 
 
-def test_conv2d_creates_computational_node(monkeypatch):
+def test_conv2d_creates_computational_node():
     """Testa que conv2d cria nó computacional quando requires_grad=True."""
     fake = FakeRuntime()
-    monkeypatch.setattr(tensor_mod, "_get_runtime", lambda: fake)
-    monkeypatch.setattr(tensor_mod, "_run_js_awaitable", lambda value: value)
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
 
     from torch._tensor import conv2d_from_tensors, Tensor, tensor_from_data
     from torch import tensor
@@ -283,14 +532,14 @@ def test_conv2d_creates_computational_node(monkeypatch):
     # Output should have requires_grad
     assert out._requires_grad
 
-    print("✓ test_conv2d_creates_computational_node passed")
+    print("[OK] test_conv2d_creates_computational_node passed")
 
 
-def test_nll_loss_creates_computational_node(monkeypatch):
+def test_nll_loss_creates_computational_node():
     """Testa que nll_loss cria nó computacional quando requires_grad=True."""
     fake = FakeRuntime()
-    monkeypatch.setattr(tensor_mod, "_get_runtime", lambda: fake)
-    monkeypatch.setattr(tensor_mod, "_run_js_awaitable", lambda value: value)
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
 
     from torch._tensor import nll_loss_from_tensor
     from torch import tensor
@@ -302,14 +551,14 @@ def test_nll_loss_creates_computational_node(monkeypatch):
 
     assert loss._requires_grad
 
-    print("✓ test_nll_loss_creates_computational_node passed")
+    print("[OK] test_nll_loss_creates_computational_node passed")
 
 
-def test_log_softmax_creates_computational_node(monkeypatch):
+def test_log_softmax_creates_computational_node():
     """Testa que log_softmax cria nó computacional quando requires_grad=True."""
     fake = FakeRuntime()
-    monkeypatch.setattr(tensor_mod, "_get_runtime", lambda: fake)
-    monkeypatch.setattr(tensor_mod, "_run_js_awaitable", lambda value: value)
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
 
     from torch._tensor import log_softmax_from_tensor
     from torch import tensor
@@ -320,17 +569,274 @@ def test_log_softmax_creates_computational_node(monkeypatch):
 
     assert out._requires_grad
 
-    print("✓ test_log_softmax_creates_computational_node passed")
+    print("[OK] test_log_softmax_creates_computational_node passed")
+
+
+def test_sigmoid_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor, sigmoid
+    x = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    out = sigmoid(x)
+    assert out._requires_grad
+    print("[OK] test_sigmoid_creates_computational_node passed")
+
+
+def test_tanh_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor, tanh
+    x = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    out = tanh(x)
+    assert out._requires_grad
+    print("[OK] test_tanh_creates_computational_node passed")
+
+
+def test_gelu_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    out = x.gelu()
+    assert out._requires_grad
+    print("[OK] test_gelu_creates_computational_node passed")
+
+
+def test_silu_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    out = x.silu()
+    assert out._requires_grad
+    print("[OK] test_silu_creates_computational_node passed")
+
+
+def test_leaky_relu_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    out = x.leaky_relu(0.1)
+    assert out._requires_grad
+    print("[OK] test_leaky_relu_creates_computational_node passed")
+
+
+def test_softmax_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
+    out = x.softmax(dim=-1)
+    assert out._requires_grad
+    print("[OK] test_softmax_creates_computational_node passed")
+
+
+def test_expand_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor, expand
+    x = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    out = expand(x, [3, 3])
+    assert out._requires_grad
+    print("[OK] test_expand_creates_computational_node passed")
+
+
+def test_where_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor, where
+    cond = tensor([1.0, 0.0, 1.0])
+    x = tensor([10.0, 20.0, 30.0], requires_grad=True)
+    y = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    out = where(cond, x, y)
+    assert out._requires_grad
+    print("[OK] test_where_creates_computational_node passed")
+
+
+def test_cat_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor, cat
+    a = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    b = tensor([4.0, 5.0, 6.0], requires_grad=True)
+    out = cat([a, b])
+    assert out._requires_grad
+    print("[OK] test_cat_creates_computational_node passed")
+
+
+def test_cumsum_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    out = x.cumsum()
+    assert out._requires_grad
+    print("[OK] test_cumsum_creates_computational_node passed")
+
+
+def test_cumprod_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0], requires_grad=True)
+    out = x.cumprod()
+    assert out._requires_grad
+    print("[OK] test_cumprod_creates_computational_node passed")
+
+
+def test_tril_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([[1.0, 2.0], [3.0, 4.0]], requires_grad=True)
+    out = x.tril()
+    assert out._requires_grad
+    print("[OK] test_tril_creates_computational_node passed")
+
+
+def test_triu_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([[1.0, 2.0], [3.0, 4.0]], requires_grad=True)
+    out = x.triu()
+    assert out._requires_grad
+    print("[OK] test_triu_creates_computational_node passed")
+
+
+def test_flip_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
+    out = x.flip([0])
+    assert out._requires_grad
+    print("[OK] test_flip_creates_computational_node passed")
+
+
+def test_masked_select_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
+    mask = tensor([1.0, 0.0, 1.0, 0.0])
+    out = x.masked_select(mask)
+    assert out._requires_grad
+    print("[OK] test_masked_select_creates_computational_node passed")
+
+
+def test_masked_fill_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
+    mask = tensor([1.0, 0.0, 1.0, 0.0])
+    out = x.masked_fill(mask, 0.0)
+    assert out._requires_grad
+    print("[OK] test_masked_fill_creates_computational_node passed")
+
+
+def test_maximum_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor, maximum
+    a = tensor([1.0, 5.0, 3.0], requires_grad=True)
+    b = tensor([4.0, 2.0, 6.0], requires_grad=True)
+    out = maximum(a, b)
+    assert out._requires_grad
+    print("[OK] test_maximum_creates_computational_node passed")
+
+
+def test_minimum_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor, minimum
+    a = tensor([1.0, 5.0, 3.0], requires_grad=True)
+    b = tensor([4.0, 2.0, 6.0], requires_grad=True)
+    out = minimum(a, b)
+    assert out._requires_grad
+    print("[OK] test_minimum_creates_computational_node passed")
+
+
+def test_sort_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([3.0, 1.0, 2.0], requires_grad=True)
+    values, indices = x.sort()
+    assert values._requires_grad
+    print("[OK] test_sort_creates_computational_node passed")
+
+
+def test_topk_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([3.0, 1.0, 2.0, 5.0, 4.0], requires_grad=True)
+    values, indices = x.topk(3)
+    assert values._requires_grad
+    print("[OK] test_topk_creates_computational_node passed")
+
+
+def test_scatter_creates_computational_node():
+    fake = FakeRuntime()
+    tensor_mod._get_runtime = lambda: fake
+    tensor_mod._run_js_awaitable = lambda value: value
+    from torch import tensor
+    x = tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
+    idx = tensor([1, 3], dtype="int32")
+    out = x.scatter_(0, idx, 0.0)
+    assert out._requires_grad
+    print("[OK] test_scatter_creates_computational_node passed")
 
 
 if __name__ == "__main__":
-    test_is_grad_enabled()
-    test_backward_api_exists()
-    test_optimizer_api_exists()
     test_conv2d_backward_functions_exist()
     test_nll_loss_backward_functions_exist()
     test_log_softmax_backward_functions_exist()
     test_conv2d_creates_computational_node()
     test_nll_loss_creates_computational_node()
     test_log_softmax_creates_computational_node()
-    print("\n✅ Todos os testes de API passaram!")
+    test_sigmoid_creates_computational_node()
+    test_tanh_creates_computational_node()
+    test_gelu_creates_computational_node()
+    test_silu_creates_computational_node()
+    test_leaky_relu_creates_computational_node()
+    test_softmax_creates_computational_node()
+    test_expand_creates_computational_node()
+    test_where_creates_computational_node()
+    test_cat_creates_computational_node()
+    test_cumsum_creates_computational_node()
+    test_cumprod_creates_computational_node()
+    test_tril_creates_computational_node()
+    test_triu_creates_computational_node()
+    test_flip_creates_computational_node()
+    test_masked_select_creates_computational_node()
+    test_masked_fill_creates_computational_node()
+    test_maximum_creates_computational_node()
+    test_minimum_creates_computational_node()
+    test_sort_creates_computational_node()
+    test_topk_creates_computational_node()
+    test_scatter_creates_computational_node()
+    print("\n[OK] Todos os testes de API passaram!")
