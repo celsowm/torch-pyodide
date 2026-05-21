@@ -156,7 +156,9 @@ async function main() {
     resetButton.disabled = true;
     exampleSelect.disabled = true;
     meta.textContent = "Loading Pyodide + runtime...";
-    const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch();
+    const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch({
+      preferLocalFallbackInProduction: true
+    });
     const defaultId = await loadCatalog();
     await switchToExample(defaultId!);
     const shortInstallDetail =
