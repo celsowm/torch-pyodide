@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Sequence
 
+__version__ = "0.0.43"
+
 # Import autograd FIRST - must be before any other imports that might trigger Torch runtime
 from .autograd import (
     no_grad,
