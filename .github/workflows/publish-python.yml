@@ -54,6 +54,9 @@ jobs:
       - name: Run python tests
         run: npm run test:python
 
+      - name: Sync torch._version from pyproject.toml
+        run: node scripts/sync_torch_version.mjs
+
       - name: Build dist
         run: >-
           cd python

@@ -1,4 +1,5 @@
 import initPy from "../../python/torch/__init__.py?raw";
+import versionPy from "../../python/torch/_version.py?raw";
 import autogradPy from "../../python/torch/autograd.py?raw";
 import gradModePy from "../../python/torch/grad_mode.py?raw";
 import cudaPy from "../../python/torch/cuda.py?raw";
@@ -71,6 +72,7 @@ for name in list(sys.modules):
 `);
   pyodide.FS.mkdirTree("/home/pyodide/torch");
   pyodide.FS.writeFile("/home/pyodide/torch/__init__.py", initPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/_version.py", versionPy);
   pyodide.FS.writeFile("/home/pyodide/torch/autograd.py", autogradPy);
   pyodide.FS.writeFile("/home/pyodide/torch/grad_mode.py", gradModePy);
   pyodide.FS.writeFile("/home/pyodide/torch/cuda.py", cudaPy);
