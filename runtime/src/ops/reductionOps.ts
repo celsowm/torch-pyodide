@@ -266,7 +266,7 @@ export class ReductionOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const resolvedDim = dim < 0 ? dim + meta.shape.length : dim;
     const maxReduce = await this.reduceDim(tensorId, resolvedDim, true, "max");
-    const shifted = await this.elementwiseOp(meta, maxReduce.id, "sub_op");
+    const shifted = await this.elementwiseOp(meta.id, maxReduce.id, "sub_op");
     const expTensor = await this.elementwiseOp(shifted.id, -1, "exp_op");
     const sumReduce = await this.reduceDim(expTensor.id, resolvedDim, true, "sum");
     const result = await this.elementwiseOp(expTensor.id, sumReduce.id, "div_op");
