@@ -47,6 +47,13 @@ function setGpuLabel(value: string): void {
   gpuLabel.textContent = value || "Unknown GPU";
 }
 
+function setOutputState(state: "empty" | "running" | "error" | "ready", text: string): void {
+  output.classList.toggle("is-empty", state === "empty");
+  output.classList.toggle("is-running", state === "running");
+  output.classList.toggle("is-error", state === "error");
+  output.textContent = text;
+}
+
 const editorState = EditorState.create({
   doc: "",
   extensions: [
@@ -57,7 +64,8 @@ const editorState = EditorState.create({
     oneDark,
     EditorView.theme({
       "&": { height: "100%", minHeight: "0", fontSize: "13px" },
-      ".cm-scroller": { fontFamily: '"JetBrains Mono", Consolas, monospace' },
+      ".cm-editor": { height: "100%", minHeight: "0" },
+      ".cm-scroller": { height: "100%", minHeight: "0", overflow: "auto", fontFamily: '"JetBrains Mono", Consolas, monospace' },
       ".cm-content": { caretColor: "#ffffff" }
     })
   ]
@@ -193,7 +201,7 @@ torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No WebGPU adapt
       switchToExample(id);
     };
     runButton.onclick = async () => {
-      output.textContent = "";
+      setOutputState("running", "Running...");
       runButton.disabled = true;
       try {
         const webgpuActive = String(
@@ -219,9 +227,9 @@ sys.stdout = _torch_playground_stdout
 _torch_playground_buf.getvalue()
 `)
         );
-        output.textContent = captured || "(no stdout)";
+        setOutputState(captured ? "ready" : "empty", captured || "(no stdout)");
       } catch (error) {
-        output.textContent = `ERROR:\n${String(error)}`;
+        setOutputState("error", `ERROR:\n${String(error)}`);
       } finally {
         runButton.disabled = false;
       }
@@ -233,7 +241,7 @@ _torch_playground_buf.getvalue()
     };
   } catch (error) {
     meta.textContent = `Failed to initialize playground: ${String(error)}`;
-    output.textContent = String(error);
+    setOutputState("error", String(error));
     runButton.disabled = true;
     resetButton.disabled = true;
     exampleSelect.disabled = true;
