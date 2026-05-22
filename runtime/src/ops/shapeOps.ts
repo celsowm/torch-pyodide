@@ -319,19 +319,16 @@ export class ShapeOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const length = product(meta.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-
-    const encoder = this.deviceMgr.device!.createCommandEncoder();
-    encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, meta.bytes);
-    this.deviceMgr.device!.queue.submit([encoder.finish()]);
-
-    const params = new Int32Array([diagonal, length, meta.shape[meta.shape.length - 2] ?? 0, meta.shape[meta.shape.length - 1] ?? 0]);
+    const rows = meta.shape[meta.shape.length - 2] ?? 1;
+    const cols = meta.shape[meta.shape.length - 1] ?? length;
+    const params = new Int32Array([rows, cols, diagonal, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(TRIL_SHADER, "main");
-    dispatchCompute(pipeline, [out, out, paramBuffer], calculateWorkgroups(length));
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
@@ -342,19 +339,16 @@ export class ShapeOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const length = product(meta.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-
-    const encoder = this.deviceMgr.device!.createCommandEncoder();
-    encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, meta.bytes);
-    this.deviceMgr.device!.queue.submit([encoder.finish()]);
-
-    const params = new Int32Array([diagonal, length, meta.shape[meta.shape.length - 2] ?? 0, meta.shape[meta.shape.length - 1] ?? 0]);
+    const rows = meta.shape[meta.shape.length - 2] ?? 1;
+    const cols = meta.shape[meta.shape.length - 1] ?? length;
+    const params = new Int32Array([rows, cols, diagonal, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(TRIU_SHADER, "main");
-    dispatchCompute(pipeline, [out, out, paramBuffer], calculateWorkgroups(length));
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
