@@ -25,7 +25,7 @@ export function encodeValuesByDType(values: number[], dtype: SupportedDType): Ar
   if (dtype === "float16") {
     const f32 = new Float32Array(values);
     const f16 = f32ArrayToF16(f32);
-    return f16.buffer;
+    return f16.buffer as ArrayBuffer;
   }
   if (dtype === "bfloat16") {
     // bfloat16: keep upper 16 bits of float32

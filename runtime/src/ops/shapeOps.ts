@@ -1,4 +1,4 @@
-import { TensorHandle, TensorMeta } from "./types.js";
+import { TensorHandle, TensorMeta, SupportedDType } from "./types.js";
 import { product } from "./types.js";
 import {
   getOrCreatePipeline,
@@ -43,7 +43,7 @@ function createUniformParamBuffer(
     size,
     usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
   });
-  deviceMgr.writeBuffer(buffer, 0, params);
+  deviceMgr.writeBuffer(buffer, 0, params as GPUAllowSharedBufferSource);
   return buffer;
 }
 

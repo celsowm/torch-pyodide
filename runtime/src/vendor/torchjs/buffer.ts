@@ -162,7 +162,7 @@ export function createBufferWithData(data: TypedArray, _dtype: DType): WebGPUBuf
     padded.set(new Uint8Array(data.buffer, data.byteOffset, sizeBytes));
     device.queue.writeBuffer(buffer, 0, padded);
   } else {
-    device.queue.writeBuffer(buffer, 0, data);
+    device.queue.writeBuffer(buffer, 0, data as unknown as GPUAllowSharedBufferSource);
   }
 
   return buffer;

@@ -11,6 +11,7 @@ export type TensorHandle = {
   id: number;
   shape: number[];
   dtype: string;
+  destroy?: () => void;
 };
 
 export type SupportedDType = "float32" | "float16" | "bfloat16" | "int32" | "bool";

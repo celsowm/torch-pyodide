@@ -159,7 +159,7 @@ export class DeviceManager {
               size: entry.shadow.size,
               usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
             });
-            this._device!.queue.writeBuffer(buf, 0, entry.shadow.data as AllowSharedBufferSource);
+            this._device!.queue.writeBuffer(buf, 0, entry.shadow.data as GPUAllowSharedBufferSource);
           }
         }
         for (const cb of this._recoveryCallbacks) await cb();
@@ -263,7 +263,7 @@ export class DeviceManager {
     return buffer;
   }
 
-  writeBuffer(buffer: GPUBuffer, offset: number, data: AllowSharedBufferSource): void {
+  writeBuffer(buffer: GPUBuffer, offset: number, data: GPUAllowSharedBufferSource): void {
     if (!this._device) throw new Error("Device not initialized");
     this._device.queue.writeBuffer(buffer, offset, data);
     const shadowId = this._bufferToShadow.get(buffer);
@@ -354,7 +354,7 @@ export class DeviceManager {
       size: shadow.size,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
     });
-    this._device.queue.writeBuffer(buffer, 0, shadow.data as AllowSharedBufferSource);
+    this._device.queue.writeBuffer(buffer, 0, shadow.data as GPUAllowSharedBufferSource);
     this._bufferToShadow.set(buffer, shadowId);
     return buffer;
   }
