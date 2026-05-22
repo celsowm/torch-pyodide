@@ -113,6 +113,9 @@ jobs:
           c.replace(v.group(0),f'version = \"{mm}{p}\"'));
           print(f'Bumped to {mm}{p}')"
 
+      - name: Sync torch._version from pyproject.toml
+        run: node scripts/sync_torch_version.mjs
+
       - name: Build wheel
         run: >-
           python -m pip install --upgrade build
@@ -122,7 +125,7 @@ jobs:
         run: >-
           git config user.name "github-actions"
           && git config user.email "github-actions@github.com"
-          && git add python/pyproject.toml
+          && git add python/pyproject.toml python/torch/_version.py
           && V=$(python -c "import re;
           print(re.search(r'^version = \"(.+?)\"',
           open('python/pyproject.toml').read(), re.M).group(1))")
