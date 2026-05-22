@@ -689,43 +689,54 @@ def _grad_gather(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Ten
     return tensor_from_data(flat_list, in_shape, input_tensor.dtype)
 
 
-def _grad_topk(grad_output: Tensor, input_tensor: Tensor, dim: int, k: int, descending: bool) -> Tensor | None:
+def _grad_topk(grad_output: Tensor, input_tensor: Tensor, dim: int, k: int, descending: bool, saved_indices: Tensor | None = None) -> Tensor | None:
     """d/dinput topk(input) = scatter grad_output back to full shape at topk indices."""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import sort_from_tensor
-    _, indices = sort_from_tensor(input_tensor, dim, descending)
     n = 1
     for s in input_tensor._shape:
         n *= s
     from ._tensor import tensor_from_data, _flatten
     flat = [0.0] * n
-    idx_flat = _flatten(indices.tolist())
-    out_flat = _flatten(grad_output.tolist())
-    for i in range(min(len(idx_flat), len(out_flat))):
-        pos = int(idx_flat[i])
+    grads_np = grad_output.tolist()
+    if saved_indices is not None:
+        idx_np = saved_indices.tolist()
+    else:
+        from ._tensor import sort_from_tensor
+        _, indices = sort_from_tensor(input_tensor, dim, descending)
+        idx_np = indices.tolist()
+    flat_grads = _flatten(grads_np)
+    flat_idx = _flatten(idx_np)
+    for i in range(min(len(flat_idx), len(flat_grads))):
+        pos = int(flat_idx[i])
         if 0 <= pos < n:
-            flat[pos] += out_flat[i]
+            flat[pos] += flat_grads[i]
     return tensor_from_data(flat, list(input_tensor._shape), input_tensor.dtype)
 
 
-def _grad_sort(grad_output: Tensor, input_tensor: Tensor, dim: int, descending: bool) -> Tensor | None:
+def _grad_sort(grad_output: Tensor, input_tensor: Tensor, dim: int, descending: bool, saved_indices: Tensor | None = None) -> Tensor | None:
     """d/dinput sort(input) = scatter grad_output back to original positions."""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import sort_from_tensor
-    _, indices = sort_from_tensor(input_tensor, dim, descending)
+    from ._tensor import tensor_from_data
     n = 1
     for s in input_tensor._shape:
         n *= s
-    from ._tensor import tensor_from_data, _flatten
     flat = [0.0] * n
-    idx_flat = _flatten(indices.tolist())
-    out_flat = _flatten(grad_output.tolist())
-    for i in range(min(len(idx_flat), len(out_flat))):
-        pos = int(idx_flat[i])
+    grads_np = grad_output.tolist()
+    if saved_indices is not None:
+        idx_np = saved_indices.tolist()
+    else:
+        from ._tensor import sort_from_tensor
+        _, indices = sort_from_tensor(input_tensor, dim, descending)
+        idx_np = indices.tolist()
+    from ._tensor import _flatten
+    flat_grads = _flatten(grads_np)
+    flat_idx = _flatten(idx_np)
+    for i in range(min(len(flat_idx), len(flat_grads))):
+        pos = int(flat_idx[i])
         if 0 <= pos < n:
-            flat[pos] += out_flat[i]
+            flat[pos] += flat_grads[i]
     return tensor_from_data(flat, list(input_tensor._shape), input_tensor.dtype)
 
 

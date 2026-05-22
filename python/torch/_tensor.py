@@ -1424,7 +1424,8 @@ def topk_from_tensor(tensor: Tensor, k: int, dim: int = -1, largest: bool = True
 
     if is_grad_enabled() and tensor._requires_grad:
         values_t._requires_grad = True
-        values_t._node = _Node(values_t, lambda g: (_grad_topk(g, tensor, d, k, descending),), [tensor])
+        saved_sort_indices = indices
+        values_t._node = _Node(values_t, lambda g: (_grad_topk(g, tensor, d, k, descending, saved_sort_indices),), [tensor])
     return values_t, indices_t
 
 
@@ -1445,7 +1446,8 @@ def sort_from_tensor(tensor: Tensor, dim: int = -1, descending: bool = False) ->
 
     if is_grad_enabled() and tensor._requires_grad:
         values._requires_grad = True
-        values._node = _Node(values, lambda g: (_grad_sort(g, tensor, dim, descending),), [tensor])
+        saved_indices = indices
+        values._node = _Node(values, lambda g: (_grad_sort(g, tensor, dim, descending, saved_indices),), [tensor])
     return values, indices
 
 
