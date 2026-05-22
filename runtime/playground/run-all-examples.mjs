@@ -322,6 +322,10 @@ function printSummary(results) {
       }
     }
   }
+
+  if (failed > 0) {
+    process.exitCode = 1;
+  }
 }
 
 run().catch((err) => {
