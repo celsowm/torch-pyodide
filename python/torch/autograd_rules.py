@@ -346,9 +346,11 @@ def _grad_slice(grad_output: Tensor, input_tensor: Tensor, dim: int, start: int,
 
 def _grad_where(grad_output: Tensor, condition: Tensor, x: Tensor, y: Tensor) -> tuple[Tensor | None, Tensor | None, Tensor | None]:
     """d/dx where(cond, x, y) = where(cond, grad_output, 0)"""
-    grad_x = grad_output if x._requires_grad else None
-    grad_y = grad_output if y._requires_grad else None
-    # condition não tem gradiente
+    from ._tensor import zeros_like_from_tensor, where_from_tensors
+
+    zeros = zeros_like_from_tensor(grad_output)
+    grad_x = where_from_tensors(condition, grad_output, zeros) if x._requires_grad else None
+    grad_y = where_from_tensors(condition, zeros, grad_output) if y._requires_grad else None
     return None, grad_x, grad_y
 
 

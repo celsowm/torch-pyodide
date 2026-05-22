@@ -1397,8 +1397,7 @@ def where_from_tensors(condition: Tensor, x: Tensor, y: Tensor) -> Tensor:
 
     if is_grad_enabled() and (x._requires_grad or y._requires_grad):
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
-        parents = [p for p in (x, y) if p._requires_grad]
-        result._node = _Node(result, lambda g: _grad_where(g, condition, x, y), parents)
+        result._node = _Node(result, lambda g: _grad_where(g, condition, x, y), [condition, x, y])
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
