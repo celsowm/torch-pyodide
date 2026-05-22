@@ -172,6 +172,7 @@ async function main() {
     const shortInstallDetail =
       installMode === "published" ? "Published package active." : "Using bundled local fallback.";
     meta.textContent = `Ready. Pyodide: ${indexURL} | mode: ${installMode} | ${shortInstallDetail}`;
+    meta.style.display = "none";
     if (installMode !== "published") {
       console.warn(`[torch-pyodide] ${installDetail}`);
     }
