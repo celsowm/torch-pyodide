@@ -605,6 +605,18 @@ export class TorchPyodideRuntime {
     }
   }
 
+  beginFrame(): void {
+    this.deviceMgr.beginFrame();
+  }
+
+  endFrame(): Promise<void> {
+    return this.deviceMgr.endFrame();
+  }
+
+  cancelFrame(): void {
+    this.deviceMgr.cancelFrame();
+  }
+
   async toList(tensorId: number): Promise<number[]> {
     await this.deviceMgr.ensureReady();
     const meta = this.deviceMgr.getTensorMeta(tensorId);

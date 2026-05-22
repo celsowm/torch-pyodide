@@ -114,8 +114,16 @@ def _backward_from_tensor(
         _run_backward()
     else:
         from .grad_mode import no_grad
+        from ._runtime import _get_runtime, _run_js_awaitable
+
         with no_grad():
-            _run_backward()
+            try:
+                runtime = _get_runtime()
+                _run_js_awaitable(runtime.beginFrame())
+                _run_backward()
+                _run_js_awaitable(runtime.endFrame())
+            except Exception:
+                pass
 
     # Limpar grafo se não reter
     if not retain_graph:
