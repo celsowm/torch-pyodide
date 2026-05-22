@@ -10,7 +10,7 @@ const distTarget = path.join(repoRoot, "external", "pyodide", "dist");
 const vitePublicTarget = path.join(repoRoot, "runtime", "public", "pyodide");
 
 function run(command, args, cwd) {
-  const result = spawnSync(command, args, { cwd, stdio: "inherit" });
+  const result = spawnSync(command, args, { cwd, stdio: "inherit", shell: true });
   if (result.status !== 0) {
     throw new Error(`Command failed: ${command} ${args.join(" ")}`);
   }

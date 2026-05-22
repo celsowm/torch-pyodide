@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, Callable, Optional
 from torch import Tensor
+from ..grad_mode import no_grad
 
 
 class Optimizer:
@@ -85,46 +86,47 @@ class SGD(Optimizer):
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         loss = super().step(closure)
-        for group in self.param_groups:
-            lr = float(group["lr"])
-            momentum = float(group["momentum"])
-            weight_decay = float(group["weight_decay"])
-            dampening = float(group["dampening"])
-            nesterov = bool(group["nesterov"])
-            
-            for p in group["params"]:
-                if p.grad is None:
-                    continue
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                momentum = float(group["momentum"])
+                weight_decay = float(group["weight_decay"])
+                dampening = float(group["dampening"])
+                nesterov = bool(group["nesterov"])
                 
-                grad = p.grad
-                
-                # Weight decay
-                if weight_decay != 0:
-                    grad = grad.add(p.mul(weight_decay))
-                
-                # Momentum
-                if momentum != 0:
-                    if id(p) not in self.state:
-                        self.state[id(p)] = {}
-                    state = self.state[id(p)]
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
                     
-                    if "momentum_buffer" not in state:
-                        buf = grad
-                        state["momentum_buffer"] = buf
-                    else:
-                        buf = state["momentum_buffer"]
-                        buf = buf.mul(momentum).add(grad.mul(1 - dampening))
-                        state["momentum_buffer"] = buf
+                    grad = p.grad
                     
-                    if nesterov:
-                        grad = grad.add(buf.mul(momentum))
-                    else:
-                        grad = buf
-                
-                # Update: p = p - lr * grad
-                update = grad.mul(lr)
-                new_p = p.sub(update)
-                p._set(new_p)
+                    # Weight decay
+                    if weight_decay != 0:
+                        grad = grad.add(p.mul(weight_decay))
+                    
+                    # Momentum
+                    if momentum != 0:
+                        if id(p) not in self.state:
+                            self.state[id(p)] = {}
+                        state = self.state[id(p)]
+                        
+                        if "momentum_buffer" not in state:
+                            buf = grad
+                            state["momentum_buffer"] = buf
+                        else:
+                            buf = state["momentum_buffer"]
+                            buf = buf.mul(momentum).add(grad.mul(1 - dampening))
+                            state["momentum_buffer"] = buf
+                        
+                        if nesterov:
+                            grad = grad.add(buf.mul(momentum))
+                        else:
+                            grad = buf
+                    
+                    # Update: p = p - lr * grad
+                    update = grad.mul(lr)
+                    new_p = p.sub(update)
+                    p._set(new_p)
         return loss
 
 
@@ -160,67 +162,68 @@ class Adam(Optimizer):
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         loss = super().step(closure)
-        for group in self.param_groups:
-            lr = float(group["lr"])
-            beta1, beta2 = group["betas"]
-            eps = float(group["eps"])
-            weight_decay = float(group["weight_decay"])
-            amsgrad = bool(group["amsgrad"])
-            
-            for p in group["params"]:
-                if p.grad is None:
-                    continue
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                beta1, beta2 = group["betas"]
+                eps = float(group["eps"])
+                weight_decay = float(group["weight_decay"])
+                amsgrad = bool(group["amsgrad"])
                 
-                grad = p.grad
-                
-                # Weight decay
-                if weight_decay != 0:
-                    grad = grad.add(p.mul(weight_decay))
-                
-                # Inicializar estado
-                if id(p) not in self.state:
-                    self.state[id(p)] = {
-                        "step": 0,
-                        "exp_avg": None,
-                        "exp_avg_sq": None,
-                        "max_exp_avg_sq": None if amsgrad else None,
-                    }
-                
-                state = self.state[id(p)]
-                state["step"] = int(state["step"]) + 1
-                
-                # Momento de primeira ordem (média móvel do gradiente)
-                if state["exp_avg"] is None:
-                    exp_avg = grad
-                    state["exp_avg"] = exp_avg
-                else:
-                    exp_avg = state["exp_avg"].mul(beta1).add(grad.mul(1 - beta1))
-                    state["exp_avg"] = exp_avg
-                
-                # Momento de segunda ordem (média móvel do gradiente ao quadrado)
-                grad_sq = grad.mul(grad)
-                if state["exp_avg_sq"] is None:
-                    exp_avg_sq = grad_sq
-                    state["exp_avg_sq"] = exp_avg_sq
-                else:
-                    exp_avg_sq = state["exp_avg_sq"].mul(beta2).add(grad_sq.mul(1 - beta2))
-                    state["exp_avg_sq"] = exp_avg_sq
-                
-                # Bias correction
-                step = state["step"]
-                bias_correction1 = 1.0 - beta1 ** step
-                bias_correction2 = 1.0 - beta2 ** step
-                
-                # Denominador com bias correction
-                denom = exp_avg_sq.div(bias_correction2).sqrt().add(eps)
-                
-                # Update
-                step_size = lr / bias_correction1
-                update = exp_avg.div(denom).mul(step_size)
-                
-                # Aplicar update
-                new_p = p.sub(update)
-                p._set(new_p)
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    
+                    grad = p.grad
+                    
+                    # Weight decay
+                    if weight_decay != 0:
+                        grad = grad.add(p.mul(weight_decay))
+                    
+                    # Inicializar estado
+                    if id(p) not in self.state:
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "exp_avg": None,
+                            "exp_avg_sq": None,
+                            "max_exp_avg_sq": None if amsgrad else None,
+                        }
+                    
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    
+                    # Momento de primeira ordem (média móvel do gradiente)
+                    if state["exp_avg"] is None:
+                        exp_avg = grad
+                        state["exp_avg"] = exp_avg
+                    else:
+                        exp_avg = state["exp_avg"].mul(beta1).add(grad.mul(1 - beta1))
+                        state["exp_avg"] = exp_avg
+                    
+                    # Momento de segunda ordem (média móvel do gradiente ao quadrado)
+                    grad_sq = grad.mul(grad)
+                    if state["exp_avg_sq"] is None:
+                        exp_avg_sq = grad_sq
+                        state["exp_avg_sq"] = exp_avg_sq
+                    else:
+                        exp_avg_sq = state["exp_avg_sq"].mul(beta2).add(grad_sq.mul(1 - beta2))
+                        state["exp_avg_sq"] = exp_avg_sq
+                    
+                    # Bias correction
+                    step = state["step"]
+                    bias_correction1 = 1.0 - beta1 ** step
+                    bias_correction2 = 1.0 - beta2 ** step
+                    
+                    # Denominador com bias correction
+                    denom = exp_avg_sq.div(bias_correction2).sqrt().add(eps)
+                    
+                    # Update
+                    step_size = lr / bias_correction1
+                    update = exp_avg.div(denom).mul(step_size)
+                    
+                    # Aplicar update
+                    new_p = p.sub(update)
+                    p._set(new_p)
         return loss
 
 
@@ -256,61 +259,62 @@ class AdamW(Optimizer):
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         loss = super().step(closure)
-        for group in self.param_groups:
-            lr = float(group["lr"])
-            beta1, beta2 = group["betas"]
-            eps = float(group["eps"])
-            weight_decay = float(group["weight_decay"])
-            amsgrad = bool(group["amsgrad"])
-            
-            for p in group["params"]:
-                if p.grad is None:
-                    continue
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                beta1, beta2 = group["betas"]
+                eps = float(group["eps"])
+                weight_decay = float(group["weight_decay"])
+                amsgrad = bool(group["amsgrad"])
                 
-                grad = p.grad
-                
-                # Weight decay desacoplado (aplicado diretamente, não no gradiente)
-                if weight_decay != 0:
-                    new_p = p.sub(p.mul(weight_decay * lr))
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    
+                    grad = p.grad
+                    
+                    # Weight decay desacoplado (aplicado diretamente, não no gradiente)
+                    if weight_decay != 0:
+                        new_p = p.sub(p.mul(weight_decay * lr))
+                        p._set(new_p)
+                    
+                    # Mesmo lógica do Adam para momentos
+                    if id(p) not in self.state:
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "exp_avg": None,
+                            "exp_avg_sq": None,
+                            "max_exp_avg_sq": None if amsgrad else None,
+                        }
+                    
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    
+                    if state["exp_avg"] is None:
+                        exp_avg = grad
+                        state["exp_avg"] = exp_avg
+                    else:
+                        exp_avg = state["exp_avg"].mul(beta1).add(grad.mul(1 - beta1))
+                        state["exp_avg"] = exp_avg
+                    
+                    grad_sq = grad.mul(grad)
+                    if state["exp_avg_sq"] is None:
+                        exp_avg_sq = grad_sq
+                        state["exp_avg_sq"] = exp_avg_sq
+                    else:
+                        exp_avg_sq = state["exp_avg_sq"].mul(beta2).add(grad_sq.mul(1 - beta2))
+                        state["exp_avg_sq"] = exp_avg_sq
+                    
+                    step = state["step"]
+                    bias_correction1 = 1.0 - beta1 ** step
+                    bias_correction2 = 1.0 - beta2 ** step
+                    
+                    denom = exp_avg_sq.div(bias_correction2).sqrt().add(eps)
+                    step_size = lr / bias_correction1
+                    update = exp_avg.div(denom).mul(step_size)
+                    
+                    new_p = p.sub(update)
                     p._set(new_p)
-                
-                # Mesmo lógica do Adam para momentos
-                if id(p) not in self.state:
-                    self.state[id(p)] = {
-                        "step": 0,
-                        "exp_avg": None,
-                        "exp_avg_sq": None,
-                        "max_exp_avg_sq": None if amsgrad else None,
-                    }
-                
-                state = self.state[id(p)]
-                state["step"] = int(state["step"]) + 1
-                
-                if state["exp_avg"] is None:
-                    exp_avg = grad
-                    state["exp_avg"] = exp_avg
-                else:
-                    exp_avg = state["exp_avg"].mul(beta1).add(grad.mul(1 - beta1))
-                    state["exp_avg"] = exp_avg
-                
-                grad_sq = grad.mul(grad)
-                if state["exp_avg_sq"] is None:
-                    exp_avg_sq = grad_sq
-                    state["exp_avg_sq"] = exp_avg_sq
-                else:
-                    exp_avg_sq = state["exp_avg_sq"].mul(beta2).add(grad_sq.mul(1 - beta2))
-                    state["exp_avg_sq"] = exp_avg_sq
-                
-                step = state["step"]
-                bias_correction1 = 1.0 - beta1 ** step
-                bias_correction2 = 1.0 - beta2 ** step
-                
-                denom = exp_avg_sq.div(bias_correction2).sqrt().add(eps)
-                step_size = lr / bias_correction1
-                update = exp_avg.div(denom).mul(step_size)
-                
-                new_p = p.sub(update)
-                p._set(new_p)
         return loss
 
 
@@ -344,54 +348,55 @@ class RMSprop(Optimizer):
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         loss = super().step(closure)
-        for group in self.param_groups:
-            lr = float(group["lr"])
-            alpha = float(group["alpha"])
-            eps = float(group["eps"])
-            weight_decay = float(group["weight_decay"])
-            momentum = float(group["momentum"])
-            
-            for p in group["params"]:
-                if p.grad is None:
-                    continue
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                alpha = float(group["alpha"])
+                eps = float(group["eps"])
+                weight_decay = float(group["weight_decay"])
+                momentum = float(group["momentum"])
                 
-                grad = p.grad
-                
-                if weight_decay != 0:
-                    grad = grad.add(p.mul(weight_decay))
-                
-                if id(p) not in self.state:
-                    self.state[id(p)] = {
-                        "square_avg": None,
-                        "momentum_buffer": None,
-                    }
-                
-                state = self.state[id(p)]
-                
-                # Média móvel dos quadrados
-                grad_sq = grad.mul(grad)
-                if state["square_avg"] is None:
-                    square_avg = grad_sq
-                    state["square_avg"] = square_avg
-                else:
-                    square_avg = state["square_avg"].mul(alpha).add(grad_sq.mul(1 - alpha))
-                    state["square_avg"] = square_avg
-                
-                denom = square_avg.sqrt().add(eps)
-                
-                # Momentum
-                if momentum != 0:
-                    if state["momentum_buffer"] is None:
-                        buf = grad.div(denom)
-                        state["momentum_buffer"] = buf
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    
+                    grad = p.grad
+                    
+                    if weight_decay != 0:
+                        grad = grad.add(p.mul(weight_decay))
+                    
+                    if id(p) not in self.state:
+                        self.state[id(p)] = {
+                            "square_avg": None,
+                            "momentum_buffer": None,
+                        }
+                    
+                    state = self.state[id(p)]
+                    
+                    # Média móvel dos quadrados
+                    grad_sq = grad.mul(grad)
+                    if state["square_avg"] is None:
+                        square_avg = grad_sq
+                        state["square_avg"] = square_avg
                     else:
-                        buf = state["momentum_buffer"].mul(momentum).add(grad.div(denom))
-                        state["momentum_buffer"] = buf
-                    update = buf
-                else:
-                    update = grad.div(denom)
-                
-                update = update.mul(lr)
-                new_p = p.sub(update)
-                p._set(new_p)
+                        square_avg = state["square_avg"].mul(alpha).add(grad_sq.mul(1 - alpha))
+                        state["square_avg"] = square_avg
+                    
+                    denom = square_avg.sqrt().add(eps)
+                    
+                    # Momentum
+                    if momentum != 0:
+                        if state["momentum_buffer"] is None:
+                            buf = grad.div(denom)
+                            state["momentum_buffer"] = buf
+                        else:
+                            buf = state["momentum_buffer"].mul(momentum).add(grad.div(denom))
+                            state["momentum_buffer"] = buf
+                        update = buf
+                    else:
+                        update = grad.div(denom)
+                    
+                    update = update.mul(lr)
+                    new_p = p.sub(update)
+                    p._set(new_p)
         return loss

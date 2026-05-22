@@ -72,42 +72,50 @@ def _backward_from_tensor(
     # Backward pass
     grads: dict[int, Tensor] = {id(tensor): gradient}
 
-    for node in reversed(topo):
-        if id(node.tensor) not in grads:
-            continue
-
-        grad_output = grads.pop(id(node.tensor))
-
-        # Executar função de gradiente
-        parent_grads = node.grad_fn(grad_output)
-
-        for parent, parent_grad in zip(node.parents, parent_grads):
-            if parent_grad is None:
-                continue
-            if not parent._requires_grad:
+    def _run_backward() -> None:
+        for node in reversed(topo):
+            if id(node.tensor) not in grads:
                 continue
 
-            # Acumular gradiente do pai
-            if id(parent) in grads:
-                grads[id(parent)] = grads[id(parent)].add(parent_grad)
-            else:
-                grads[id(parent)] = parent_grad
+            grad_output = grads.pop(id(node.tensor))
 
-            # Aplicar hook se registrado
-            if parent._backward_hooks:
-                for hook in parent._backward_hooks.values():
-                    result = hook(parent_grad)
-                    if result is not None:
-                        if id(parent) in grads:
-                            grads[id(parent)] = grads[id(parent)].add(result)
-                        else:
-                            grads[id(parent)] = result
+            # Executar função de gradiente
+            parent_grads = node.grad_fn(grad_output)
 
-            # Armazenar gradiente no tensor pai
-            if parent.grad is not None:
-                parent.grad = parent.grad.add(parent_grad)
-            else:
-                parent.grad = parent_grad
+            for parent, parent_grad in zip(node.parents, parent_grads):
+                if parent_grad is None:
+                    continue
+                if not parent._requires_grad:
+                    continue
+
+                # Acumular gradiente do pai
+                if id(parent) in grads:
+                    grads[id(parent)] = grads[id(parent)].add(parent_grad)
+                else:
+                    grads[id(parent)] = parent_grad
+
+                # Aplicar hook se registrado
+                if parent._backward_hooks:
+                    for hook in parent._backward_hooks.values():
+                        result = hook(parent_grad)
+                        if result is not None:
+                            if id(parent) in grads:
+                                grads[id(parent)] = grads[id(parent)].add(result)
+                            else:
+                                grads[id(parent)] = result
+
+                # Armazenar gradiente no tensor pai
+                if parent.grad is not None:
+                    parent.grad = parent.grad.add(parent_grad)
+                else:
+                    parent.grad = parent_grad
+
+    if create_graph:
+        _run_backward()
+    else:
+        from .grad_mode import no_grad
+        with no_grad():
+            _run_backward()
 
     # Limpar grafo se não reter
     if not retain_graph:
