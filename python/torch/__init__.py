@@ -79,6 +79,8 @@ from ._tensor import (
     max_from_tensor,
     masked_select_from_tensor,
     masked_fill_from_tensor,
+    log_softmax_from_tensor,
+    softmax_from_tensor,
     # New in this session
     empty_from_shape,
     tan_from_tensor,
@@ -255,6 +257,8 @@ __all__ = [
     "cumprod",
     "masked_select",
     "masked_fill",
+    "softmax",
+    "log_softmax",
     "tril",
     "triu",
     "flip",
@@ -357,7 +361,13 @@ def clamp(x: Tensor, min: float, max: float) -> Tensor:
     return x.clamp(min=min, max=max)
 
 
-def where(condition: Tensor, x: Tensor, y: Tensor) -> Tensor:
+def where(condition: Tensor, x: Tensor | float | int | bool, y: Tensor | float | int | bool) -> Tensor:
+    if not isinstance(x, Tensor):
+        dtype = y.dtype if isinstance(y, Tensor) else "float32"
+        x = full_like(condition, float(x), dtype=dtype)
+    if not isinstance(y, Tensor):
+        dtype = x.dtype if isinstance(x, Tensor) else "float32"
+        y = full_like(condition, float(y), dtype=dtype)
     return where_from_tensors(condition, x, y)
 
 
@@ -723,6 +733,14 @@ def masked_select(input: Tensor, mask: Tensor) -> Tensor:
 
 def masked_fill(input: Tensor, mask: Tensor, value: float) -> Tensor:
     return masked_fill_from_tensor(input, mask=mask, value=value)
+
+
+def softmax(input: Tensor, dim: int = -1) -> Tensor:
+    return softmax_from_tensor(input, dim)
+
+
+def log_softmax(input: Tensor, dim: int = -1) -> Tensor:
+    return log_softmax_from_tensor(input, dim)
 
 
 def cholesky(x: Tensor) -> Tensor:

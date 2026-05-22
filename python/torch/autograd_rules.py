@@ -161,24 +161,38 @@ def _grad_softmax(grad_output: Tensor, input_tensor: Tensor, dim: int = -1) -> T
     """d/dinput softmax(input) = softmax(input) * (grad_output - sum(grad_output * softmax(input), dim))"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import softmax_from_tensor
-    s = softmax_from_tensor(input_tensor, dim)
-    # Produto elemento a elemento
-    prod = grad_output.mul(s)
-    # Soma ao longo da dimensão
-    sum_prod = prod.sum()  # simplificado; precisa sum ao longo de dim
-    return s.mul(grad_output.sub(sum_prod))
+    from ._tensor import softmax_from_tensor, sum_dim_from_tensor
+    from .grad_mode import no_grad
+
+    with no_grad():
+        s = softmax_from_tensor(input_tensor, dim)
+        prod = grad_output.mul(s)
+        sum_prod = sum_dim_from_tensor(prod, dim, keepdim=True)
+        return s.mul(grad_output.sub(sum_prod))
 
 
 def _grad_log_softmax(grad_output: Tensor, input_tensor: Tensor, dim: int = -1) -> Tensor | None:
     """d/dinput log_softmax(input) = grad_output - softmax(input) * sum(grad_output, dim)"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import softmax_from_tensor, sum_dim_from_tensor
-    s = softmax_from_tensor(input_tensor, dim)
-    # Soma do grad_output ao longo da dimensão
-    sum_grad = sum_dim_from_tensor(grad_output, dim, keepdim=True)
-    return grad_output.sub(s.mul(sum_grad))
+    from ._tensor import log_softmax_backward_from_tensors, softmax_from_tensor, sum_dim_from_tensor
+    from .grad_mode import no_grad
+
+    d = dim if dim >= 0 else dim + len(input_tensor.shape)
+    if len(input_tensor.shape) == 2 and d == 1:
+        with no_grad():
+            softmax = softmax_from_tensor(input_tensor, dim)
+            return log_softmax_backward_from_tensors(
+                grad_output,
+                softmax,
+                input_tensor.shape[0],
+                input_tensor.shape[1],
+            )
+
+    with no_grad():
+        s = softmax_from_tensor(input_tensor, dim)
+        sum_grad = sum_dim_from_tensor(grad_output, dim, keepdim=True)
+        return grad_output.sub(s.mul(sum_grad))
 
 
 def _grad_neg(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
