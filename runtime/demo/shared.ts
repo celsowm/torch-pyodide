@@ -151,6 +151,10 @@ assert shape == [2]
 assert dtype == "float32"
 assert hasattr(torch, "cuda")
 assert callable(torch.cuda.is_available)
+assert hasattr(torch, "long")
+assert torch.long == "int64"
+assert hasattr(torch, "bool")
+assert torch.bool == "bool"
 getattr(torch, "__version__", "no-version")
 `);
   console.log("torch version installed:", versionInfo);

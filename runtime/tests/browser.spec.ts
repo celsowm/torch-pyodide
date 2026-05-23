@@ -142,4 +142,31 @@ test.describe.serial("playground examples @webgpu", () => {
 
     expect(failures, failures.join("\n\n---\n\n")).toEqual([]);
   });
+
+  test("dtype aliases behave like PyTorch names in browser runtime", async () => {
+    await page.locator("#example-select").selectOption("dtype_aliases");
+    await expect(page.locator("#example-select")).toHaveValue("dtype_aliases");
+    await runSelectedExample(page);
+    await page.waitForFunction(() => {
+      const output = document.getElementById("output")?.textContent ?? "";
+      return output.trim().startsWith("{");
+    });
+    const outputText = await page.locator("#output").innerText();
+    const output = JSON.parse(outputText) as Record<string, unknown>;
+
+    expect(output.long_alias).toBe("int64");
+    expect(output.bool_alias).toBe("bool");
+    expect(output.double_alias).toBe("float64");
+    expect(output.half_alias).toBe("float16");
+    expect(output.int_alias).toBe("int32");
+    expect(output.float_alias).toBe("float32");
+    expect(output.short_alias).toBe("int32");
+    expect(output.char_alias).toBe("int32");
+    expect(output.byte_alias).toBe("uint8");
+
+    expect(output.idx_dtype).toBe("int64");
+    expect(output.roundtrip_dtype).toBe("int64");
+    expect(output.mask_dtype).toBe("bool");
+    expect(output.selected).toEqual([1, 3]);
+  });
 });

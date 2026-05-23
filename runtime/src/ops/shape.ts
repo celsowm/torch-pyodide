@@ -1,21 +1,57 @@
 import { TensorMeta, SupportedDType, product, dtypeBytes, f32ArrayToF16, f16ToF32Array } from "./types.js";
 
 export function assertDType(dtype: string) {
-  if (dtype !== "float32" && dtype !== "float16" && dtype !== "bfloat16" && dtype !== "int32" && dtype !== "bool") {
-    throw new Error(`Unsupported dtype: ${dtype}. Supported dtypes: float32, float16, bfloat16, int32, bool.`);
+  if (
+    dtype !== "float32" &&
+    dtype !== "float16" &&
+    dtype !== "bfloat16" &&
+    dtype !== "int8" &&
+    dtype !== "int16" &&
+    dtype !== "int32" &&
+    dtype !== "int64" &&
+    dtype !== "uint8" &&
+    dtype !== "uint16" &&
+    dtype !== "uint32" &&
+    dtype !== "uint64" &&
+    dtype !== "bool"
+  ) {
+    throw new Error(
+      `Unsupported dtype: ${dtype}. Supported dtypes: float32, float16, bfloat16, int8, int16, int32, int64, uint8, uint16, uint32, uint64, bool.`,
+    );
   }
 }
 
 export function coerceScalarByDType(value: number, dtype: SupportedDType): number {
   if (dtype === "bool") return value ? 1 : 0;
-  if (dtype === "int32") return Math.trunc(value);
+  if (dtype === "int8" || dtype === "int16" || dtype === "int32" || dtype === "int64") return Math.trunc(value);
+  if (dtype === "uint8" || dtype === "uint16" || dtype === "uint32" || dtype === "uint64") return Math.max(0, Math.trunc(value));
   return value;
 }
 
 /** Encode a JS number array into an ArrayBuffer for the given dtype */
 export function encodeValuesByDType(values: number[], dtype: SupportedDType): ArrayBuffer {
-  if (dtype === "int32") {
+  if (dtype === "int8") {
+    const buf = new Int8Array(values);
+    return buf.buffer;
+  }
+  if (dtype === "uint8") {
+    const buf = new Uint8Array(values);
+    return buf.buffer;
+  }
+  if (dtype === "int16") {
+    const buf = new Int16Array(values);
+    return buf.buffer;
+  }
+  if (dtype === "uint16") {
+    const buf = new Uint16Array(values);
+    return buf.buffer;
+  }
+  if (dtype === "int32" || dtype === "int64") {
     const buf = new Int32Array(values);
+    return buf.buffer;
+  }
+  if (dtype === "uint32" || dtype === "uint64") {
+    const buf = new Uint32Array(values);
     return buf.buffer;
   }
   if (dtype === "bool") {
@@ -42,7 +78,12 @@ export function encodeValuesByDType(values: number[], dtype: SupportedDType): Ar
 }
 
 export function decodeValuesByDType(buffer: ArrayBuffer, dtype: SupportedDType): number[] {
-  if (dtype === "int32") return Array.from(new Int32Array(buffer));
+  if (dtype === "int8") return Array.from(new Int8Array(buffer));
+  if (dtype === "uint8") return Array.from(new Uint8Array(buffer));
+  if (dtype === "int16") return Array.from(new Int16Array(buffer));
+  if (dtype === "uint16") return Array.from(new Uint16Array(buffer));
+  if (dtype === "int32" || dtype === "int64") return Array.from(new Int32Array(buffer));
+  if (dtype === "uint32" || dtype === "uint64") return Array.from(new Uint32Array(buffer));
   if (dtype === "bool") return Array.from(new Float32Array(buffer)).map((v) => (v !== 0 ? 1 : 0));
   if (dtype === "float16") {
     const f16 = new Uint16Array(buffer);

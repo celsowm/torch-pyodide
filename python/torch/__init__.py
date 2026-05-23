@@ -288,6 +288,29 @@ __all__ = [
     "diag",
     "distributions",
     "linalg",
+    # dtype constants / aliases
+    "float32",
+    "float16",
+    "bfloat16",
+    "float64",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+    "bool_",
+    "long",
+    "bool",
+    "double",
+    "half",
+    "int",
+    "float",
+    "short",
+    "char",
+    "byte",
 ]
 
 
@@ -853,10 +876,28 @@ float32 = "float32"
 float16 = "float16"
 bfloat16 = "bfloat16"
 float64 = "float64"
+int8 = "int8"
+int16 = "int16"
 int32 = "int32"
 int64 = "int64"
 uint8 = "uint8"
+uint16 = "uint16"
+uint32 = "uint32"
+uint64 = "uint64"
 bool_ = "bool"
+
+# PyTorch-style dtype aliases for compatibility.
+long = int64
+bool = bool_
+double = float64
+half = float16
+int = int32
+float = float32
+byte = uint8
+
+# Integer-width aliases aligned with PyTorch naming.
+short = int16
+char = int8
 
 
 # Make submodules accessible

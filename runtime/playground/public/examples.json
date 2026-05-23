@@ -50,6 +50,7 @@
     { "id": "distributions", "label": "Distributions: Normal, Uniform, Bernoulli", "file": "examples/distributions.py" },
     { "id": "data_loader", "label": "DataLoader: Samplers, ConcatDataset", "file": "examples/data_loader_advanced.py" },
     { "id": "float16_bfloat16", "label": "dtypes: float16, bfloat16", "file": "examples/float16_bfloat16.py" },
+    { "id": "dtype_aliases", "label": "dtypes: torch.long + aliases", "file": "examples/dtype_aliases.py" },
     { "id": "autograd_activations", "label": "Autograd: sigmoid, tanh, gelu...", "file": "examples/autograd_activations.py" },
     { "id": "autograd_sort_topk", "label": "Autograd: Sort + Topk", "file": "examples/autograd_sort_topk.py" },
     { "id": "autograd_maximum_minimum", "label": "Autograd: max/min elementwise", "file": "examples/autograd_maximum_minimum.py" },

@@ -14,7 +14,19 @@ export type TensorHandle = {
   destroy?: () => void;
 };
 
-export type SupportedDType = "float32" | "float16" | "bfloat16" | "int32" | "bool";
+export type SupportedDType =
+  | "float32"
+  | "float16"
+  | "bfloat16"
+  | "int8"
+  | "int16"
+  | "int32"
+  | "int64"
+  | "uint8"
+  | "uint16"
+  | "uint32"
+  | "uint64"
+  | "bool";
 
 /** Number of bytes per element for a given dtype */
 export function dtypeBytes(dtype: SupportedDType | string): number {
@@ -22,7 +34,14 @@ export function dtypeBytes(dtype: SupportedDType | string): number {
     case "float32": return 4;
     case "float16": return 2;
     case "bfloat16": return 2;
+    case "int8": return 1;
+    case "uint8": return 1;
+    case "int16": return 2;
+    case "uint16": return 2;
     case "int32": return 4;
+    case "uint32": return 4;
+    case "int64": return 8;
+    case "uint64": return 8;
     case "bool": return 1;
     default: return 4;
   }
