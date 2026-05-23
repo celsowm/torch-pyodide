@@ -20,11 +20,17 @@ import {
   LOG_SOFTMAX_SHADER,
   LOG_SOFTMAX_BACKWARD_SHADER,
   SOFTMAX_BACKWARD_SHADER,
+  SOFTMAX_SHADER,
   NLL_LOSS_SHADER,
   NLL_LOSS_BACKWARD_SHADER,
   CROSS_ENTROPY_SHADER,
   CROSS_ENTROPY_BACKWARD_SHADER,
   ADAM_STEP_SHADER,
+  ADAMW_STEP_SHADER,
+  NLL_LOSS_REDUCED_SHADER,
+  SGD_STEP_SHADER,
+  RMSPROP_STEP_SHADER,
+  MAXMIN_BACKWARD_SHADER,
   createStorageBuffer,
   padShapeTo4,
 } from "./utils.js";
@@ -266,16 +272,60 @@ export class ReductionOps {
     return this.deviceMgr.registerTensorAsHandle(out, outShape, input.dtype as SupportedDType, batchSize);
   }
 
+  async nllLossReduced(inputId: number, targetsId: number, reduction: "sum" | "mean"): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const input = this.deviceMgr.getTensorMeta(inputId);
+    const targets = this.deviceMgr.getTensorMeta(targetsId);
+    const batchSize = targets.length;
+    const numClasses = input.shape[input.shape.length - 1]!;
+    if (batchSize * numClasses !== input.length) {
+      throw new Error(
+        `nllLossReduced expects input shape [..., C] and target shape [...]; got input length ${input.length}, target length ${batchSize}, classes ${numClasses}`,
+      );
+    }
+    const out = createStorageBuffer(this.deviceMgr.device!, 4);
+    const reductionMode = reduction === "sum" ? 1 : 2;
+    const params = new Uint32Array([batchSize, numClasses, reductionMode, 0]);
+    const paramsBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramsBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(NLL_LOSS_REDUCED_SHADER, "nll_loss_reduced");
+    dispatchCompute(pipeline, [input.buffer, targets.buffer, out, paramsBuffer], [1]);
+    await syncDevice();
+    paramsBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [], input.dtype as SupportedDType, 1);
+  }
+
   async softmax(tensorId: number, dim: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const resolvedDim = dim < 0 ? dim + meta.shape.length : dim;
-    const maxReduce = await this.reduceDim(tensorId, resolvedDim, true, "max");
-    const shifted = await this.elementwiseOp(meta.id, maxReduce.id, "sub");
-    const expTensor = await this.elementwiseOp(shifted.id, -1, "exp_op");
-    const sumReduce = await this.reduceDim(expTensor.id, resolvedDim, true, "sum");
-    const result = await this.elementwiseOp(expTensor.id, sumReduce.id, "div_op");
-    maxReduce.destroy?.(); shifted.destroy?.(); expTensor.destroy?.(); sumReduce.destroy?.();
-    return result;
+    if (resolvedDim < 0 || resolvedDim >= meta.shape.length) {
+      throw new Error(`dim ${dim} out of range for rank ${meta.shape.length}`);
+    }
+
+    let outer = 1;
+    for (let i = 0; i < resolvedDim; i++) outer *= meta.shape[i]!;
+    const axisSize = meta.shape[resolvedDim]!;
+    let inner = 1;
+    for (let i = resolvedDim + 1; i < meta.shape.length; i++) inner *= meta.shape[i]!;
+    const rows = outer * inner;
+    const outLength = product(meta.shape);
+
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
+    const dims = new Uint32Array([rows, axisSize, inner, 0]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({
+      size: dims.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    const pipeline = getOrCreatePipeline(SOFTMAX_SHADER, "softmax");
+    dispatchCompute(pipeline, [meta.buffer, out, dimsBuffer], calculateWorkgroups(rows));
+    await syncDevice();
+    dimsBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype as SupportedDType, outLength);
   }
 
   async logSoftmax(tensorId: number, dim: number): Promise<TensorHandle> {
@@ -490,6 +540,136 @@ export class ReductionOps {
     dimsBuffer.destroy();
     hpBuffer.destroy();
     extraBuffer.destroy();
+  }
+
+  async adamWStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expAvgSqId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    invSqrtBiasCorrection2: number,
+  ): Promise<void> {
+    await this.deviceMgr.ensureReady();
+    const param = this.deviceMgr.getTensorMeta(paramId);
+    const grad = this.deviceMgr.getTensorMeta(gradId);
+    const expAvg = this.deviceMgr.getTensorMeta(expAvgId);
+    const expAvgSq = this.deviceMgr.getTensorMeta(expAvgSqId);
+    const n = param.length;
+    if (grad.length !== n || expAvg.length !== n || expAvgSq.length !== n) {
+      throw new Error("adamWStep: tensor lengths must match");
+    }
+
+    const dims = new Uint32Array([n, 0, 0, 0]);
+    const hp = new Float32Array([lr, beta1, beta2, eps]);
+    const extra = new Float32Array([weightDecay, stepSize, invSqrtBiasCorrection2, 0]);
+
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({ size: dims.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const hpBuffer = this.deviceMgr.device!.createBuffer({ size: hp.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const extraBuffer = this.deviceMgr.device!.createBuffer({ size: extra.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
+    this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
+
+    const pipeline = getOrCreatePipeline(ADAMW_STEP_SHADER, "adamw_step");
+    dispatchCompute(
+      pipeline,
+      [param.buffer, grad.buffer, expAvg.buffer, expAvgSq.buffer, dimsBuffer, hpBuffer, extraBuffer],
+      calculateWorkgroups(n),
+    );
+    await syncDevice();
+    dimsBuffer.destroy();
+    hpBuffer.destroy();
+    extraBuffer.destroy();
+  }
+
+  async sgdStep(
+    paramId: number,
+    gradId: number,
+    momentumBufId: number,
+    lr: number,
+    momentum: number,
+    weightDecay: number,
+    dampening: number,
+    nesterov: boolean,
+  ): Promise<void> {
+    await this.deviceMgr.ensureReady();
+    const param = this.deviceMgr.getTensorMeta(paramId);
+    const grad = this.deviceMgr.getTensorMeta(gradId);
+    const momentumBuf = this.deviceMgr.getTensorMeta(momentumBufId);
+    const n = param.length;
+    if (grad.length !== n || momentumBuf.length !== n) throw new Error("sgdStep: tensor lengths must match");
+    const hasMomentum = momentum !== 0 ? 1 : 0;
+    const dims = new Uint32Array([n, hasMomentum, nesterov ? 1 : 0, 0]);
+    const hp = new Float32Array([lr, momentum, weightDecay, dampening]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({ size: dims.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const hpBuffer = this.deviceMgr.device!.createBuffer({ size: hp.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
+    const pipeline = getOrCreatePipeline(SGD_STEP_SHADER, "sgd_step");
+    dispatchCompute(pipeline, [param.buffer, grad.buffer, momentumBuf.buffer, dimsBuffer, hpBuffer], calculateWorkgroups(n));
+    await syncDevice();
+    dimsBuffer.destroy();
+    hpBuffer.destroy();
+  }
+
+  async rmspropStep(
+    paramId: number,
+    gradId: number,
+    squareAvgId: number,
+    momentumBufId: number,
+    lr: number,
+    alpha: number,
+    eps: number,
+    weightDecay: number,
+    momentum: number,
+  ): Promise<void> {
+    await this.deviceMgr.ensureReady();
+    const param = this.deviceMgr.getTensorMeta(paramId);
+    const grad = this.deviceMgr.getTensorMeta(gradId);
+    const squareAvg = this.deviceMgr.getTensorMeta(squareAvgId);
+    const momentumBuf = this.deviceMgr.getTensorMeta(momentumBufId);
+    const n = param.length;
+    if (grad.length !== n || squareAvg.length !== n || momentumBuf.length !== n) throw new Error("rmspropStep: tensor lengths must match");
+    const dims = new Uint32Array([n, momentum !== 0 ? 1 : 0, 0, 0]);
+    const hp = new Float32Array([lr, alpha, eps, weightDecay]);
+    const extra = new Float32Array([momentum, 0, 0, 0]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({ size: dims.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const hpBuffer = this.deviceMgr.device!.createBuffer({ size: hp.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const extraBuffer = this.deviceMgr.device!.createBuffer({ size: extra.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
+    this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
+    const pipeline = getOrCreatePipeline(RMSPROP_STEP_SHADER, "rmsprop_step");
+    dispatchCompute(pipeline, [param.buffer, grad.buffer, squareAvg.buffer, momentumBuf.buffer, dimsBuffer, hpBuffer, extraBuffer], calculateWorkgroups(n));
+    await syncDevice();
+    dimsBuffer.destroy();
+    hpBuffer.destroy();
+    extraBuffer.destroy();
+  }
+
+  async maxMinBackward(inputId: number, gradOutputId: number, mode: "max" | "min"): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const input = this.deviceMgr.getTensorMeta(inputId);
+    const gradOutput = this.deviceMgr.getTensorMeta(gradOutputId);
+    const n = input.length;
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, n * 4));
+    const params = new Uint32Array([n, mode === "max" ? 0 : 1, 0, 0]);
+    const paramsBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramsBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(MAXMIN_BACKWARD_SHADER, "maxmin_backward");
+    dispatchCompute(pipeline, [input.buffer, gradOutput.buffer, out, paramsBuffer], [1]);
+    await syncDevice();
+    paramsBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, input.shape, input.dtype as SupportedDType, n);
   }
 
   private async elementwiseOp(aId: number, bIdOrScalar: number, op: string): Promise<TensorHandle> {

@@ -910,4 +910,5 @@ from .tensor_backward_ops import (
     sort_backward_from_tensors,
     topk_backward_from_tensors,
     cross_entropy_backward_from_tensors,
+    maxmin_backward_from_tensors,
 )

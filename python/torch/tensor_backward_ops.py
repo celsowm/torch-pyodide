@@ -201,3 +201,19 @@ def cross_entropy_backward_from_tensors(
     ))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def maxmin_backward_from_tensors(
+    input: "Tensor",
+    grad_output: "Tensor",
+    mode: str,
+) -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.maxMinBackward(
+        input._id,
+        grad_output._id,
+        str(mode),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)

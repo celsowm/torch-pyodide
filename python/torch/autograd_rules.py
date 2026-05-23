@@ -511,6 +511,11 @@ def _grad_max(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     """d/dinput max(input) = one_hot(argmax(input)) * grad_output"""
     if not input_tensor._requires_grad:
         return None
+    from ._tensor import maxmin_backward_from_tensors
+    try:
+        return maxmin_backward_from_tensors(input_tensor, grad_output, "max")
+    except Exception:
+        pass
     from .tensor_factories_ops import tensor_from_data
     from .tensor_shape_utils import _flatten
     in_vals = _flatten(input_tensor.tolist())
@@ -529,6 +534,11 @@ def _grad_min(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     """d/dinput min(input) = one_hot(argmin(input)) * grad_output"""
     if not input_tensor._requires_grad:
         return None
+    from ._tensor import maxmin_backward_from_tensors
+    try:
+        return maxmin_backward_from_tensors(input_tensor, grad_output, "min")
+    except Exception:
+        pass
     from .tensor_factories_ops import tensor_from_data
     from .tensor_shape_utils import _flatten
     in_vals = _flatten(input_tensor.tolist())

@@ -286,12 +286,11 @@ def cross_entropy(input: Tensor, target: Tensor, reduction: str = "mean") -> Ten
 
 def nll_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
     from torch._tensor import nll_loss_from_tensor
-    loss_per_batch = nll_loss_from_tensor(input, target)
     if reduction == "none":
-        return loss_per_batch
+        return nll_loss_from_tensor(input, target, "none")
     if reduction == "sum":
-        return loss_per_batch.sum()
-    return loss_per_batch.mean()
+        return nll_loss_from_tensor(input, target, "sum")
+    return nll_loss_from_tensor(input, target, "mean")
 
 
 def mse_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:

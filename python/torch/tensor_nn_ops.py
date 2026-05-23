@@ -114,12 +114,16 @@ def batch_norm_from_tensor(
 def nll_loss_from_tensor(
     input: "Tensor",
     target: "Tensor",
+    reduction: str = "none",
 ) -> "Tensor":
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_nll_loss
 
     runtime = _get_runtime()
-    meta = _run_js_awaitable(runtime.nllLoss(input._id, target._id))
+    if reduction in ("sum", "mean"):
+        meta = _run_js_awaitable(runtime.nllLossReduced(input._id, target._id, reduction))
+    else:
+        meta = _run_js_awaitable(runtime.nllLoss(input._id, target._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
 
     if is_grad_enabled() and input._requires_grad:

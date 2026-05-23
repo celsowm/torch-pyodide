@@ -76,6 +76,12 @@ import TOPK_BACKWARD_SHADER from './topk_backward.wgsl';
 import CROSS_ENTROPY_SHADER from './cross_entropy.wgsl';
 import CROSS_ENTROPY_BACKWARD_SHADER from './cross_entropy_backward.wgsl';
 import ADAM_STEP_SHADER from './adam_step.wgsl';
+import SOFTMAX_SHADER from './softmax.wgsl';
+import ADAMW_STEP_SHADER from './adamw_step.wgsl';
+import NLL_LOSS_REDUCED_SHADER from './nll_loss_reduced.wgsl';
+import SGD_STEP_SHADER from './sgd_step.wgsl';
+import RMSPROP_STEP_SHADER from './rmsprop_step.wgsl';
+import MAXMIN_BACKWARD_SHADER from './maxmin_backward.wgsl';
 
 export {
   ELEMENTWISE_SHADER,
@@ -150,4 +156,10 @@ export {
   CROSS_ENTROPY_SHADER,
   CROSS_ENTROPY_BACKWARD_SHADER,
   ADAM_STEP_SHADER,
+  SOFTMAX_SHADER,
+  ADAMW_STEP_SHADER,
+  NLL_LOSS_REDUCED_SHADER,
+  SGD_STEP_SHADER,
+  RMSPROP_STEP_SHADER,
+  MAXMIN_BACKWARD_SHADER,
 };

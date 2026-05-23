@@ -447,6 +447,10 @@ export class TorchPyodideRuntime {
     return this.reductionOps.nllLoss(inputId, targetsId);
   }
 
+  async nllLossReduced(inputId: number, targetsId: number, reduction: "sum" | "mean"): Promise<TensorHandle> {
+    return this.reductionOps.nllLossReduced(inputId, targetsId, reduction);
+  }
+
   async crossEntropy(inputId: number, targetsId: number): Promise<TensorHandle> {
     return this.reductionOps.crossEntropy(inputId, targetsId);
   }
@@ -513,6 +517,84 @@ export class TorchPyodideRuntime {
       stepSize,
       invSqrtBiasCorrection2,
     );
+  }
+
+  async adamWStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expAvgSqId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    invSqrtBiasCorrection2: number,
+  ): Promise<void> {
+    return this.reductionOps.adamWStep(
+      paramId,
+      gradId,
+      expAvgId,
+      expAvgSqId,
+      lr,
+      beta1,
+      beta2,
+      eps,
+      weightDecay,
+      stepSize,
+      invSqrtBiasCorrection2,
+    );
+  }
+
+  async sgdStep(
+    paramId: number,
+    gradId: number,
+    momentumBufId: number,
+    lr: number,
+    momentum: number,
+    weightDecay: number,
+    dampening: number,
+    nesterov: boolean,
+  ): Promise<void> {
+    return this.reductionOps.sgdStep(
+      paramId,
+      gradId,
+      momentumBufId,
+      lr,
+      momentum,
+      weightDecay,
+      dampening,
+      nesterov,
+    );
+  }
+
+  async rmspropStep(
+    paramId: number,
+    gradId: number,
+    squareAvgId: number,
+    momentumBufId: number,
+    lr: number,
+    alpha: number,
+    eps: number,
+    weightDecay: number,
+    momentum: number,
+  ): Promise<void> {
+    return this.reductionOps.rmspropStep(
+      paramId,
+      gradId,
+      squareAvgId,
+      momentumBufId,
+      lr,
+      alpha,
+      eps,
+      weightDecay,
+      momentum,
+    );
+  }
+
+  async maxMinBackward(inputId: number, gradOutputId: number, mode: "max" | "min"): Promise<TensorHandle> {
+    return this.reductionOps.maxMinBackward(inputId, gradOutputId, mode);
   }
 
   async eq(aId: number, bId: number): Promise<TensorHandle> {
