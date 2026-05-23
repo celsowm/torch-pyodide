@@ -47,6 +47,9 @@ jobs:
       - name: Validate imports (no dangling references to unimported constants)
         run: npm --workspace runtime run validate:imports
 
+      - name: Validate local fallback file coverage
+        run: npm --workspace runtime run validate:local-fallback
+
       - name: Setup Pyodide dist
         run: npm run setup:pyodide:dist
 
