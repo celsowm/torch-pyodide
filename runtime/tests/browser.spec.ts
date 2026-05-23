@@ -35,7 +35,8 @@ async function waitForPlaygroundReady(page: Page): Promise<void> {
   );
 }
 
-async function runSelectedExample(page: Page): Promise<string> {
+async function runSelectedExample(page: Page): Promise<{ output: string; elapsedMs: number }> {
+  const startedAt = Date.now();
   await page.locator("#output").evaluate((node) => {
     node.textContent = "";
   });
@@ -47,7 +48,9 @@ async function runSelectedExample(page: Page): Promise<string> {
     },
     { timeout: 600000 },
   );
-  return page.locator("#output").innerText();
+  const output = await page.locator("#output").innerText();
+  const elapsedMs = Date.now() - startedAt;
+  return { output, elapsedMs };
 }
 
 test.describe.serial("playground examples @webgpu", () => {
@@ -96,13 +99,16 @@ test.describe.serial("playground examples @webgpu", () => {
   test("all playground examples run without Python or WebGPU errors", async () => {
     test.setTimeout(30 * 60 * 1000);
     const failures: string[] = [];
+    const timings: Array<{ id: string; label: string; elapsedMs: number }> = [];
 
     for (const example of examples) {
       consoleFailures.length = 0;
       await page.locator("#example-select").selectOption(example.id);
       await expect(page.locator("#example-select")).toHaveValue(example.id);
 
-      const outputText = await runSelectedExample(page);
+      const runResult = await runSelectedExample(page);
+      const outputText = runResult.output;
+      timings.push({ id: example.id, label: example.label, elapsedMs: runResult.elapsedMs });
       const outputFailed =
         outputText.startsWith("ERROR") ||
         outputText.includes("Traceback") ||
@@ -121,6 +127,18 @@ test.describe.serial("playground examples @webgpu", () => {
         );
       }
     }
+
+    const slowest = [...timings]
+      .sort((a, b) => b.elapsedMs - a.elapsedMs)
+      .slice(0, 10);
+    const timingSummary = slowest
+      .map((t) => `${t.id} (${t.label}): ${(t.elapsedMs / 1000).toFixed(2)}s`)
+      .join("\n");
+    test.info().annotations.push({
+      type: "timings",
+      description: timingSummary,
+    });
+    console.log(`\nTop 10 slowest playground examples:\n${timingSummary}\n`);
 
     expect(failures, failures.join("\n\n---\n\n")).toEqual([]);
   });

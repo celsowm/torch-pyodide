@@ -13,6 +13,7 @@
     "validate": "npm run validate:shaders && npm run validate:api && npm run validate:imports && npm run validate:local-fallback",
     "test": "npm run validate && playwright test --project=gpu-headed --grep @webgpu",
     "test:gpu": "playwright test --project=gpu-headed --grep @webgpu",
+    "test:gpu:investigate": "playwright test --project=gpu-headed tests/gpu-investigation.spec.ts",
     "test:chrome": "playwright test --project=chrome-webgpu --grep @webgpu"
   },
   "devDependencies": {

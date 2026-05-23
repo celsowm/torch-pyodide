@@ -267,7 +267,7 @@ export class ReductionOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const resolvedDim = dim < 0 ? dim + meta.shape.length : dim;
     const maxReduce = await this.reduceDim(tensorId, resolvedDim, true, "max");
-    const shifted = await this.elementwiseOp(meta.id, maxReduce.id, "sub_op");
+    const shifted = await this.elementwiseOp(meta.id, maxReduce.id, "sub");
     const expTensor = await this.elementwiseOp(shifted.id, -1, "exp_op");
     const sumReduce = await this.reduceDim(expTensor.id, resolvedDim, true, "sum");
     const result = await this.elementwiseOp(expTensor.id, sumReduce.id, "div_op");
@@ -390,15 +390,9 @@ export class ReductionOps {
       const bLength = product(b.shape);
       const outLength = Math.max(aLength, bLength);
       const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-      const params = new Int32Array([aLength, bLength, outLength, 0]);
-      const paramBuffer = this.deviceMgr.device!.createBuffer({
-        size: 16, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-      });
-      this.deviceMgr.writeBuffer(paramBuffer, 0, params);
       const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, op);
-      dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(outLength));
+      dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(outLength));
       await syncDevice();
-      paramBuffer.destroy();
       return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, outLength);
     } else {
       const scalar = bIdOrScalar;
