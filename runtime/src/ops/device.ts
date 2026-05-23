@@ -66,6 +66,8 @@ export class DeviceManager {
 
   // Mapping GPUBuffer -> shadowId for fast lookup
   private _bufferToShadow = new Map<GPUBuffer, number>();
+  // Track wrapped buffers so destroy() cleanup is attached only once
+  private _wrappedDestroy = new WeakSet<GPUBuffer>();
 
   get device(): GPUDevice | null { return this._device; }
   get adapter(): GPUAdapter | null { return this._adapter; }
@@ -265,7 +267,25 @@ export class DeviceManager {
     this._shadowBuffers.set(shadowId, shadow);
     this._pendingBuffers.push({ id: shadowId, shadow });
     this._bufferToShadow.set(buffer, shadowId);
+    this.attachDestroyCleanup(buffer);
     return buffer;
+  }
+
+  private attachDestroyCleanup(buffer: GPUBuffer): void {
+    if (this._wrappedDestroy.has(buffer)) return;
+    this._wrappedDestroy.add(buffer);
+    const originalDestroy = buffer.destroy.bind(buffer);
+    const self = this;
+    (buffer as GPUBuffer & { __torchDestroyWrapped__?: boolean }).destroy = function () {
+      const shadowId = self._bufferToShadow.get(buffer);
+      if (shadowId !== undefined) self.discardShadow(shadowId);
+      self.forgetBuffer(buffer);
+      try {
+        originalDestroy();
+      } catch {
+        // Ignore destroy errors (device may already be lost/destroyed).
+      }
+    };
   }
 
   writeBuffer(buffer: GPUBuffer, offset: number, data: GPUAllowSharedBufferSource): void {
@@ -361,6 +381,7 @@ export class DeviceManager {
     });
     this._device.queue.writeBuffer(buffer, 0, shadow.data as GPUAllowSharedBufferSource);
     this._bufferToShadow.set(buffer, shadowId);
+    this.attachDestroyCleanup(buffer);
     return buffer;
   }
 
