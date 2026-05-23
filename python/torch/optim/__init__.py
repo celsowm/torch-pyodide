@@ -29,7 +29,8 @@ def _begin_runtime_frame() -> tuple[object | None, bool, object]:
     run_js = _run_js_awaitable
     try:
         runtime = _get_runtime()
-        run_js(runtime.beginFrame())
+        # beginFrame is synchronous in the JS runtime.
+        runtime.beginFrame()
         return runtime, True, run_js
     except Exception as exc:
         _warn_frame_fallback("beginFrame", exc)

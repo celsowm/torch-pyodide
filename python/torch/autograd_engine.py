@@ -138,7 +138,8 @@ def _backward_from_tensor(
         with no_grad():
             try:
                 runtime = _get_runtime()
-                _run_js_awaitable(runtime.beginFrame())
+                # beginFrame is synchronous in the JS runtime.
+                runtime.beginFrame()
                 frame_started = True
             except Exception as exc:
                 _warn_frame_fallback("beginFrame", exc)
