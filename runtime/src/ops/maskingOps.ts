@@ -6,7 +6,6 @@ import {
   calculateWorkgroups,
   syncDevice,
   BufferUsage,
-  MASKED_SELECT_SHADER,
   MASKED_FILL_SHADER,
   createStorageBuffer,
   coerceScalarByDType,
@@ -22,19 +21,16 @@ export class MaskingOps {
     const mask = this.deviceMgr.getTensorMeta(maskId);
     const length = product(meta.shape);
     const maskData = await this.deviceMgr.readFromGPU(mask.buffer, length, "bool");
-    const trueCount = maskData.filter(v => v !== 0).length;
-
+    const inputData = await this.deviceMgr.readFromGPU(meta.buffer, length, meta.dtype as SupportedDType);
+    const selected: number[] = [];
+    for (let i = 0; i < length; i++) {
+      if (maskData[i] !== 0) selected.push(inputData[i]!);
+    }
+    const trueCount = selected.length;
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, trueCount * 4));
-    const params = new Uint32Array([length, trueCount, 0, 0]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(MASKED_SELECT_SHADER, "main");
-    dispatchCompute(pipeline, [meta.buffer, mask.buffer, out, paramBuffer], calculateWorkgroups(length));
-    await syncDevice();
-    paramBuffer.destroy();
+    if (trueCount > 0) {
+      this.deviceMgr.writeBuffer(out, 0, new Float32Array(selected));
+    }
     return this.deviceMgr.registerTensorAsHandle(out, [trueCount], meta.dtype, trueCount);
   }
 
