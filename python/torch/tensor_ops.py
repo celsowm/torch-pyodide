@@ -921,7 +921,7 @@ def softmax_from_tensor(tensor: "Tensor", dim: int = -1) -> "Tensor":
 
     if is_grad_enabled() and tensor._requires_grad:
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
-        result._node = _Node(result, lambda g: (_grad_softmax(g, tensor, dim),), [tensor])
+        result._node = _Node(result, lambda g, out=result: (_grad_softmax(g, tensor, dim, out),), [tensor])
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 

@@ -456,6 +456,15 @@ export class TorchPyodideRuntime {
     return this.reductionOps.logSoftmaxBackward(gradOutputId, softmaxId, batchSize, numClasses);
   }
 
+  async softmaxBackward(
+    gradOutputId: number,
+    softmaxId: number,
+    batchSize: number,
+    numClasses: number,
+  ): Promise<TensorHandle> {
+    return this.reductionOps.softmaxBackward(gradOutputId, softmaxId, batchSize, numClasses);
+  }
+
   async nllLossBackward(
     targetsId: number,
     batchSize: number,
@@ -574,6 +583,25 @@ export class TorchPyodideRuntime {
 
   async sort(tensorId: number, dim: number): Promise<TensorHandle[]> {
     return this.shapeOps.sort(tensorId, dim);
+  }
+
+  async sortBackward(
+    gradOutputId: number,
+    indicesId: number,
+    inputShape: number[],
+    dim: number,
+  ): Promise<TensorHandle> {
+    return this.shapeOps.sortBackward(gradOutputId, indicesId, inputShape, dim);
+  }
+
+  async topkBackward(
+    gradOutputId: number,
+    indicesId: number,
+    inputShape: number[],
+    dim: number,
+    k: number,
+  ): Promise<TensorHandle> {
+    return this.shapeOps.topkBackward(gradOutputId, indicesId, inputShape, dim, k);
   }
 
   async tril(tensorId: number, diagonal = 0): Promise<TensorHandle> {

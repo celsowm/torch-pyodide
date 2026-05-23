@@ -22,6 +22,8 @@ import {
   FLIP_SHADER,
   REPEAT_SHADER,
   SORT_SHADER,
+  SORT_BACKWARD_SHADER,
+  TOPK_BACKWARD_SHADER,
   normalizeDim,
   computeStrides,
   normalizeSliceStart,
@@ -504,5 +506,68 @@ export class ShapeOps {
       this.deviceMgr.registerTensorAsHandle(values, [...meta.shape], meta.dtype, meta.length),
       this.deviceMgr.registerTensorAsHandle(indices, [...meta.shape], "int64", meta.length),
     ];
+  }
+
+  async sortBackward(
+    gradOutputId: number,
+    indicesId: number,
+    inputShape: number[],
+    dim: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const gradOutput = this.deviceMgr.getTensorMeta(gradOutputId);
+    const indices = this.deviceMgr.getTensorMeta(indicesId);
+    const rank = inputShape.length;
+    const d = normalizeDim(dim, rank);
+    const inputLength = product(inputShape);
+    const strides = computeStrides(inputShape);
+    const segSize = inputShape[d]!;
+    const segStride = strides[d]!;
+    const outerStride = segStride * segSize;
+    const numSegments = inputLength / segSize;
+    const gradInput = createStorageBuffer(this.deviceMgr.device!, Math.max(4, inputLength * 4));
+
+    const params = new Uint32Array([segSize, numSegments, segStride, outerStride]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
+    const pipeline = getOrCreatePipeline(SORT_BACKWARD_SHADER, "sort_backward");
+    dispatchCompute(pipeline, [gradOutput.buffer, indices.buffer, gradInput, paramBuffer], [numSegments, 1, 1]);
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(gradInput, [...inputShape], gradOutput.dtype as SupportedDType, inputLength);
+  }
+
+  async topkBackward(
+    gradOutputId: number,
+    indicesId: number,
+    inputShape: number[],
+    dim: number,
+    k: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const gradOutput = this.deviceMgr.getTensorMeta(gradOutputId);
+    const indices = this.deviceMgr.getTensorMeta(indicesId);
+    const rank = inputShape.length;
+    const d = normalizeDim(dim, rank);
+    const inputLength = product(inputShape);
+    const strides = computeStrides(inputShape);
+    const segStride = strides[d]!;
+    const inputSegSize = inputShape[d]!;
+    const outerStrideIn = segStride * inputSegSize;
+    const outerStrideOut = segStride * k;
+    const numSegments = inputLength / inputSegSize;
+    const gradInput = createStorageBuffer(this.deviceMgr.device!, Math.max(4, inputLength * 4));
+
+    // Top-k covers only part of the segment; initialize with zeros before scatter.
+    const encoder = this.deviceMgr.device!.createCommandEncoder();
+    encoder.clearBuffer(gradInput, 0, Math.max(4, inputLength * 4));
+    this.deviceMgr.device!.queue.submit([encoder.finish()]);
+
+    const params = new Uint32Array([k, numSegments, segStride, outerStrideIn, outerStrideOut]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 32);
+    const pipeline = getOrCreatePipeline(TOPK_BACKWARD_SHADER, "topk_backward");
+    dispatchCompute(pipeline, [gradOutput.buffer, indices.buffer, gradInput, paramBuffer], [numSegments, 1, 1]);
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(gradInput, [...inputShape], gradOutput.dtype as SupportedDType, inputLength);
   }
 }

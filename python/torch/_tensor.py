@@ -902,7 +902,10 @@ from .tensor_backward_ops import (
     conv2d_input_backward_from_tensors,
     conv2d_weight_backward_from_tensors,
     conv2d_bias_backward_from_tensors,
+    softmax_backward_from_tensors,
     log_softmax_backward_from_tensors,
     nll_loss_backward_from_tensors,
     slice_backward_from_tensors,
+    sort_backward_from_tensors,
+    topk_backward_from_tensors,
 )

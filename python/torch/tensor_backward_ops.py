@@ -89,6 +89,24 @@ def log_softmax_backward_from_tensors(
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
+def softmax_backward_from_tensors(
+    grad_output: "Tensor",
+    softmax: "Tensor",
+    batch_size: int,
+    num_classes: int,
+) -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.softmaxBackward(
+        grad_output._id,
+        softmax._id,
+        int(batch_size),
+        int(num_classes),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
 def nll_loss_backward_from_tensors(
     targets: "Tensor",
     batch_size: int,
@@ -124,6 +142,44 @@ def slice_backward_from_tensors(
         int(dim),
         int(start),
         int(step),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def sort_backward_from_tensors(
+    grad_output: "Tensor",
+    indices: "Tensor",
+    input_shape: list[int],
+    dim: int,
+) -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.sortBackward(
+        grad_output._id,
+        indices._id,
+        list(input_shape),
+        int(dim),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def topk_backward_from_tensors(
+    grad_output: "Tensor",
+    indices: "Tensor",
+    input_shape: list[int],
+    dim: int,
+    k: int,
+) -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.topkBackward(
+        grad_output._id,
+        indices._id,
+        list(input_shape),
+        int(dim),
+        int(k),
     ))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)

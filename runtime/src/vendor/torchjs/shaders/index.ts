@@ -37,6 +37,7 @@ import MASKED_SELECT_SHADER from './masked_select.wgsl';
 import BROADCAST_SHADER from './broadcast.wgsl';
 import NLL_LOSS_BACKWARD_SHADER from './nll_loss_backward.wgsl';
 import LOG_SOFTMAX_BACKWARD_SHADER from './log_softmax_backward.wgsl';
+import SOFTMAX_BACKWARD_SHADER from './softmax_backward.wgsl';
 import MASKED_FILL_SHADER from './masked_fill.wgsl';
 import WHERE_SHADER from './where.wgsl';
 import TRANSPOSE_ND_SHADER from './transpose_nd.wgsl';
@@ -70,6 +71,8 @@ import EXPAND_BROADCAST_SHADER from './expand_broadcast.wgsl';
 import REPEAT_SHADER from './repeat.wgsl';
 import GATHER_SHADER from './gather.wgsl';
 import SORT_SHADER from './sort.wgsl';
+import SORT_BACKWARD_SHADER from './sort_backward.wgsl';
+import TOPK_BACKWARD_SHADER from './topk_backward.wgsl';
 
 export {
   ELEMENTWISE_SHADER,
@@ -105,6 +108,7 @@ export {
   BROADCAST_SHADER,
   NLL_LOSS_BACKWARD_SHADER,
   LOG_SOFTMAX_BACKWARD_SHADER,
+  SOFTMAX_BACKWARD_SHADER,
   MASKED_FILL_SHADER,
   WHERE_SHADER,
   TRANSPOSE_ND_SHADER,
@@ -138,4 +142,6 @@ export {
   REPEAT_SHADER,
   GATHER_SHADER,
   SORT_SHADER,
+  SORT_BACKWARD_SHADER,
+  TOPK_BACKWARD_SHADER,
 };

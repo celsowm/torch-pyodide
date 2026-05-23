@@ -19,6 +19,7 @@ import {
   UNARY_SHADER,
   LOG_SOFTMAX_SHADER,
   LOG_SOFTMAX_BACKWARD_SHADER,
+  SOFTMAX_BACKWARD_SHADER,
   NLL_LOSS_SHADER,
   NLL_LOSS_BACKWARD_SHADER,
   createStorageBuffer,
@@ -320,6 +321,35 @@ export class ReductionOps {
 
     const pipeline = getOrCreatePipeline(LOG_SOFTMAX_BACKWARD_SHADER, "log_softmax_backward");
     dispatchCompute(pipeline, [gradOutput.buffer, this.deviceMgr.getTensorMeta(softmaxId).buffer, gradInput, dimsBuffer], calculateWorkgroups(total));
+    await syncDevice();
+    dimsBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(gradInput, [batchSize, numClasses], gradOutput.dtype as SupportedDType, total);
+  }
+
+  async softmaxBackward(
+    gradOutputId: number,
+    softmaxId: number,
+    batchSize: number,
+    numClasses: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const gradOutput = this.deviceMgr.getTensorMeta(gradOutputId);
+    const total = batchSize * numClasses;
+
+    const gradInput = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
+    const dims = new Uint32Array([batchSize, numClasses, 0, 0]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({
+      size: dims.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+
+    const pipeline = getOrCreatePipeline(SOFTMAX_BACKWARD_SHADER, "softmax_backward");
+    dispatchCompute(
+      pipeline,
+      [gradOutput.buffer, this.deviceMgr.getTensorMeta(softmaxId).buffer, gradInput, dimsBuffer],
+      calculateWorkgroups(total),
+    );
     await syncDevice();
     dimsBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(gradInput, [batchSize, numClasses], gradOutput.dtype as SupportedDType, total);

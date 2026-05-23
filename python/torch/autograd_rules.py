@@ -157,15 +157,35 @@ def _grad_gelu(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     return grad_output.mul(grad)
 
 
-def _grad_softmax(grad_output: Tensor, input_tensor: Tensor, dim: int = -1) -> Tensor | None:
+def _grad_softmax(
+    grad_output: Tensor,
+    input_tensor: Tensor,
+    dim: int = -1,
+    saved_softmax: Tensor | None = None,
+) -> Tensor | None:
     """d/dinput softmax(input) = softmax(input) * (grad_output - sum(grad_output * softmax(input), dim))"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import softmax_from_tensor, sum_dim_from_tensor
+    from ._tensor import softmax_backward_from_tensors, softmax_from_tensor, sum_dim_from_tensor
     from .grad_mode import no_grad
 
+    d = dim if dim >= 0 else dim + len(input_tensor.shape)
+    if len(input_tensor.shape) == 2 and d == 1:
+        with no_grad():
+            s = saved_softmax if saved_softmax is not None else softmax_from_tensor(input_tensor, dim)
+            try:
+                return softmax_backward_from_tensors(
+                    grad_output,
+                    s,
+                    input_tensor.shape[0],
+                    input_tensor.shape[1],
+                )
+            except Exception:
+                # Fallback to Python implementation when runtime path is unavailable.
+                pass
+
     with no_grad():
-        s = softmax_from_tensor(input_tensor, dim)
+        s = saved_softmax if saved_softmax is not None else softmax_from_tensor(input_tensor, dim)
         prod = grad_output.mul(s)
         sum_prod = sum_dim_from_tensor(prod, dim, keepdim=True)
         return s.mul(grad_output.sub(sum_prod))
@@ -700,21 +720,32 @@ def _grad_topk(grad_output: Tensor, input_tensor: Tensor, dim: int, k: int, desc
     """d/dinput topk(input) = scatter grad_output back to full shape at topk indices."""
     if not input_tensor._requires_grad:
         return None
+    from ._tensor import sort_from_tensor, topk_backward_from_tensors
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
+
+    d = dim if dim >= 0 else dim + len(input_tensor.shape)
+    indices = saved_indices
+    if indices is None:
+        _, indices = sort_from_tensor(input_tensor, d, descending)
+
+    try:
+        return topk_backward_from_tensors(
+            grad_output,
+            indices,
+            list(input_tensor.shape),
+            d,
+            int(k),
+        )
+    except Exception:
+        pass
+
     n = 1
     for s in input_tensor._shape:
         n *= s
-    from .tensor_factories_ops import tensor_from_data
-    from .tensor_shape_utils import _flatten
     flat = [0.0] * n
-    grads_np = grad_output.tolist()
-    if saved_indices is not None:
-        idx_np = saved_indices.tolist()
-    else:
-        from ._tensor import sort_from_tensor
-        _, indices = sort_from_tensor(input_tensor, dim, descending)
-        idx_np = indices.tolist()
-    flat_grads = _flatten(grads_np)
-    flat_idx = _flatten(idx_np)
+    flat_grads = _flatten(grad_output.tolist())
+    flat_idx = _flatten(indices.tolist())
     for i in range(min(len(flat_idx), len(flat_grads))):
         pos = int(flat_idx[i])
         if 0 <= pos < n:
@@ -726,21 +757,31 @@ def _grad_sort(grad_output: Tensor, input_tensor: Tensor, dim: int, descending: 
     """d/dinput sort(input) = scatter grad_output back to original positions."""
     if not input_tensor._requires_grad:
         return None
+    from ._tensor import sort_backward_from_tensors, sort_from_tensor
     from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
+
+    d = dim if dim >= 0 else dim + len(input_tensor.shape)
+    indices = saved_indices
+    if indices is None:
+        _, indices = sort_from_tensor(input_tensor, d, descending)
+
+    try:
+        return sort_backward_from_tensors(
+            grad_output,
+            indices,
+            list(input_tensor.shape),
+            d,
+        )
+    except Exception:
+        pass
+
     n = 1
     for s in input_tensor._shape:
         n *= s
     flat = [0.0] * n
-    grads_np = grad_output.tolist()
-    if saved_indices is not None:
-        idx_np = saved_indices.tolist()
-    else:
-        from ._tensor import sort_from_tensor
-        _, indices = sort_from_tensor(input_tensor, dim, descending)
-        idx_np = indices.tolist()
-    from .tensor_shape_utils import _flatten
-    flat_grads = _flatten(grads_np)
-    flat_idx = _flatten(idx_np)
+    flat_grads = _flatten(grad_output.tolist())
+    flat_idx = _flatten(indices.tolist())
     for i in range(min(len(flat_idx), len(flat_grads))):
         pos = int(flat_idx[i])
         if 0 <= pos < n:
