@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import warnings
+
 from typing import TYPE_CHECKING, Callable, Sequence
 
 if TYPE_CHECKING:
@@ -21,6 +23,21 @@ class _Node:
         self.grad_fn = grad_fn
         self.parents = parents
         self.requires_grad = requires_grad
+
+
+_FRAME_FALLBACK_WARNED = False
+
+
+def _warn_frame_fallback(where: str, exc: Exception) -> None:
+    global _FRAME_FALLBACK_WARNED
+    if _FRAME_FALLBACK_WARNED:
+        return
+    _FRAME_FALLBACK_WARNED = True
+    warnings.warn(
+        f"{where} unavailable in runtime; running without frame batching ({type(exc).__name__}: {exc})",
+        RuntimeWarning,
+        stacklevel=3,
+    )
 
 
 # ── Backward engine ───────────────────────────────────────────────
@@ -116,14 +133,24 @@ def _backward_from_tensor(
         from .grad_mode import no_grad
         from ._runtime import _get_runtime, _run_js_awaitable
 
+        runtime = None
+        frame_started = False
         with no_grad():
             try:
                 runtime = _get_runtime()
                 _run_js_awaitable(runtime.beginFrame())
+                frame_started = True
+            except Exception as exc:
+                _warn_frame_fallback("beginFrame", exc)
+
+            try:
                 _run_backward()
-                _run_js_awaitable(runtime.endFrame())
-            except Exception:
-                pass
+            finally:
+                if frame_started and runtime is not None:
+                    try:
+                        _run_js_awaitable(runtime.endFrame())
+                    except Exception as exc:
+                        _warn_frame_fallback("endFrame", exc)
 
     # Limpar grafo se não reter
     if not retain_graph:

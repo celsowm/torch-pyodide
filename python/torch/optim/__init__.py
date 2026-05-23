@@ -1,8 +1,48 @@
 from __future__ import annotations
 
+import warnings
+
 from typing import Iterable, Callable, Optional
 from torch import Tensor
 from ..grad_mode import no_grad
+
+
+_FRAME_FALLBACK_WARNED = False
+
+
+def _warn_frame_fallback(where: str, exc: Exception) -> None:
+    global _FRAME_FALLBACK_WARNED
+    if _FRAME_FALLBACK_WARNED:
+        return
+    _FRAME_FALLBACK_WARNED = True
+    warnings.warn(
+        f"{where} unavailable in runtime; optimizer step running without frame batching ({type(exc).__name__}: {exc})",
+        RuntimeWarning,
+        stacklevel=3,
+    )
+
+
+def _begin_runtime_frame() -> tuple[object | None, bool, object]:
+    from torch._runtime import _get_runtime, _run_js_awaitable
+
+    runtime = None
+    run_js = _run_js_awaitable
+    try:
+        runtime = _get_runtime()
+        run_js(runtime.beginFrame())
+        return runtime, True, run_js
+    except Exception as exc:
+        _warn_frame_fallback("beginFrame", exc)
+        return runtime, False, run_js
+
+
+def _end_runtime_frame(runtime: object | None, frame_started: bool, run_js: object) -> None:
+    if not frame_started or runtime is None:
+        return
+    try:
+        run_js(runtime.endFrame())
+    except Exception as exc:
+        _warn_frame_fallback("endFrame", exc)
 
 
 class Optimizer:
@@ -86,12 +126,7 @@ class SGD(Optimizer):
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         loss = super().step(closure)
-        from torch._runtime import _get_runtime, _run_js_awaitable
-        try:
-            runtime = _get_runtime()
-            _run_js_awaitable(runtime.beginFrame())
-        except Exception:
-            pass
+        runtime, frame_started, run_js = _begin_runtime_frame()
         with no_grad():
             for group in self.param_groups:
                 lr = float(group["lr"])
@@ -133,10 +168,7 @@ class SGD(Optimizer):
                     update = grad.mul(lr)
                     new_p = p.sub(update)
                     p._set(new_p)
-        try:
-            _run_js_awaitable(runtime.endFrame())
-        except Exception:
-            pass
+        _end_runtime_frame(runtime, frame_started, run_js)
         return loss
 
 
@@ -173,12 +205,7 @@ class Adam(Optimizer):
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         loss = super().step(closure)
-        from torch._runtime import _get_runtime, _run_js_awaitable
-        try:
-            runtime = _get_runtime()
-            _run_js_awaitable(runtime.beginFrame())
-        except Exception:
-            pass
+        runtime, frame_started, run_js = _begin_runtime_frame()
         with no_grad():
             for group in self.param_groups:
                 lr = float(group["lr"])
@@ -241,10 +268,7 @@ class Adam(Optimizer):
                     # Aplicar update
                     new_p = p.sub(update)
                     p._set(new_p)
-        try:
-            _run_js_awaitable(runtime.endFrame())
-        except Exception:
-            pass
+        _end_runtime_frame(runtime, frame_started, run_js)
         return loss
 
 
@@ -280,12 +304,7 @@ class AdamW(Optimizer):
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         loss = super().step(closure)
-        from torch._runtime import _get_runtime, _run_js_awaitable
-        try:
-            runtime = _get_runtime()
-            _run_js_awaitable(runtime.beginFrame())
-        except Exception:
-            pass
+        runtime, frame_started, run_js = _begin_runtime_frame()
         with no_grad():
             for group in self.param_groups:
                 lr = float(group["lr"])
@@ -342,10 +361,7 @@ class AdamW(Optimizer):
                     
                     new_p = p.sub(update)
                     p._set(new_p)
-        try:
-            _run_js_awaitable(runtime.endFrame())
-        except Exception:
-            pass
+        _end_runtime_frame(runtime, frame_started, run_js)
         return loss
 
 
@@ -379,12 +395,7 @@ class RMSprop(Optimizer):
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         loss = super().step(closure)
-        from torch._runtime import _get_runtime, _run_js_awaitable
-        try:
-            runtime = _get_runtime()
-            _run_js_awaitable(runtime.beginFrame())
-        except Exception:
-            pass
+        runtime, frame_started, run_js = _begin_runtime_frame()
         with no_grad():
             for group in self.param_groups:
                 lr = float(group["lr"])
@@ -436,8 +447,5 @@ class RMSprop(Optimizer):
                     update = update.mul(lr)
                     new_p = p.sub(update)
                     p._set(new_p)
-        try:
-            _run_js_awaitable(runtime.endFrame())
-        except Exception:
-            pass
+        _end_runtime_frame(runtime, frame_started, run_js)
         return loss
