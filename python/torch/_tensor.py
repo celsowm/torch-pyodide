@@ -145,23 +145,12 @@ class Tensor:
         return self.slice(dim=dim, start=start, end=start + length)
 
     def repeat(self, *sizes: int) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.repeat(self._id, [int(s) for s in sizes]))
-        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, shape, dtype)
+        from ._tensor_runtime_bridge import repeat_from_tensor
+        return repeat_from_tensor(self, list(sizes))
 
     def repeat_interleave(self, repeats: int, dim: int | None = None) -> "Tensor":
-        from .__init__ import arange
-        if dim is None:
-            flat = self.flatten()
-            shape_0 = flat._shape[0]
-            indices = arange(shape_0, dtype="int64").unsqueeze(1).expand(shape_0, repeats).flatten()
-            return flat.index_select(0, indices)
-        d = dim if dim >= 0 else dim + self._shape.__len__()
-        shape_d = self._shape[d]
-        indices = arange(shape_d, dtype="int64").unsqueeze(1).expand(shape_d, repeats).flatten()
-        return self.index_select(d, indices)
+        from ._tensor_math_helpers import repeat_interleave_from_tensor
+        return repeat_interleave_from_tensor(self, repeats, dim)
 
     tile = repeat
 
@@ -190,7 +179,8 @@ class Tensor:
         return self.add(other)
 
     def __radd__(self, other: "Tensor | float") -> "Tensor":
-        return self.add(other) if isinstance(other, Tensor) else Tensor(0, [1], self._dtype).add(self)
+        from ._tensor_math_helpers import radd_from_tensor
+        return radd_from_tensor(self, other)
 
     def __mul__(self, other: "Tensor | float") -> "Tensor":
         return self.mul(other)
@@ -202,8 +192,8 @@ class Tensor:
         return self.sub(other)
 
     def __rsub__(self, other: "Tensor | float") -> "Tensor":
-        from .tensor_ops import _scalar_to_tensor
-        return self.neg().add(other) if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype).sub(self)
+        from ._tensor_math_helpers import rsub_from_tensor
+        return rsub_from_tensor(self, other)
 
     def __truediv__(self, other: "Tensor | float") -> "Tensor":
         return self.div(other)
@@ -261,8 +251,8 @@ class Tensor:
         return (self.__or__(other)).__sub__(self.__and__(other))
 
     def __invert__(self) -> "Tensor":
-        from .tensor_ops import _scalar_to_tensor
-        return _scalar_to_tensor(1.0, self._dtype).sub(self)
+        from ._tensor_math_helpers import invert_from_tensor
+        return invert_from_tensor(self)
 
     def matmul(self, other: "Tensor") -> "Tensor":
         from .tensor_ops import matmul_from_tensors
@@ -284,21 +274,12 @@ class Tensor:
         return self.reshape(-1, 1) * other.reshape(1, -1)
 
     def norm(self, p: float | str = "fro") -> "Tensor":
-        if p == "fro" or p == 2:
-            return (self * self).sum().sqrt()
-        elif p == 1:
-            return self.abs().sum()
-        elif p == float("inf") or p == "inf":
-            return self.abs().max()
-        else:
-            return (self.abs() ** p).sum() ** (1.0 / p)
+        from ._tensor_math_helpers import norm_from_tensor
+        return norm_from_tensor(self, p)
 
     def cholesky(self) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.cholesky(self._id))
-        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, shape, dtype)
+        from ._tensor_runtime_bridge import cholesky_from_tensor
+        return cholesky_from_tensor(self)
 
     def add(self, other: "Tensor | float") -> "Tensor":
         from .tensor_ops import add_from_tensors, _scalar_to_tensor
@@ -321,24 +302,16 @@ class Tensor:
         return div_from_tensors(self, b_tensor)
 
     def lu(self) -> tuple["Tensor", "Tensor"]:
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        result = _run_js_awaitable(runtime.lu(self._id))
-        a_meta = result[0]
-        p_meta = result[1]
-        a_id, a_shape, a_dtype = _js_meta_to_tuple(a_meta)
-        p_id, p_shape, p_dtype = _js_meta_to_tuple(p_meta)
-        return Tensor(a_id, a_shape, a_dtype), Tensor(p_id, p_shape, p_dtype)
+        from ._tensor_runtime_bridge import lu_from_tensor
+        return lu_from_tensor(self)
 
     def triangular_solve(self, b: "Tensor", upper: bool = False) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.triangularSolve(self._id, b._id, upper))
-        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, shape, dtype)
+        from ._tensor_runtime_bridge import triangular_solve_from_tensors
+        return triangular_solve_from_tensors(self, b, upper)
 
     def item(self) -> float:
-        return _run_js_awaitable(_get_runtime().toList(self._id))[0]
+        from ._tensor_runtime_bridge import item_from_tensor
+        return item_from_tensor(self)
 
     def det(self) -> "Tensor":
         from ._tensor_linalg_py import det_from_tensor
@@ -449,34 +422,20 @@ class Tensor:
         return neg_from_tensor(self)
 
     def clamp(self, min: float, max: float) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.clamp(self._id, float(min), float(max)))
-        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, shape, dtype)
+        from ._tensor_runtime_bridge import clamp_from_tensor
+        return clamp_from_tensor(self, min, max)
 
     def argmax(self) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.argmax(self._id))
-        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, shape, dtype)
+        from ._tensor_runtime_bridge import argmax_from_tensor
+        return argmax_from_tensor(self)
 
     def argmin(self) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.argmin(self._id))
-        tensor_id, shape, dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, shape, dtype)
+        from ._tensor_runtime_bridge import argmin_from_tensor
+        return argmin_from_tensor(self)
 
     def reshape(self, shape: int | Sequence[int]) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_shape_utils import _normalize_shape
-        from .tensor_ops import _js_meta_to_tuple
-        normalized = _normalize_shape(shape)
-        meta = _run_js_awaitable(runtime.reshape(self._id, normalized))
-        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, out_shape, out_dtype)
+        from ._tensor_runtime_bridge import reshape_from_tensor
+        return reshape_from_tensor(self, shape)
 
     def view(self, *shape: int) -> "Tensor":
         from .tensor_shape_utils import _normalize_shape_from_args
@@ -484,43 +443,24 @@ class Tensor:
         return self.reshape(normalized)
 
     def flatten(self, start_dim: int = 0, end_dim: int = -1) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.flatten(self._id, int(start_dim), int(end_dim)))
-        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, out_shape, out_dtype)
+        from ._tensor_runtime_bridge import flatten_from_tensor
+        return flatten_from_tensor(self, start_dim, end_dim)
 
     def squeeze(self, dim: int | None = None) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        if dim is None:
-            meta = _run_js_awaitable(runtime.squeeze(self._id))
-        else:
-            meta = _run_js_awaitable(runtime.squeeze(self._id, int(dim)))
-        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, out_shape, out_dtype)
+        from ._tensor_runtime_bridge import squeeze_from_tensor
+        return squeeze_from_tensor(self, dim)
 
     def unsqueeze(self, dim: int) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.unsqueeze(self._id, int(dim)))
-        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, out_shape, out_dtype)
+        from ._tensor_runtime_bridge import unsqueeze_from_tensor
+        return unsqueeze_from_tensor(self, dim)
 
     def transpose(self, dim0: int, dim1: int) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.transpose(self._id, int(dim0), int(dim1)))
-        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, out_shape, out_dtype)
+        from ._tensor_runtime_bridge import transpose_from_tensor
+        return transpose_from_tensor(self, dim0, dim1)
 
     def permute(self, dims: Sequence[int]) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        normalized = [int(v) for v in dims]
-        meta = _run_js_awaitable(runtime.permute(self._id, normalized))
-        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, out_shape, out_dtype)
+        from ._tensor_runtime_bridge import permute_from_tensor
+        return permute_from_tensor(self, dims)
 
     def expand(self, *shape: int) -> "Tensor":
         from .tensor_ops import expand_from_tensor
@@ -536,49 +476,24 @@ class Tensor:
 
     @property
     def T(self) -> "Tensor":
-        runtime = _get_runtime()
-        from .tensor_ops import _js_meta_to_tuple
-        meta = _run_js_awaitable(runtime.transpose2d(self._id))
-        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-        return Tensor(tensor_id, out_shape, out_dtype)
+        from ._tensor_runtime_bridge import t_from_tensor
+        return t_from_tensor(self)
 
     def tolist(self) -> object:
-        runtime = _get_runtime()
-        from .tensor_shape_utils import _reshape_flat_values
-        result = _run_js_awaitable(runtime.toList(self._id))
-        flat = list(result.to_py() if hasattr(result, "to_py") else result)
-        return _reshape_flat_values(flat, self._shape, self._dtype)
+        from ._tensor_runtime_bridge import tolist_from_tensor
+        return tolist_from_tensor(self)
 
     def split(self, split_size: int | list[int], dim: int = 0) -> list["Tensor"]:
-        shape = self._shape
-        d = dim if dim >= 0 else dim + len(shape)
-        size_dim = shape[d]
-        if isinstance(split_size, int):
-            sections = []
-            i = 0
-            while i < size_dim:
-                end = min(i + split_size, size_dim)
-                sections.append(end - i)
-                i = end
-        else:
-            sections = [int(s) for s in split_size]
-        result: list[Tensor] = []
-        offset = 0
-        for sec in sections:
-            result.append(self.slice(dim=d, start=offset, end=offset + sec))
-            offset += sec
-        return result
+        from ._tensor_shape_ops import split_from_tensor
+        return split_from_tensor(self, split_size, dim)
 
     def chunk(self, chunks: int, dim: int = 0) -> list["Tensor"]:
-        shape = self._shape
-        d = dim if dim >= 0 else dim + len(shape)
-        size_dim = shape[d]
-        split_size = (size_dim + chunks - 1) // chunks
-        return self.split(split_size, dim=dim)
+        from ._tensor_shape_ops import chunk_from_tensor
+        return chunk_from_tensor(self, chunks, dim)
 
     def destroy(self) -> None:
-        runtime = _get_runtime()
-        _run_js_awaitable(runtime.destroy(self._id))
+        from ._tensor_runtime_bridge import destroy_tensor
+        destroy_tensor(self)
 
     def sigmoid(self) -> "Tensor":
         from .tensor_ops import sigmoid_from_tensor
