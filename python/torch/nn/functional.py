@@ -280,13 +280,8 @@ def glu(x: Tensor, dim: int = -1) -> Tensor:
 # ── Loss functions ────────────────────────────────────────────────
 
 def cross_entropy(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
-    log_probs = log_softmax(input, dim=-1)
-    nll = nll_loss(log_probs, target, reduction="none")
-    if reduction == "none":
-        return nll
-    if reduction == "sum":
-        return nll.sum()
-    return nll.mean()
+    from torch._tensor import cross_entropy_from_tensor
+    return cross_entropy_from_tensor(input, target, reduction)
 
 
 def nll_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:

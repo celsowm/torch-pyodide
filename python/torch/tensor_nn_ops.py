@@ -129,6 +129,33 @@ def nll_loss_from_tensor(
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
+def cross_entropy_from_tensor(
+    input: "Tensor",
+    target: "Tensor",
+    reduction: str = "mean",
+) -> "Tensor":
+    from ._tensor import Tensor
+    from .autograd import _Node, is_grad_enabled
+    from .autograd_rules import _grad_cross_entropy_fused
+
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.crossEntropy(input._id, target._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    loss_per_batch = Tensor(tensor_id, out_shape, out_dtype)
+
+    if reduction == "none":
+        result = loss_per_batch
+    elif reduction == "sum":
+        result = loss_per_batch.sum()
+    else:
+        result = loss_per_batch.mean()
+
+    if is_grad_enabled() and input._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_cross_entropy_fused(g, input, target, reduction),), [input])
+    return result
+
+
 def batch_norm_inference_from_tensor(
     input: "Tensor",
     running_mean: "Tensor",

@@ -73,6 +73,9 @@ import GATHER_SHADER from './gather.wgsl';
 import SORT_SHADER from './sort.wgsl';
 import SORT_BACKWARD_SHADER from './sort_backward.wgsl';
 import TOPK_BACKWARD_SHADER from './topk_backward.wgsl';
+import CROSS_ENTROPY_SHADER from './cross_entropy.wgsl';
+import CROSS_ENTROPY_BACKWARD_SHADER from './cross_entropy_backward.wgsl';
+import ADAM_STEP_SHADER from './adam_step.wgsl';
 
 export {
   ELEMENTWISE_SHADER,
@@ -144,4 +147,7 @@ export {
   SORT_SHADER,
   SORT_BACKWARD_SHADER,
   TOPK_BACKWARD_SHADER,
+  CROSS_ENTROPY_SHADER,
+  CROSS_ENTROPY_BACKWARD_SHADER,
+  ADAM_STEP_SHADER,
 };

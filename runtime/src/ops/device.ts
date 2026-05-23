@@ -195,7 +195,12 @@ export class DeviceManager {
     const encoder = this._frameEncoder!;
     this._frameEncoder = null;
     this._device!.queue.submit([encoder.finish()]);
-    await this._device!.queue.onSubmittedWorkDone();
+    // Performance mode: do not force a device-wide stall on every frame end.
+    // Command ordering on a single queue is preserved; readback paths still synchronize explicitly.
+    const target = globalThis as typeof globalThis & { __TORCH_PYODIDE_FRAME_SYNC_EAGER__?: boolean };
+    if (target.__TORCH_PYODIDE_FRAME_SYNC_EAGER__) {
+      await this._device!.queue.onSubmittedWorkDone();
+    }
   }
 
   /** Cancel and discard a batch frame without submitting. */

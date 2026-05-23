@@ -116,6 +116,13 @@ export function calculateWorkgroups(
  * Useful for timing and synchronization.
  */
 export async function syncDevice(): Promise<void> {
+  // Performance mode: avoid per-op GPU stalls.
+  // Callers that need strict completion already synchronize via mapAsync/readback paths.
+  // Set globalThis.__TORCH_PYODIDE_SYNC_EAGER__ = true to force eager sync for debugging.
+  const target = globalThis as typeof globalThis & { __TORCH_PYODIDE_SYNC_EAGER__?: boolean };
+  if (!target.__TORCH_PYODIDE_SYNC_EAGER__) {
+    return;
+  }
   const device = getDevice();
   await device.queue.onSubmittedWorkDone();
 }

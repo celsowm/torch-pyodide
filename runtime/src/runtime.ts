@@ -447,6 +447,10 @@ export class TorchPyodideRuntime {
     return this.reductionOps.nllLoss(inputId, targetsId);
   }
 
+  async crossEntropy(inputId: number, targetsId: number): Promise<TensorHandle> {
+    return this.reductionOps.crossEntropy(inputId, targetsId);
+  }
+
   async logSoftmaxBackward(
     gradOutputId: number,
     softmaxId: number,
@@ -472,6 +476,43 @@ export class TorchPyodideRuntime {
     scale?: number,
   ): Promise<TensorHandle> {
     return this.reductionOps.nllLossBackward(targetsId, batchSize, numClasses, scale);
+  }
+
+  async crossEntropyBackward(
+    gradOutputId: number,
+    inputId: number,
+    targetsId: number,
+    reduction: "none" | "sum" | "mean",
+  ): Promise<TensorHandle> {
+    return this.reductionOps.crossEntropyBackward(gradOutputId, inputId, targetsId, reduction);
+  }
+
+  async adamStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expAvgSqId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    invSqrtBiasCorrection2: number,
+  ): Promise<void> {
+    return this.reductionOps.adamStep(
+      paramId,
+      gradId,
+      expAvgId,
+      expAvgSqId,
+      lr,
+      beta1,
+      beta2,
+      eps,
+      weightDecay,
+      stepSize,
+      invSqrtBiasCorrection2,
+    );
   }
 
   async eq(aId: number, bId: number): Promise<TensorHandle> {

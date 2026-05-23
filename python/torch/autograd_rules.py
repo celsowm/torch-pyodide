@@ -410,6 +410,18 @@ def _grad_cross_entropy(grad_output: Tensor, input_tensor: Tensor, target: Tenso
     return s.sub(target) if target._shape == s._shape else s
 
 
+def _grad_cross_entropy_fused(
+    grad_output: Tensor,
+    input_tensor: Tensor,
+    target: Tensor,
+    reduction: str = "mean",
+) -> Tensor | None:
+    if not input_tensor._requires_grad:
+        return None
+    from ._tensor import cross_entropy_backward_from_tensors
+    return cross_entropy_backward_from_tensors(grad_output, input_tensor, target, reduction)
+
+
 def _grad_mse_loss(grad_output: Tensor, input_tensor: Tensor, target: Tensor) -> Tensor | None:
     """d/dinput mse_loss(input, target) = 2 * (input - target) / n"""
     if not input_tensor._requires_grad:
@@ -433,16 +445,12 @@ def _grad_nll_loss(grad_output: Tensor, input_tensor: Tensor, target: Tensor) ->
 
     grad_input = nll_loss_backward_from_tensors(target, batch_size, num_classes, scale)
 
-    # Multiply by grad_output (chain rule), handling scalar or per-sample reductions.
-    if grad_output.shape == ():
-        scalar_val = grad_output.tolist()[0] if grad_output.tolist() else 1.0
-        from .tensor_ops import _scalar_to_tensor
-        grad_input = grad_input.mul(_scalar_to_tensor(scalar_val))
-    else:
-        grad_scale = grad_output
-        while len(grad_scale.shape) < len(grad_input.shape):
-            grad_scale = grad_scale.unsqueeze(-1)
-        grad_input = grad_input.mul(grad_scale)
+    # Multiply by grad_output (chain rule) without host readback.
+    # This keeps the entire scaling on device and avoids per-iteration tolist()/item() sync.
+    grad_scale = grad_output
+    while len(grad_scale.shape) < len(grad_input.shape):
+        grad_scale = grad_scale.unsqueeze(-1)
+    grad_input = grad_input.mul(grad_scale)
 
     return grad_input
 

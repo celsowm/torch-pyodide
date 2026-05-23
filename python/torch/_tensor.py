@@ -894,6 +894,7 @@ from .tensor_nn_ops import (
     avg_pool2d_from_tensor,
     batch_norm_from_tensor,
     nll_loss_from_tensor,
+    cross_entropy_from_tensor,
     batch_norm_inference_from_tensor,
     layer_norm_from_tensor,
 )
@@ -908,4 +909,5 @@ from .tensor_backward_ops import (
     slice_backward_from_tensors,
     sort_backward_from_tensors,
     topk_backward_from_tensors,
+    cross_entropy_backward_from_tensors,
 )

@@ -218,13 +218,9 @@ class Adam(Optimizer):
                 for p in group["params"]:
                     if p.grad is None:
                         continue
-                    
+
                     grad = p.grad
-                    
-                    # Weight decay
-                    if weight_decay != 0:
-                        grad = grad.add(p.mul(weight_decay))
-                    
+
                     # Inicializar estado
                     if id(p) not in self.state:
                         self.state[id(p)] = {
@@ -236,39 +232,51 @@ class Adam(Optimizer):
                     
                     state = self.state[id(p)]
                     state["step"] = int(state["step"]) + 1
-                    
-                    # Momento de primeira ordem (média móvel do gradiente)
+
                     if state["exp_avg"] is None:
-                        exp_avg = grad
-                        state["exp_avg"] = exp_avg
-                    else:
-                        exp_avg = state["exp_avg"].mul(beta1).add(grad.mul(1 - beta1))
-                        state["exp_avg"] = exp_avg
-                    
-                    # Momento de segunda ordem (média móvel do gradiente ao quadrado)
-                    grad_sq = grad.mul(grad)
+                        import torch
+                        state["exp_avg"] = torch.zeros_like(p)
                     if state["exp_avg_sq"] is None:
-                        exp_avg_sq = grad_sq
-                        state["exp_avg_sq"] = exp_avg_sq
-                    else:
-                        exp_avg_sq = state["exp_avg_sq"].mul(beta2).add(grad_sq.mul(1 - beta2))
-                        state["exp_avg_sq"] = exp_avg_sq
-                    
-                    # Bias correction
+                        import torch
+                        state["exp_avg_sq"] = torch.zeros_like(p)
+
+                    exp_avg = state["exp_avg"]
+                    exp_avg_sq = state["exp_avg_sq"]
+
                     step = state["step"]
                     bias_correction1 = 1.0 - beta1 ** step
                     bias_correction2 = 1.0 - beta2 ** step
-                    
-                    # Denominador com bias correction
-                    denom = exp_avg_sq.div(bias_correction2).sqrt().add(eps)
-                    
-                    # Update
+
                     step_size = lr / bias_correction1
-                    update = exp_avg.div(denom).mul(step_size)
-                    
-                    # Aplicar update
-                    new_p = p.sub(update)
-                    p._set(new_p)
+                    inv_sqrt_bc2 = 1.0 / (bias_correction2 ** 0.5)
+
+                    try:
+                        run_js(runtime.adamStep(
+                            p._id,
+                            grad._id,
+                            exp_avg._id,
+                            exp_avg_sq._id,
+                            float(lr),
+                            float(beta1),
+                            float(beta2),
+                            float(eps),
+                            float(weight_decay),
+                            float(step_size),
+                            float(inv_sqrt_bc2),
+                        ))
+                    except Exception:
+                        # Fallback path keeps previous behavior when fused runtime op is unavailable.
+                        if weight_decay != 0:
+                            grad = grad.add(p.mul(weight_decay))
+                        exp_avg = exp_avg.mul(beta1).add(grad.mul(1 - beta1))
+                        state["exp_avg"] = exp_avg
+                        grad_sq = grad.mul(grad)
+                        exp_avg_sq = exp_avg_sq.mul(beta2).add(grad_sq.mul(1 - beta2))
+                        state["exp_avg_sq"] = exp_avg_sq
+                        denom = exp_avg_sq.div(bias_correction2).sqrt().add(eps)
+                        update = exp_avg.div(denom).mul(step_size)
+                        new_p = p.sub(update)
+                        p._set(new_p)
         _end_runtime_frame(runtime, frame_started, run_js)
         return loss
 

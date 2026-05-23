@@ -38,9 +38,7 @@ export async function initWebGPU(customGpu?: GPU): Promise<void> {
       );
     }
 
-    const adapter = await gpuProvider.requestAdapter({
-      powerPreference: 'high-performance',
-    });
+    const adapter = await gpuProvider.requestAdapter();
 
     if (!adapter) {
       throw new Error('Failed to get WebGPU adapter');

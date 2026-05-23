@@ -22,6 +22,9 @@ import {
   SOFTMAX_BACKWARD_SHADER,
   NLL_LOSS_SHADER,
   NLL_LOSS_BACKWARD_SHADER,
+  CROSS_ENTROPY_SHADER,
+  CROSS_ENTROPY_BACKWARD_SHADER,
+  ADAM_STEP_SHADER,
   createStorageBuffer,
   padShapeTo4,
 } from "./utils.js";
@@ -379,6 +382,114 @@ export class ReductionOps {
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(gradInput, [batchSize, numClasses], "float32", total);
+  }
+
+  async crossEntropy(inputId: number, targetsId: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const input = this.deviceMgr.getTensorMeta(inputId);
+    const targets = this.deviceMgr.getTensorMeta(targetsId);
+    const batchSize = targets.length;
+    const numClasses = input.shape[input.shape.length - 1]!;
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, batchSize * 4));
+    const dims = new Uint32Array([batchSize, numClasses, 0, 0]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({
+      size: dims.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    const pipeline = getOrCreatePipeline(CROSS_ENTROPY_SHADER, "cross_entropy");
+    dispatchCompute(pipeline, [input.buffer, targets.buffer, out, dimsBuffer], calculateWorkgroups(batchSize));
+    await syncDevice();
+    dimsBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [batchSize], input.dtype as SupportedDType, batchSize);
+  }
+
+  async crossEntropyBackward(
+    gradOutputId: number,
+    inputId: number,
+    targetsId: number,
+    reduction: "none" | "sum" | "mean",
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const gradOutput = this.deviceMgr.getTensorMeta(gradOutputId);
+    const input = this.deviceMgr.getTensorMeta(inputId);
+    const targets = this.deviceMgr.getTensorMeta(targetsId);
+    const batchSize = targets.length;
+    const numClasses = input.shape[input.shape.length - 1]!;
+    const total = batchSize * numClasses;
+    const reductionMode = reduction === "none" ? 0 : reduction === "sum" ? 1 : 2;
+    const gradIsScalar = gradOutput.length === 1 ? 1 : 0;
+    const normScale = reduction === "mean" ? 1.0 / Math.max(1, batchSize) : 1.0;
+
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
+    const dims = new Uint32Array([batchSize, numClasses, reductionMode, gradIsScalar]);
+    const scales = new Float32Array([normScale, 0, 0, 0]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({
+      size: dims.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    const scalesBuffer = this.deviceMgr.device!.createBuffer({
+      size: scales.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    this.deviceMgr.writeBuffer(scalesBuffer, 0, scales);
+    const pipeline = getOrCreatePipeline(CROSS_ENTROPY_BACKWARD_SHADER, "cross_entropy_backward");
+    dispatchCompute(
+      pipeline,
+      [gradOutput.buffer, input.buffer, targets.buffer, out, dimsBuffer, scalesBuffer],
+      calculateWorkgroups(total),
+    );
+    await syncDevice();
+    dimsBuffer.destroy();
+    scalesBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [batchSize, numClasses], input.dtype as SupportedDType, total);
+  }
+
+  async adamStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expAvgSqId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    invSqrtBiasCorrection2: number,
+  ): Promise<void> {
+    await this.deviceMgr.ensureReady();
+    const param = this.deviceMgr.getTensorMeta(paramId);
+    const grad = this.deviceMgr.getTensorMeta(gradId);
+    const expAvg = this.deviceMgr.getTensorMeta(expAvgId);
+    const expAvgSq = this.deviceMgr.getTensorMeta(expAvgSqId);
+    const n = param.length;
+    if (grad.length !== n || expAvg.length !== n || expAvgSq.length !== n) {
+      throw new Error("adamStep: tensor lengths must match");
+    }
+
+    const dims = new Uint32Array([n, 0, 0, 0]);
+    const hp = new Float32Array([lr, beta1, beta2, eps]);
+    const extra = new Float32Array([weightDecay, stepSize, invSqrtBiasCorrection2, 0]);
+
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({ size: dims.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const hpBuffer = this.deviceMgr.device!.createBuffer({ size: hp.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const extraBuffer = this.deviceMgr.device!.createBuffer({ size: extra.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
+    this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
+
+    const pipeline = getOrCreatePipeline(ADAM_STEP_SHADER, "adam_step");
+    dispatchCompute(
+      pipeline,
+      [param.buffer, grad.buffer, expAvg.buffer, expAvgSq.buffer, dimsBuffer, hpBuffer, extraBuffer],
+      calculateWorkgroups(n),
+    );
+    await syncDevice();
+    dimsBuffer.destroy();
+    hpBuffer.destroy();
+    extraBuffer.destroy();
   }
 
   private async elementwiseOp(aId: number, bIdOrScalar: number, op: string): Promise<TensorHandle> {

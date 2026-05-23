@@ -183,3 +183,21 @@ def topk_backward_from_tensors(
     ))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def cross_entropy_backward_from_tensors(
+    grad_output: "Tensor",
+    input: "Tensor",
+    targets: "Tensor",
+    reduction: str = "mean",
+) -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.crossEntropyBackward(
+        grad_output._id,
+        input._id,
+        targets._id,
+        str(reduction),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
