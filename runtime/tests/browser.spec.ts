@@ -35,21 +35,32 @@ async function waitForPlaygroundReady(page: Page): Promise<void> {
   );
 }
 
-async function runSelectedExample(page: Page): Promise<{ output: string; elapsedMs: number }> {
+async function runSelectedExample(
+  page: Page,
+  exampleId: string,
+  timeoutMs: number = 120000,
+): Promise<{ output: string; elapsedMs: number }> {
   const startedAt = Date.now();
+  const runButton = page.locator("#run");
+  await expect(runButton).toBeEnabled({ timeout: 300000 });
   await page.locator("#output").evaluate((node) => {
     node.textContent = "";
   });
-  await page.locator("#run").click();
+  await runButton.click();
   await page.waitForFunction(
     () => {
+      const run = document.getElementById("run") as HTMLButtonElement | null;
       const output = document.getElementById("output");
-      return Boolean(output?.textContent && output.textContent.length > 0);
+      const text = output?.textContent ?? "";
+      return Boolean(!run?.disabled && text.length > 0 && text !== "Running...");
     },
-    { timeout: 600000 },
+    { timeout: timeoutMs },
   );
-  const output = await page.locator("#output").innerText();
   const elapsedMs = Date.now() - startedAt;
+  if (elapsedMs > timeoutMs) {
+    throw new Error(`Example "${exampleId}" exceeded timeout (${timeoutMs}ms).`);
+  }
+  const output = await page.locator("#output").innerText();
   return { output, elapsedMs };
 }
 
@@ -106,7 +117,7 @@ test.describe.serial("playground examples @webgpu", () => {
       await page.locator("#example-select").selectOption(example.id);
       await expect(page.locator("#example-select")).toHaveValue(example.id);
 
-      const runResult = await runSelectedExample(page);
+      const runResult = await runSelectedExample(page, example.id);
       const outputText = runResult.output;
       timings.push({ id: example.id, label: example.label, elapsedMs: runResult.elapsedMs });
       const outputFailed =
@@ -146,7 +157,7 @@ test.describe.serial("playground examples @webgpu", () => {
   test("dtype aliases behave like PyTorch names in browser runtime", async () => {
     await page.locator("#example-select").selectOption("dtype_aliases");
     await expect(page.locator("#example-select")).toHaveValue("dtype_aliases");
-    await runSelectedExample(page);
+    await runSelectedExample(page, "dtype_aliases");
     await page.waitForFunction(() => {
       const output = document.getElementById("output")?.textContent ?? "";
       return output.trim().startsWith("{");

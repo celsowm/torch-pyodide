@@ -42,8 +42,11 @@ npm run setup:pyodide:dist
 3. Run targeted validation first:
    - Runtime: `npm --workspace runtime run validate`
    - Python: `cd python && python -m pytest tests`
-4. Run the relevant integration command (`npm run test:browser` or `npm run test:python`).
-5. If changing distributed version/API metadata, run `npm run sync:version` (already included in build scripts).
+4. Always validate behavior in Chromium with WebGPU before delivery:
+   - Required: `npm run test:browser:gpu`
+   - Do not treat local-only Python execution as sufficient validation for runtime behavior.
+5. Run the relevant integration command (`npm run test:browser` or `npm run test:python`) as needed.
+6. If changing distributed version/API metadata, run `npm run sync:version` (already included in build scripts).
 
 ## Useful conventions
 - GPU ops and kernels live in `runtime/src/ops` and `runtime/src/vendor/torchjs/shaders`.
@@ -53,5 +56,6 @@ npm run setup:pyodide:dist
 ## Pre-delivery checklist
 - Change keeps expected public API behavior.
 - Relevant tests passed locally.
+- Chromium + WebGPU validation executed (`npm run test:browser:gpu`).
 - No accidental edits under `external/pyodide/`.
 - Docs/comments updated when needed.

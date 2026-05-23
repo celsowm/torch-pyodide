@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 def _grad_add(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None, Tensor | None]:
     """d/da (a + b) = 1, d/db (a + b) = 1"""
     if a._requires_grad:
-        grad_a = grad_output
+        grad_a = _reduce_broadcast(grad_output, a._shape)
     else:
         grad_a = None
     if b._requires_grad:
-        grad_b = grad_output
+        grad_b = _reduce_broadcast(grad_output, b._shape)
     else:
         grad_b = None
     return grad_a, grad_b
@@ -24,11 +24,11 @@ def _grad_add(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None,
 def _grad_sub(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None, Tensor | None]:
     """d/da (a - b) = 1, d/db (a - b) = -1"""
     if a._requires_grad:
-        grad_a = grad_output
+        grad_a = _reduce_broadcast(grad_output, a._shape)
     else:
         grad_a = None
     if b._requires_grad:
-        grad_b = grad_output.neg()
+        grad_b = _reduce_broadcast(grad_output, b._shape).neg()
     else:
         grad_b = None
     return grad_a, grad_b
@@ -37,11 +37,11 @@ def _grad_sub(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None,
 def _grad_mul(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None, Tensor | None]:
     """d/da (a * b) = b, d/db (a * b) = a"""
     if a._requires_grad:
-        grad_a = grad_output.mul(b)
+        grad_a = _reduce_broadcast(grad_output.mul(b), a._shape)
     else:
         grad_a = None
     if b._requires_grad:
-        grad_b = grad_output.mul(a)
+        grad_b = _reduce_broadcast(grad_output.mul(a), b._shape)
     else:
         grad_b = None
     return grad_a, grad_b
@@ -50,11 +50,11 @@ def _grad_mul(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None,
 def _grad_div(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None, Tensor | None]:
     """d/da (a / b) = 1/b, d/db (a / b) = -a/b²"""
     if a._requires_grad:
-        grad_a = grad_output.div(b)
+        grad_a = _reduce_broadcast(grad_output.div(b), a._shape)
     else:
         grad_a = None
     if b._requires_grad:
-        grad_b = grad_output.mul(a).div(b.mul(b)).neg()
+        grad_b = _reduce_broadcast(grad_output.mul(a).div(b.mul(b)).neg(), b._shape)
     else:
         grad_b = None
     return grad_a, grad_b
