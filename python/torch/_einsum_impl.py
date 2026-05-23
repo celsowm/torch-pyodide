@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from ._tensor import Tensor, tensor_from_data
+from ._tensor import Tensor
+from .tensor_factories_ops import tensor_from_data
 
 
 def einsum(equation: str, *operands: Tensor) -> Tensor:

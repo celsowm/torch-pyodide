@@ -319,7 +319,8 @@ def _grad_select(grad_output: Tensor, input_tensor: Tensor, dim: int, index: int
     """d/dinput select(input, dim, index) = zeros_like(input); result[dim, index] = grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import tensor_from_data, _flatten
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
     d = dim if dim >= 0 else dim + input_tensor.ndim
     in_shape = list(input_tensor._shape)
     n = 1
@@ -360,7 +361,8 @@ def _grad_slice(grad_output: Tensor, input_tensor: Tensor, dim: int, start: int,
 
 def _grad_where(grad_output: Tensor, condition: Tensor, x: Tensor, y: Tensor) -> tuple[Tensor | None, Tensor | None, Tensor | None]:
     """d/dx where(cond, x, y) = where(cond, grad_output, 0)"""
-    from ._tensor import zeros_like_from_tensor, where_from_tensors
+    from .tensor_factories_ops import zeros_like_from_tensor
+    from .tensor_ops import where_from_tensors
 
     zeros = zeros_like_from_tensor(grad_output)
     grad_x = where_from_tensors(condition, grad_output, zeros) if x._requires_grad else None
@@ -414,7 +416,7 @@ def _grad_nll_loss(grad_output: Tensor, input_tensor: Tensor, target: Tensor) ->
     # Multiply by grad_output (chain rule), handling scalar or per-sample reductions.
     if grad_output.shape == ():
         scalar_val = grad_output.tolist()[0] if grad_output.tolist() else 1.0
-        from ._tensor import _scalar_to_tensor
+        from .tensor_ops import _scalar_to_tensor
         grad_input = grad_input.mul(_scalar_to_tensor(scalar_val))
     else:
         grad_scale = grad_output
@@ -481,7 +483,8 @@ def _grad_max(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     """d/dinput max(input) = one_hot(argmax(input)) * grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import tensor_from_data, _flatten
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
     in_vals = _flatten(input_tensor.tolist())
     grad_val = float(_flatten(grad_output.tolist())[0])
     idx = max(range(len(in_vals)), key=lambda i: in_vals[i])
@@ -498,7 +501,8 @@ def _grad_min(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     """d/dinput min(input) = one_hot(argmin(input)) * grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import tensor_from_data, _flatten
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
     in_vals = _flatten(input_tensor.tolist())
     grad_val = float(_flatten(grad_output.tolist())[0])
     idx = min(range(len(in_vals)), key=lambda i: in_vals[i])
@@ -606,7 +610,8 @@ def _grad_masked_select(grad_output: Tensor, input_tensor: Tensor, mask: Tensor)
     """d/dinput masked_select(input, mask) = zeros_like(input); result[mask] = grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import tensor_from_data, _flatten
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
     in_shape = list(input_tensor._shape)
     n = 1
     for s in in_shape:
@@ -626,7 +631,8 @@ def _grad_index_select(grad_output: Tensor, input_tensor: Tensor, dim: int, inde
     """d/dinput index_select(input, dim, index) = zeros_like(input); result[dim, index] = grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import tensor_from_data, _flatten
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
     in_shape = list(input_tensor._shape)
     d = dim if dim >= 0 else dim + len(in_shape)
     n = 1
@@ -657,7 +663,8 @@ def _grad_gather(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Ten
     """d/dinput gather(input, dim, index) = zeros_like(input); result[index[i,...], ...] += grad_output[i,...]"""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import tensor_from_data, _flatten
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
     in_shape = list(input_tensor._shape)
     d = dim if dim >= 0 else dim + len(in_shape)
     n = math.prod(in_shape)
@@ -696,7 +703,8 @@ def _grad_topk(grad_output: Tensor, input_tensor: Tensor, dim: int, k: int, desc
     n = 1
     for s in input_tensor._shape:
         n *= s
-    from ._tensor import tensor_from_data, _flatten
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
     flat = [0.0] * n
     grads_np = grad_output.tolist()
     if saved_indices is not None:
@@ -718,7 +726,7 @@ def _grad_sort(grad_output: Tensor, input_tensor: Tensor, dim: int, descending: 
     """d/dinput sort(input) = scatter grad_output back to original positions."""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import tensor_from_data
+    from .tensor_factories_ops import tensor_from_data
     n = 1
     for s in input_tensor._shape:
         n *= s
@@ -730,7 +738,7 @@ def _grad_sort(grad_output: Tensor, input_tensor: Tensor, dim: int, descending: 
         from ._tensor import sort_from_tensor
         _, indices = sort_from_tensor(input_tensor, dim, descending)
         idx_np = indices.tolist()
-    from ._tensor import _flatten
+    from .tensor_shape_utils import _flatten
     flat_grads = _flatten(grads_np)
     flat_idx = _flatten(idx_np)
     for i in range(min(len(flat_idx), len(flat_grads))):
@@ -744,7 +752,8 @@ def _grad_scatter_(grad_output: Tensor, input_tensor: Tensor, dim: int, index: T
     """d/dinput scatter_(input) = scatter grad_output back (gradient flows through unchanged positions)."""
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import tensor_from_data, _flatten
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
     in_shape = list(input_tensor._shape)
     n = 1
     for s in in_shape:
@@ -803,7 +812,7 @@ def grad(
 ) -> tuple:
     """Compute and return the sum of gradients of outputs w.r.t. inputs."""
     from .autograd_engine import _clear_graph
-    from ._tensor import ones_like_from_tensor
+    from .tensor_factories_ops import ones_like_from_tensor
     if isinstance(outputs, list):
         total = outputs[0]
         for o in outputs[1:]:

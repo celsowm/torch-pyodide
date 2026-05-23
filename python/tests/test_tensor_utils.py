@@ -1,6 +1,7 @@
 import pytest
 
-from torch._tensor import _flatten, _infer_shape, _js_meta_to_tuple, _normalize_shape, _reshape_flat_values
+from torch.tensor_ops import _js_meta_to_tuple
+from torch.tensor_shape_utils import _flatten, _infer_shape, _normalize_shape, _reshape_flat_values
 
 def test_infer_shape_rectangular():
     assert _infer_shape([[1, 2], [3, 4]]) == [2, 2]

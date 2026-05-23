@@ -41,10 +41,10 @@ def _backward_from_tensor(
     # Se nenhum gradiente foi passado, assume grad = ones_like(tensor)
     if gradient is None:
         if tensor._shape == [] or (len(tensor._shape) == 1 and tensor._shape[0] == 1):
-            from ._tensor import tensor_from_data
+            from .tensor_factories_ops import tensor_from_data
             gradient = tensor_from_data([1.0], [1], dtype=tensor._dtype)
         else:
-            from ._tensor import ones_from_shape
+            from .tensor_factories_ops import ones_from_shape
             gradient = ones_from_shape(tensor._shape, dtype=tensor._dtype)
 
     # Acumular grad no tensor raiz

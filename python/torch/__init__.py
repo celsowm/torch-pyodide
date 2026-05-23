@@ -36,24 +36,28 @@ from ._api_creation import (
     zeros_like,
 )
 from ._einsum_impl import einsum
-from ._tensor import (
-    Tensor,
+from ._runtime import _get_runtime
+from ._tensor import Tensor
+from .tensor_factories_ops import (
     arange_from_values,
-    cat_from_tensors,
-    expand_from_tensor,
+    empty_from_shape,
+    empty_like_from_tensor,
     full_from_shape,
     full_like_from_tensor,
-    zeros_like_from_tensor,
-    ones_like_from_tensor,
-    empty_like_from_tensor,
-    index_select_from_tensor,
     ones_from_shape,
+    ones_like_from_tensor,
     rand_from_shape,
     randn_from_shape,
-    stack_from_tensors,
     tensor_from_data,
-    where_from_tensors,
     zeros_from_shape,
+    zeros_like_from_tensor,
+)
+from .tensor_ops import (
+    cat_from_tensors,
+    expand_from_tensor,
+    index_select_from_tensor,
+    stack_from_tensors,
+    where_from_tensors,
     sigmoid_from_tensor,
     tanh_from_tensor,
     sin_from_tensor,
@@ -82,7 +86,6 @@ from ._tensor import (
     log_softmax_from_tensor,
     softmax_from_tensor,
     # New in this session
-    empty_from_shape,
     tan_from_tensor,
     asin_from_tensor,
     acos_from_tensor,
@@ -136,7 +139,6 @@ from ._tensor import (
     sort_from_tensor,
     gather_from_tensor,
     scatter_from_tensor,
-    _get_runtime,
 )
 
 __all__ = [

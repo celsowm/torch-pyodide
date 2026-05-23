@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Sequence
 
 def _flatten_out(data: object) -> list[float]:
     if isinstance(data, list):
@@ -10,7 +11,9 @@ def _flatten_out(data: object) -> list[float]:
 
 
 def _scalar_to_tensor(value: float, dtype: str = "float32") -> Tensor:
-    from ._tensor import Tensor, _get_runtime, _run_js_awaitable, _js_meta_to_tuple
+    from ._runtime import _get_runtime, _run_js_awaitable
+    from ._tensor import Tensor
+    from .tensor_ops import _js_meta_to_tuple
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.zeros([1], dtype))
     t_id, _, _ = _js_meta_to_tuple(meta)

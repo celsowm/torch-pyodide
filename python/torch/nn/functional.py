@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Sequence
 
 import torch
-from torch._tensor import Tensor, tensor_from_data
+from torch._tensor import Tensor
+from torch.tensor_factories_ops import tensor_from_data
 
 
 # ── Activation functions ──────────────────────────────────────────

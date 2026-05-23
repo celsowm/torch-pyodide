@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from ._tensor import (
-    Tensor,
-    _get_runtime,
+from ._runtime import _get_runtime
+from ._tensor import Tensor
+from .tensor_factories_ops import (
     arange_from_values,
     empty_from_shape,
     empty_like_from_tensor,

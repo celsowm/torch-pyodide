@@ -341,64 +341,16 @@ class Tensor:
         return _run_js_awaitable(_get_runtime().toList(self._id))[0]
 
     def det(self) -> "Tensor":
-        from .tensor_factories_ops import tensor_from_data
-        n = self._shape[-1]
-        a_lu, pivot = self.lu()
-        pivot_data = _run_js_awaitable(_get_runtime().toList(pivot._id))
-        pivot_data = [int(x) for x in pivot_data]
-        visited = [False] * n
-        sign = 1
-        for i in range(n):
-            if not visited[i]:
-                j = i
-                while not visited[j]:
-                    visited[j] = True
-                    j = pivot_data[j]
-                if j != i:
-                    sign *= -1
-        a_data = _run_js_awaitable(_get_runtime().toList(a_lu._id))
-        u_diag_prod = 1.0
-        for i in range(n):
-            u_diag_prod *= a_data[i * n + i]
-        return tensor_from_data(sign * u_diag_prod, self._dtype)
+        from ._tensor_linalg_py import det_from_tensor
+        return det_from_tensor(self)
 
     def inv(self) -> "Tensor":
-        from .__init__ import zeros, tril, triu, cat, ones
-        from .tensor_factories_ops import tensor_from_data
-        n = self._shape[-1]
-        a_lu, pivot = self.lu()
-        l_part = tril(a_lu, diagonal=-1)
-        eye_data = [0.0] * (n * n)
-        for i in range(n):
-            eye_data[i * n + i] = 1.0
-        l_full = tensor_from_data(eye_data, self._dtype).reshape([n, n]) + l_part
-        u_full = triu(a_lu, diagonal=0)
-        inv_cols = []
-        for j in range(n):
-            col = tensor_from_data([1.0 if i == j else 0.0 for i in range(n)], self._dtype).reshape([n, 1])
-            y = l_full.triangular_solve(col, upper=False)
-            x = u_full.triangular_solve(y, upper=True)
-            inv_cols.append(x)
-        return cat(inv_cols, dim=1)
+        from ._tensor_linalg_py import inv_from_tensor
+        return inv_from_tensor(self)
 
     def diag(self) -> "Tensor":
-        from .tensor_factories_ops import tensor_from_data
-        from .tensor_shape_utils import _flatten
-        flat_list_raw = self.tolist()
-        if isinstance(flat_list_raw, list):
-            flat_list: list[float] = _flatten(flat_list_raw)
-        else:
-            flat_list = [float(flat_list_raw)]
-        if len(self._shape) == 1:
-            n = self._shape[0]
-            data: list[float] = [0.0] * (n * n)
-            for i in range(n):
-                data[i * n + i] = flat_list[i]
-            return tensor_from_data(data, [n, n], self._dtype)
-        n = self._shape[-1]
-        nrows = self._shape[0]
-        result_data = [flat_list[i * n + i] for i in range(min(nrows, n))]
-        return tensor_from_data(result_data, self._dtype)
+        from ._tensor_linalg_py import diag_from_tensor
+        return diag_from_tensor(self)
 
     def pow(self, other: "Tensor | float") -> "Tensor":
         from .tensor_ops import pow_from_tensors, _scalar_to_tensor
@@ -912,141 +864,8 @@ class Tensor:
         self._dtype = other._dtype
 
     def __getitem__(self, key: object) -> object:
-        if isinstance(key, int):
-            return self.select(0, key)
-        if isinstance(key, slice):
-            return self.slice(0, key.start, key.stop, 1 if key.step is None else int(key.step))
-        if isinstance(key, Tensor) and key._dtype == "bool":
-            from .tensor_ops import masked_select_from_tensor
-            return masked_select_from_tensor(self, key)
-        if isinstance(key, tuple):
-            result = self
-            for i, k in enumerate(key):
-                if isinstance(k, int):
-                    result = result.select(dim=i, index=k)
-                elif isinstance(k, slice):
-                    result = result.slice(dim=i, start=k.start, end=k.stop, step=k.step or 1)
-                elif isinstance(k, Tensor):
-                    if result.ndim <= 2:
-                        result = result.index_select(dim=i, index=k.flatten())
-                    else:
-                        from .__init__ import cat
-                        indices_flat = k.flatten()
-                        picked: list[Tensor] = []
-                        for j in range(indices_flat._shape[0]):
-                            picked.append(result.select(dim=i, index=int(indices_flat.select(0, j).item())))
-                        result = cat(picked, dim=i)
-                else:
-                    raise TypeError(f"Unsupported index type: {type(k)}")
-            return result
-        raise TypeError(f"Tensor indexing supports only int, slice, tuple, or bool Tensor in MVP.")
-
-
-from .tensor_shape_utils import (
-    _flatten_out as _shape_flatten_out,
-    _scalar_to_tensor as _shape_scalar_to_tensor,
-    _infer_shape as _shape_infer_shape,
-    _flatten as _shape_flatten,
-    _normalize_shape as _shape_normalize_shape,
-    _normalize_shape_from_args as _shape_normalize_shape_from_args,
-    _coerce_out_value as _shape_coerce_out_value,
-    _reshape_flat_values as _shape_reshape_flat_values,
-)
-
-
-def _flatten_out(data: object) -> list[float]:
-    return _shape_flatten_out(data)
-
-
-def _scalar_to_tensor(value: float, dtype: str = "float32") -> Tensor:
-    return _shape_scalar_to_tensor(value, dtype)
-
-
-def _infer_shape(data: object) -> list[int]:
-    return _shape_infer_shape(data)
-
-
-def _flatten(data: object) -> list[float]:
-    return _shape_flatten(data)
-
-
-def _normalize_shape(shape: int | Sequence[int]) -> list[int]:
-    return _shape_normalize_shape(shape)
-
-
-def _normalize_shape_from_args(shape: Sequence[int]) -> list[int]:
-    return _shape_normalize_shape_from_args(shape)
-
-
-def _coerce_out_value(value: float, dtype: str) -> object:
-    return _shape_coerce_out_value(value, dtype)
-
-
-def _reshape_flat_values(flat: list[float], shape: Sequence[int], dtype: str = "float32") -> object:
-    return _shape_reshape_flat_values(flat, shape, dtype)
-
-from .tensor_factories_ops import (
-    tensor_from_data as _fact_tensor_from_data,
-    zeros_from_shape as _fact_zeros_from_shape,
-    ones_from_shape as _fact_ones_from_shape,
-    rand_from_shape as _fact_rand_from_shape,
-    randn_from_shape as _fact_randn_from_shape,
-    arange_from_values as _fact_arange_from_values,
-    full_from_shape as _fact_full_from_shape,
-    full_like_from_tensor as _fact_full_like_from_tensor,
-    zeros_like_from_tensor as _fact_zeros_like_from_tensor,
-    ones_like_from_tensor as _fact_ones_like_from_tensor,
-    empty_like_from_tensor as _fact_empty_like_from_tensor,
-    empty_from_shape as _fact_empty_from_shape,
-)
-
-
-def tensor_from_data(data: object, shape: Sequence[int] | None = None, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
-    return _fact_tensor_from_data(data, shape, dtype, requires_grad)
-
-
-def zeros_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return _fact_zeros_from_shape(shape, dtype)
-
-
-def ones_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return _fact_ones_from_shape(shape, dtype)
-
-
-def rand_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return _fact_rand_from_shape(shape, dtype)
-
-
-def randn_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return _fact_randn_from_shape(shape, dtype)
-
-
-def arange_from_values(start: float, end: float | None = None, step: float = 1.0, dtype: str = "float32") -> Tensor:
-    return _fact_arange_from_values(start, end, step, dtype)
-
-
-def full_from_shape(shape: int | Sequence[int], fill_value: float, dtype: str = "float32") -> Tensor:
-    return _fact_full_from_shape(shape, fill_value, dtype)
-
-
-def full_like_from_tensor(tensor: Tensor, fill_value: float, dtype: str | None = None) -> Tensor:
-    return _fact_full_like_from_tensor(tensor, fill_value, dtype)
-
-
-def zeros_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
-    return _fact_zeros_like_from_tensor(tensor, dtype)
-
-
-def ones_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
-    return _fact_ones_like_from_tensor(tensor, dtype)
-
-
-def empty_like_from_tensor(tensor: Tensor, dtype: str | None = None) -> Tensor:
-    return _fact_empty_like_from_tensor(tensor, dtype)
-
-
-def empty_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> Tensor:
-    return _fact_empty_from_shape(shape, dtype)
+        from ._tensor_indexing import getitem_from_tensor
+        return getitem_from_tensor(self, key)
 
 
 from .tensor_ops import (

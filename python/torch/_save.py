@@ -37,7 +37,7 @@ def _serialize(obj: object) -> object:
 def _deserialize(obj: object) -> object:
     if isinstance(obj, dict):
         if obj.get("__tensor__"):
-            from torch._tensor import tensor_from_data
+            from torch.tensor_factories_ops import tensor_from_data
             return tensor_from_data(obj["data"], obj["shape"], obj["dtype"])
         return {k: _deserialize(v) for k, v in obj.items()}
     if isinstance(obj, list):

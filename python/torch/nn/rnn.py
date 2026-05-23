@@ -5,7 +5,7 @@ import math
 import torch
 from torch import Tensor
 from torch.nn.modules import Module
-from torch._tensor import tensor_from_data
+from torch.tensor_factories_ops import tensor_from_data
 
 
 class RNNBase(Module):

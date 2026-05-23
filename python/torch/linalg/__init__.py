@@ -5,7 +5,8 @@ import math
 
 import torch
 from torch import Tensor
-from torch._tensor import tensor_from_data, _flatten, _infer_shape
+from torch.tensor_factories_ops import tensor_from_data
+from torch.tensor_shape_utils import _flatten, _infer_shape
 
 
 def _eigh_jacobi(x: Tensor) -> tuple[Tensor, Tensor]:

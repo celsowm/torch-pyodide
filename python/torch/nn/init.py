@@ -182,7 +182,8 @@ def _randn_gpu(shape: list[int], dtype: str) -> object:
 
 
 def _assign_flat(tensor: object, flat: list[float]) -> object:
-    from torch._tensor import _reshape_flat_values, tensor_from_data
+    from torch.tensor_shape_utils import _reshape_flat_values
+    from torch.tensor_factories_ops import tensor_from_data
     reshaped = _reshape_flat_values(flat, list(tensor.shape))
     new_tensor = tensor_from_data(reshaped, tensor.dtype)
     tensor._set(new_tensor)
