@@ -807,30 +807,81 @@ def _grad_sort(grad_output: Tensor, input_tensor: Tensor, dim: int, descending: 
     return tensor_from_data(flat, list(input_tensor._shape), input_tensor.dtype)
 
 
-def _grad_scatter_(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Tensor, src: Tensor | float) -> Tensor | None:
-    """d/dinput scatter_(input) = scatter grad_output back (gradient flows through unchanged positions)."""
-    if not input_tensor._requires_grad:
-        return None
-    from .tensor_factories_ops import tensor_from_data
-    from .tensor_shape_utils import _flatten
-    in_shape = list(input_tensor._shape)
-    n = 1
-    for s in in_shape:
-        n *= s
-    flat = [0.0] * n
-    out_flat = _flatten(grad_output.tolist())
-    idx_flat = _flatten(index.tolist())
-    mask = [True] * n
-    for i in range(len(idx_flat)):
-        pos = int(idx_flat[i])
-        if 0 <= pos < n:
-            mask[pos] = False
-    for i in range(n):
-        if mask[i] and i < len(out_flat):
-            flat[i] = out_flat[i]
-        elif not mask[i]:
-            flat[i] = out_flat[i]
-    return tensor_from_data(flat, in_shape, input_tensor.dtype)
+def _grad_scatter(
+    grad_output: Tensor,
+    input_tensor: Tensor,
+    dim: int,
+    index: Tensor,
+    src: Tensor | float,
+) -> tuple[Tensor | None, ...] | tuple[Tensor | None]:
+    """Backward pass for scatter."""
+    grad_input = None
+    if input_tensor._requires_grad:
+        try:
+            from .tensor_factories_ops import zeros_like_from_tensor
+            from .tensor_ops import scatter_from_tensor
+            zeros = zeros_like_from_tensor(grad_output)
+            grad_input = scatter_from_tensor(grad_output, dim, index, zeros)
+        except Exception:
+            # Fallback to pure python list implementation
+            from .tensor_factories_ops import tensor_from_data
+            from .tensor_shape_utils import _flatten
+            in_shape = list(input_tensor._shape)
+            n = 1
+            for s in in_shape:
+                n *= s
+            flat = [0.0] * n
+            out_flat = _flatten(grad_output.tolist())
+            idx_flat = _flatten(index.tolist())
+            mask = [True] * n
+            for i in range(len(idx_flat)):
+                pos = int(idx_flat[i])
+                if 0 <= pos < n:
+                    mask[pos] = False
+            for i in range(n):
+                if mask[i] and i < len(out_flat):
+                    flat[i] = out_flat[i]
+            grad_input = tensor_from_data(flat, in_shape, input_tensor.dtype)
+
+    if not isinstance(src, (int, float)):
+        grad_src = None
+        if src._requires_grad:
+            try:
+                from .tensor_ops import gather_from_tensor
+                grad_src = gather_from_tensor(grad_output, dim, index)
+            except Exception:
+                # Fallback to pure python list implementation
+                from .tensor_factories_ops import tensor_from_data
+                from .tensor_shape_utils import _flatten
+                out_shape = list(index._shape)
+                out_flat = _flatten(grad_output.tolist())
+                idx_vals = _flatten(index.tolist())
+                
+                in_shape = list(grad_output._shape)
+                in_strides = [1] * len(in_shape)
+                for i in range(len(in_shape) - 2, -1, -1):
+                    in_strides[i] = in_strides[i + 1] * in_shape[i + 1]
+                in_n = 1
+                for s in in_shape:
+                    in_n *= s
+                
+                flat_list = [0.0] * len(idx_vals)
+                for i in range(len(idx_vals)):
+                    remaining = i
+                    src_linear = 0
+                    for dim_idx in range(len(out_shape) - 1, -1, -1):
+                        coord = remaining % out_shape[dim_idx]
+                        remaining //= out_shape[dim_idx]
+                        if dim_idx == dim:
+                            src_linear += int(idx_vals[i]) * in_strides[dim_idx]
+                        else:
+                            src_linear += coord * in_strides[dim_idx]
+                    if 0 <= src_linear < in_n and src_linear < len(out_flat):
+                        flat_list[i] = out_flat[src_linear]
+                grad_src = tensor_from_data(flat_list, list(src._shape), src.dtype)
+        return grad_input, grad_src
+
+    return (grad_input,)
 
 
 def _grad_maximum(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | None, Tensor | None]:

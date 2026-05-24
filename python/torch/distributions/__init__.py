@@ -73,12 +73,15 @@ class Categorical(Distribution):
 
     def sample(self, sample_shape: int | list[int] = ()) -> Tensor:
         shape = [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
-        n = 1
-        for s in shape:
-            n *= s
         # Gumbel-max trick
         gumbel = -(-torch.rand(list(shape) + list(self.logits.shape)).log()).log()
-        return (self.logits + gumbel).argmax(dim=-1).reshape(shape + [1]).squeeze(-1)
+        samples = self.logits + gumbel
+        # Current Tensor.argmax API does not accept dim yet.
+        if len(shape) == 0:
+            return samples.argmax()
+        rows = samples.reshape(-1, self.logits.shape[-1]).tolist()
+        argmax_rows = [max(range(len(row)), key=lambda i: row[i]) for row in rows]
+        return tensor_from_data(argmax_rows, shape, dtype="int64")
 
     def log_prob(self, value: Tensor) -> Tensor:
         return torch.nn.functional.nll_loss(self.logits.log_softmax(dim=-1), value)

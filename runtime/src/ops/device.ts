@@ -6,8 +6,6 @@ import {
 } from "../vendor/torchjs/index.js";
 
 import { TensorMeta, TensorHandle, SupportedDType, cloneHandle, product } from "./types.js";
-import { decodeValuesByDType } from "./shape.js";
-import { dtypeBytes } from "./types.js";
 import { TensorRegistry } from "./tensorRegistry.js";
 import { PipelineCache } from "./pipelineCache.js";
 
@@ -35,6 +33,24 @@ export async function withRetry<T>(label: string, fn: () => Promise<T>, retries:
 interface ShadowBuffer {
   data: Float32Array;
   size: number;
+}
+
+function decodeStorageValues(values: Float32Array, length: number, dtype: SupportedDType): number[] {
+  const raw = Array.from(values.slice(0, length));
+  if (dtype === "bool") return raw.map((v) => (v !== 0 ? 1 : 0));
+  if (
+    dtype === "int8" ||
+    dtype === "int16" ||
+    dtype === "int32" ||
+    dtype === "int64" ||
+    dtype === "uint8" ||
+    dtype === "uint16" ||
+    dtype === "uint32" ||
+    dtype === "uint64"
+  ) {
+    return raw.map((v) => Math.trunc(v));
+  }
+  return raw;
 }
 
 export class DeviceManager {
@@ -343,24 +359,23 @@ export class DeviceManager {
   }
 
   async readFromGPU(source: GPUBuffer, length: number, dtype: SupportedDType): Promise<number[]> {
-    // All GPU buffers store data as Float32Array regardless of dtype;
-    // bool tensors are stored as f32 (0.0/1.0), so read 4 bytes per element.
-    const elementBytes = dtype === "bool" ? 4 : dtypeBytes(dtype);
-    const byteSize = length * elementBytes;
+    // Shaders use f32 storage for every logical dtype. Metadata tracks dtype
+    // compatibility, but GPU readback must use the physical storage width.
+    const byteSize = length * Float32Array.BYTES_PER_ELEMENT;
     const shadowId = this._bufferToShadow.get(source);
     const shadow = shadowId !== undefined ? this._shadowBuffers.get(shadowId) : undefined;
     // If device was recovered, shadow is more reliable than GPU read
     if (shadow && this._deviceGeneration > 0) {
       console.warn("[DeviceManager] Using shadow copy (device recovered)");
-      return Array.from(shadow.data).slice(0, length) as number[];
+      return decodeStorageValues(shadow.data, length, dtype);
     }
     try {
       const data = await this.readFromGPUBuffer(source, byteSize);
-      return decodeValuesByDType(data, dtype);
+      return decodeStorageValues(new Float32Array(data), length, dtype);
     } catch (err) {
       if (shadow) {
         console.warn("[DeviceManager] Falling back to shadow copy");
-        return Array.from(shadow.data).slice(0, length) as number[];
+        return decodeStorageValues(shadow.data, length, dtype);
       }
       throw err;
     }

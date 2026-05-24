@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins as _builtins
 from typing import Sequence
 
 from ._version import __version__
@@ -389,10 +390,10 @@ def clamp(x: Tensor, min: float, max: float) -> Tensor:
 def where(condition: Tensor, x: Tensor | float | int | bool, y: Tensor | float | int | bool) -> Tensor:
     if not isinstance(x, Tensor):
         dtype = y.dtype if isinstance(y, Tensor) else "float32"
-        x = full_like(condition, float(x), dtype=dtype)
+        x = full_like(condition, _builtins.float(x), dtype=dtype)
     if not isinstance(y, Tensor):
         dtype = x.dtype if isinstance(x, Tensor) else "float32"
-        y = full_like(condition, float(y), dtype=dtype)
+        y = full_like(condition, _builtins.float(y), dtype=dtype)
     return where_from_tensors(condition, x, y)
 
 

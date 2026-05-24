@@ -38,7 +38,7 @@ async function waitForPlaygroundReady(page: Page): Promise<void> {
 async function runSelectedExample(
   page: Page,
   exampleId: string,
-  timeoutMs: number = 120000,
+  timeoutMs: number = 45000,
 ): Promise<{ output: string; elapsedMs: number }> {
   const startedAt = Date.now();
   const runButton = page.locator("#run");
@@ -112,12 +112,19 @@ test.describe.serial("playground examples @webgpu", () => {
     const failures: string[] = [];
     const timings: Array<{ id: string; label: string; elapsedMs: number }> = [];
 
-    for (const example of examples) {
+    for (const [index, example] of examples.entries()) {
       consoleFailures.length = 0;
+      console.log(`[browser examples] ${index + 1}/${examples.length}: ${example.id}`);
       await page.locator("#example-select").selectOption(example.id);
       await expect(page.locator("#example-select")).toHaveValue(example.id);
 
-      const runResult = await runSelectedExample(page, example.id);
+      let runResult: { output: string; elapsedMs: number };
+      try {
+        runResult = await runSelectedExample(page, example.id);
+      } catch (error) {
+        failures.push(`${example.id} (${example.label})\n${String(error)}`);
+        break;
+      }
       const outputText = runResult.output;
       timings.push({ id: example.id, label: example.label, elapsedMs: runResult.elapsedMs });
       const outputFailed =

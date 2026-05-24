@@ -159,7 +159,7 @@ def maximum_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
 
     if is_grad_enabled() and (a._requires_grad or b._requires_grad):
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
-        parents = [p for p in (a, b) if p._requires_grad]
+        parents = [a, b]
         result._node = _Node(result, lambda g: _grad_maximum(g, a, b), parents)
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
@@ -175,7 +175,7 @@ def minimum_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
 
     if is_grad_enabled() and (a._requires_grad or b._requires_grad):
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
-        parents = [p for p in (a, b) if p._requires_grad]
+        parents = [a, b]
         result._node = _Node(result, lambda g: _grad_minimum(g, a, b), parents)
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
@@ -358,7 +358,7 @@ def gather_from_tensor(tensor: "Tensor", dim: int, index: "Tensor") -> "Tensor":
 
 def scatter_from_tensor(tensor: "Tensor", dim: int, index: "Tensor", src: "Tensor | float") -> "Tensor":
     from ._tensor import Tensor
-    from .autograd import _Node, is_grad_enabled, _grad_scatter_
+    from .autograd import _Node, is_grad_enabled, _grad_scatter
     from .tensor_shape_utils import _flatten_out
     from .tensor_factories_ops import tensor_from_data
 
@@ -384,7 +384,10 @@ def scatter_from_tensor(tensor: "Tensor", dim: int, index: "Tensor", src: "Tenso
 
     if is_grad_enabled() and (tensor._requires_grad or (not isinstance(src, (int, float)) and src._requires_grad)):
         out._requires_grad = True
-        out._node = _Node(out, lambda g: (_grad_scatter_(g, tensor, dim, index, src),), [tensor])
+        parents = [tensor]
+        if not isinstance(src, (int, float)):
+            parents.append(src)
+        out._node = _Node(out, lambda g: _grad_scatter(g, tensor, dim, index, src), parents)
     return out
 
 
@@ -399,7 +402,7 @@ def cat_from_tensors(tensors: Sequence["Tensor"], dim: int = 0) -> "Tensor":
 
     if is_grad_enabled() and any(t._requires_grad for t in tensors):
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
-        parents = [t for t in tensors if t._requires_grad]
+        parents = list(tensors)
         result._node = _Node(result, lambda g: _grad_cat(g, tensors, dim), parents)
         return result
     return Tensor(tensor_id, out_shape, out_dtype)

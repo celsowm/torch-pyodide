@@ -463,8 +463,9 @@ class Tensor:
         return permute_from_tensor(self, dims)
 
     def expand(self, *shape: int) -> "Tensor":
+        from .tensor_shape_utils import _normalize_shape_from_args
         from .tensor_ops import expand_from_tensor
-        return expand_from_tensor(self, list(shape))
+        return expand_from_tensor(self, _normalize_shape_from_args(shape))
 
     def select(self, dim: int, index: int) -> "Tensor":
         from .tensor_ops import select_from_tensor

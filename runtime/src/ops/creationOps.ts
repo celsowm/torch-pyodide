@@ -1,5 +1,4 @@
-import { TensorHandle, TensorMeta, SupportedDType, dtypeBytes, product } from "./types.js";
-import { encodeValuesByDType } from "./shape.js";
+import { TensorHandle, SupportedDType, product } from "./types.js";
 import {
   assertDType,
   coerceScalarByDType,
@@ -131,7 +130,7 @@ export class CreationOps {
     await this.deviceMgr.ensureReady();
     assertDType(dtype);
     const length = product(shape);
-    const byteSize = length * dtypeBytes(dtype);
+    const byteSize = length * Float32Array.BYTES_PER_ELEMENT;
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, byteSize));
     const params = new ArrayBuffer(16);
     const view = new DataView(params);
