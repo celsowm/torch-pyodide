@@ -123,11 +123,11 @@ test.describe.serial("playground examples @webgpu", () => {
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
     page.on("console", (msg) => {
-      if (msg.type() !== "error") {
-        return;
-      }
       const text = msg.text();
       if (!isIgnoredConsoleMessage(text)) {
+        console.log(`[browser.${msg.type()}] ${text}`);
+      }
+      if (msg.type() === "error") {
         consoleFailures.push(`[console.${msg.type()}] ${text}`);
       }
     });

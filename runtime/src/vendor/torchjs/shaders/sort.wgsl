@@ -50,7 +50,7 @@ fn main(@builtin(local_invocation_id) lid: vec3<u32>,
       shared_vals[pos] = input[linear_idx];
       shared_idx[pos] = f32(pos);
     } else if (pos < pad_size) {
-      shared_vals[pos] = 3.402823466e+38;
+      shared_vals[pos] = 3.402823466e+38; // FLT_MAX
       shared_idx[pos] = f32(pos);
     }
   }
@@ -62,7 +62,7 @@ fn main(@builtin(local_invocation_id) lid: vec3<u32>,
     while (j > 0u) {
       for (var i = 0u; i < work_per_thread; i += 1u) {
         let pos = tid * work_per_thread + i;
-        if (pos < seg_size) {
+        if (pos < pad_size) {
           let ixj = pos ^ j;
           if (ixj > pos && ixj < pad_size) {
             let is_ascending = (pos & k) == 0u;

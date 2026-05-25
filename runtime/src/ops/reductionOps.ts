@@ -120,7 +120,7 @@ export class ReductionOps {
     const batchElements = product(meta.shape.slice(0, -1));
     const reduceDim = meta.shape[meta.shape.length - 1]!;
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, batchElements * 4));
-    const params = new Uint32Array([reduceDim, batchElements, 0, 0]);
+    const params = new Uint32Array([batchElements, reduceDim, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
@@ -141,7 +141,7 @@ export class ReductionOps {
     const batchElements = product(meta.shape.slice(0, -1));
     const reduceDim = meta.shape[meta.shape.length - 1]!;
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, batchElements * 4));
-    const params = new Uint32Array([reduceDim, batchElements, 0, 0]);
+    const params = new Uint32Array([batchElements, reduceDim, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,

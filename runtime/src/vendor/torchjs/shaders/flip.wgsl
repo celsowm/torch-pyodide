@@ -1,8 +1,7 @@
 struct Params {
-    batch_size: u32,
-    dim_size: u32,
-    stride: u32,
-    _pad: u32,
+    shape: vec4<u32>,
+    strides: vec4<u32>,
+    flip_mask: vec4<u32>, // 1 if dimension should be flipped, 0 otherwise
 }
 
 @group(0) @binding(0) var<storage, read> input: array<f32>;
@@ -15,15 +14,20 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     let total = arrayLength(&output);
     if (idx >= total) { return; }
 
-    let stride_after = params.stride;
-    let dim_size = params.dim_size;
+    var input_idx = 0u;
+    var remaining = idx;
     
-    let after_idx = idx % stride_after;
-    let mid_idx = (idx / stride_after) % dim_size;
-    let before_idx = idx / (stride_after * dim_size);
-    
-    let flipped_mid = dim_size - 1u - mid_idx;
-    let input_idx = (before_idx * dim_size + flipped_mid) * stride_after + after_idx;
+    for (var i = 0u; i < 4u; i++) {
+        let coord = remaining / params.strides[i];
+        remaining = remaining % params.strides[i];
+        
+        var flipped_coord = coord;
+        if (params.flip_mask[i] == 1u) {
+            flipped_coord = params.shape[i] - 1u - coord;
+        }
+        
+        input_idx = input_idx + flipped_coord * params.strides[i];
+    }
     
     output[idx] = input[input_idx];
 }

@@ -37,8 +37,14 @@ def item_from_tensor(tensor: "Tensor") -> float:
 
 
 def clamp_from_tensor(tensor: "Tensor", min_: float, max_: float) -> "Tensor":
+    from .autograd import _Node, is_grad_enabled, _grad_clamp
+
     meta = _run_js_awaitable(_get_runtime().clamp(tensor._id, float(min_), float(max_)))
-    return _mk_tensor(meta)
+    result = _mk_tensor(meta)
+    if is_grad_enabled() and tensor._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_clamp(g, tensor, float(min_), float(max_)),), [tensor])
+    return result
 
 
 def argmax_from_tensor(tensor: "Tensor", dim: int | None = None, keepdim: bool = False) -> "Tensor":
@@ -68,8 +74,14 @@ def argmin_from_tensor(tensor: "Tensor", dim: int | None = None, keepdim: bool =
 
 
 def t_from_tensor(tensor: "Tensor") -> "Tensor":
+    from .autograd import _Node, is_grad_enabled, _grad_transpose
+
     meta = _run_js_awaitable(_get_runtime().transpose2d(tensor._id))
-    return _mk_tensor(meta)
+    result = _mk_tensor(meta)
+    if is_grad_enabled() and tensor._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_transpose(g, tensor, 0, 1),), [tensor])
+    return result
 
 
 def tolist_from_tensor(tensor: "Tensor") -> object:
@@ -83,8 +95,14 @@ def destroy_tensor(tensor: "Tensor") -> None:
 
 
 def repeat_from_tensor(tensor: "Tensor", sizes: list[int]) -> "Tensor":
+    from .autograd import _Node, is_grad_enabled, _grad_repeat
+
     meta = _run_js_awaitable(_get_runtime().repeat(tensor._id, [int(s) for s in sizes]))
-    return _mk_tensor(meta)
+    result = _mk_tensor(meta)
+    if is_grad_enabled() and tensor._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_repeat(g, tensor, sizes),), [tensor])
+    return result
 
 
 def reshape_from_tensor(tensor: "Tensor", shape: int | list[int] | tuple[int, ...]) -> "Tensor":
@@ -100,29 +118,59 @@ def reshape_from_tensor(tensor: "Tensor", shape: int | list[int] | tuple[int, ..
 
 
 def flatten_from_tensor(tensor: "Tensor", start_dim: int = 0, end_dim: int = -1) -> "Tensor":
+    from .autograd import _Node, is_grad_enabled, _grad_reshape
+
     meta = _run_js_awaitable(_get_runtime().flatten(tensor._id, int(start_dim), int(end_dim)))
-    return _mk_tensor(meta)
+    result = _mk_tensor(meta)
+    if is_grad_enabled() and tensor._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_reshape(g, tensor, result.shape),), [tensor])
+    return result
 
 
 def squeeze_from_tensor(tensor: "Tensor", dim: int | None = None) -> "Tensor":
+    from .autograd import _Node, is_grad_enabled, _grad_squeeze
+
     if dim is None:
         meta = _run_js_awaitable(_get_runtime().squeeze(tensor._id))
     else:
         meta = _run_js_awaitable(_get_runtime().squeeze(tensor._id, int(dim)))
-    return _mk_tensor(meta)
+    result = _mk_tensor(meta)
+    if is_grad_enabled() and tensor._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_squeeze(g, tensor, dim),), [tensor])
+    return result
 
 
 def unsqueeze_from_tensor(tensor: "Tensor", dim: int) -> "Tensor":
+    from .autograd import _Node, is_grad_enabled, _grad_unsqueeze
+
     meta = _run_js_awaitable(_get_runtime().unsqueeze(tensor._id, int(dim)))
-    return _mk_tensor(meta)
+    result = _mk_tensor(meta)
+    if is_grad_enabled() and tensor._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_unsqueeze(g, tensor, dim),), [tensor])
+    return result
 
 
 def transpose_from_tensor(tensor: "Tensor", dim0: int, dim1: int) -> "Tensor":
+    from .autograd import _Node, is_grad_enabled, _grad_transpose
+
     meta = _run_js_awaitable(_get_runtime().transpose(tensor._id, int(dim0), int(dim1)))
-    return _mk_tensor(meta)
+    result = _mk_tensor(meta)
+    if is_grad_enabled() and tensor._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_transpose(g, tensor, dim0, dim1),), [tensor])
+    return result
 
 
 def permute_from_tensor(tensor: "Tensor", dims: list[int] | tuple[int, ...]) -> "Tensor":
+    from .autograd import _Node, is_grad_enabled, _grad_permute
+
     normalized = [int(v) for v in dims]
     meta = _run_js_awaitable(_get_runtime().permute(tensor._id, normalized))
-    return _mk_tensor(meta)
+    result = _mk_tensor(meta)
+    if is_grad_enabled() and tensor._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_permute(g, tensor, normalized),), [tensor])
+    return result

@@ -2,7 +2,7 @@
 // Output is per-sample loss [batch]: logsumexp(logits[row]) - logits[row, target[row]]
 
 @group(0) @binding(0) var<storage, read> logits: array<f32>;
-@group(0) @binding(1) var<storage, read> targets: array<i32>;
+@group(0) @binding(1) var<storage, read> targets: array<f32>;
 @group(0) @binding(2) var<storage, read_write> out_loss: array<f32>;
 @group(0) @binding(3) var<uniform> dims: vec4<u32>; // [batch, classes, _, _]
 
@@ -31,9 +31,10 @@ fn cross_entropy(@builtin(global_invocation_id) gid: vec3<u32>) {
     c = c + 1u;
   }
 
-  let t = u32(max(targets[row], 0));
-  let target_idx = min(t, classes - 1u);
+  let t = i32(targets[row]);
+  let target_idx = u32(max(t, 0));
+  let final_target_idx = min(target_idx, classes - 1u);
   let log_denom = maxv + log(sum_exp);
-  out_loss[row] = log_denom - logits[base + target_idx];
+  out_loss[row] = log_denom - logits[base + final_target_idx];
 }
 

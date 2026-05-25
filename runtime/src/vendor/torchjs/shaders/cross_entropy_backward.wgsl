@@ -4,7 +4,7 @@
 
 @group(0) @binding(0) var<storage, read> grad_output: array<f32>; // scalar (len=1) or vector [batch]
 @group(0) @binding(1) var<storage, read> logits: array<f32>;
-@group(0) @binding(2) var<storage, read> targets: array<i32>;
+@group(0) @binding(2) var<storage, read> targets: array<f32>;
 @group(0) @binding(3) var<storage, read_write> grad_input: array<f32>;
 @group(0) @binding(4) var<uniform> dims: vec4<u32>;   // [batch, classes, reduction_mode, grad_is_scalar]
 @group(0) @binding(5) var<uniform> scales: vec4<f32>; // [norm_scale, _, _, _]
@@ -39,9 +39,10 @@ fn cross_entropy_backward(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   let prob = exp(logits[idx] - maxv) / sum_exp;
-  let t = u32(max(targets[row], 0));
-  let target_idx = min(t, classes - 1u);
-  let one_hot = select(0.0, 1.0, col == target_idx);
+  let t = i32(targets[row]);
+  let target_idx = u32(max(t, 0));
+  let final_target_idx = min(target_idx, classes - 1u);
+  let one_hot = select(0.0, 1.0, col == final_target_idx);
 
   var upstream = 0.0;
   if (dims.w == 1u) {

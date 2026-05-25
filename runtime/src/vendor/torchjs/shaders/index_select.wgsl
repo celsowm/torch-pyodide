@@ -4,23 +4,22 @@
  *                 output[i, j] = input[i, indices[j]] when dim=1
  */
 
+struct Params {
+  dim: u32,
+  input_dim0: u32,
+  input_dim1: u32,
+  num_indices: u32,
+}
+
 @group(0) @binding(0) var<storage, read> input: array<f32>;
 @group(0) @binding(1) var<storage, read> indices: array<f32>;
 @group(0) @binding(2) var<storage, read_write> output: array<f32>;
-
-struct Params {
-  dim: u32,           // Dimension to index along
-  input_dim0: u32,    // Input shape[0]
-  input_dim1: u32,    // Input shape[1]
-  num_indices: u32,   // Number of indices
-}
-
 @group(0) @binding(3) var<uniform> params: Params;
 
 @compute @workgroup_size(256)
 fn index_select_2d(@builtin(global_invocation_id) global_id: vec3<u32>) {
-  let output_size = select(params.num_indices * params.input_dim1,
-                           params.input_dim0 * params.num_indices,
+  let output_size = select(params.input_dim0 * params.num_indices,
+                           params.num_indices * params.input_dim1,
                            params.dim == 0u);
   let idx = global_id.x;
   if (idx >= output_size) {
@@ -42,7 +41,6 @@ fn index_select_2d(@builtin(global_invocation_id) global_id: vec3<u32>) {
   }
 }
 
-// For 1D tensors: simple gather
 @compute @workgroup_size(256)
 fn index_select_1d(@builtin(global_invocation_id) global_id: vec3<u32>) {
   let idx = global_id.x;

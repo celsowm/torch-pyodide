@@ -87,10 +87,10 @@ export class BroadcastOps {
     const outLength = product(targetShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
 
-    const strides = computeStrides(paddedShape);
-    const broadcastStrides = paddedShape.map((s, i) => (s === 1 ? 0 : strides[i]!));
     const outShapePadded = padShapeTo4(targetShape);
-    const bsPadded = padShapeTo4(broadcastStrides);
+    const paddedShape4 = padShapeTo4(paddedShape);
+    const strides4 = computeStrides(paddedShape4);
+    const bsPadded = new Uint32Array(paddedShape4.map((s, i) => (s === 1 ? 0 : strides4[i]!)));
 
     const paramsData = new Uint32Array([
       outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],

@@ -1,7 +1,7 @@
 // Argmin shader - finds index of min value along the last dimension
 
 @group(0) @binding(0) var<storage, read> input: array<f32>;
-@group(0) @binding(1) var<storage, read_write> output: array<i32>;
+@group(0) @binding(1) var<storage, read_write> output: array<f32>;
 @group(0) @binding(2) var<uniform> dims: vec2<u32>;  // (batch_size, num_elements)
 
 @compute @workgroup_size(256)
@@ -28,5 +28,5 @@ fn argmin(@builtin(global_invocation_id) gid: vec3<u32>) {
         }
     }
 
-    output[batch_idx] = i32(min_idx);
+    output[batch_idx] = f32(min_idx);
 }

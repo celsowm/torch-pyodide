@@ -361,15 +361,32 @@ export class ShapeOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const length = product(meta.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const params = new Int32Array([
-      dims.length, length, 0, 0,
-      ...dims.slice(0, 4).map(d => d < 0 ? d + meta.shape.length : d),
+    
+    const rank = meta.shape.length;
+    const normalizedDims = dims.map(d => normalizeDim(d, rank));
+    
+    const shape4 = padShapeTo4(meta.shape);
+    const strides4 = computeStrides(shape4);
+    const flipMask = new Uint32Array(4);
+    
+    // padShapeTo4 pads with 1s at the beginning.
+    // So dim 0 of original shape (if rank=2) becomes dim 2 of padded shape.
+    const offset = 4 - rank;
+    for (const d of normalizedDims) {
+      flipMask[offset + d] = 1;
+    }
+
+    const params = new Uint32Array([
+      ...shape4,
+      ...strides4,
+      ...Array.from(flipMask),
     ]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: Math.max(16, Math.ceil(params.byteLength / 16) * 16),
+      size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    
     const pipeline = getOrCreatePipeline(FLIP_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
@@ -385,8 +402,8 @@ export class ShapeOps {
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
     const outShapePadded = padShapeTo4(outShape);
     const inShapePadded = padShapeTo4(meta.shape);
-    const inStrides = computeStrides(meta.shape);
-    const outStrides = computeStrides(outShape);
+    const inStridesPadded = computeStrides(inShapePadded);
+    const outStridesPadded = computeStrides(outShapePadded);
     const repeats = new Array(4).fill(1);
     for (let i = 0; i < sizes.length; i++) {
       repeats[i] = sizes[i] ?? 1;
@@ -394,8 +411,8 @@ export class ShapeOps {
     const params = new Uint32Array([
       inShapePadded[0], inShapePadded[1], inShapePadded[2], inShapePadded[3],
       outShapePadded[0], outShapePadded[1], outShapePadded[2], outShapePadded[3],
-      inStrides[0], inStrides[1], inStrides[2], inStrides[3],
-      outStrides[0], outStrides[1], outStrides[2], outStrides[3],
+      inStridesPadded[0], inStridesPadded[1], inStridesPadded[2], inStridesPadded[3],
+      outStridesPadded[0], outStridesPadded[1], outStridesPadded[2], outStridesPadded[3],
       repeats[0], repeats[1], repeats[2], repeats[3],
       meta.shape.length, outLength, 0, 0,
     ]);

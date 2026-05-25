@@ -77,14 +77,14 @@ def _grad_matmul(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | No
     if a._requires_grad:
         # grad_a = grad_output @ b.T
         b_t = b.T if len(b._shape) == 2 else b.permute(list(range(b.ndim - 2)) + [b.ndim - 1, b.ndim - 2])
-        grad_a = grad_output.matmul(b_t)
+        grad_a = _reduce_broadcast(grad_output.matmul(b_t), a._shape)
     else:
         grad_a = None
 
     if b._requires_grad:
         # grad_b = a.T @ grad_output
         a_t = a.T if len(a._shape) == 2 else a.permute(list(range(a.ndim - 2)) + [a.ndim - 1, a.ndim - 2])
-        grad_b = a_t.matmul(grad_output)
+        grad_b = _reduce_broadcast(a_t.matmul(grad_output), b._shape)
     else:
         grad_b = None
 
@@ -715,7 +715,7 @@ def _grad_index_select(grad_output: Tensor, input_tensor: Tensor, dim: int, inde
                 src_idx = o * in_shape[d] * stride + pos_i * stride + s
                 dst_idx = i * chunk_size + s + o * len(idx_vals) * chunk_size
                 if src_idx < n and dst_idx < len(out_flat):
-                    flat_list[src_idx] = out_flat[dst_idx]
+                    flat_list[src_idx] += out_flat[dst_idx]
     return tensor_from_data(flat_list, in_shape, input_tensor.dtype)
 
 
