@@ -4,7 +4,7 @@ import torch
 from torch.grad_mode import is_grad_enabled
 from torch._tensor import Tensor
 from torch.tensor_ops import _js_meta_to_tuple
-from torch.tensor_shape_utils import _flatten, _infer_shape, _normalize_shape, _reshape_flat_values
+from torch.tensor_shape_utils import _flatten, _infer_shape, _normalize_shape, _normalize_reshape_shape_from_args, _reshape_flat_values
 
 
 def test_scalar_tensor_numeric_conversions_delegate_to_item(monkeypatch):
@@ -55,6 +55,18 @@ def test_infer_shape_rejects_ragged():
 def test_normalize_shape_rejects_negative():
     with pytest.raises(ValueError, match=">= 0"):
         _normalize_shape((-1, 2))
+
+
+def test_normalize_reshape_shape_infers_negative_one():
+    assert _normalize_reshape_shape_from_args((-1, 8), [2, 4, 8]) == [8, 8]
+    assert _normalize_reshape_shape_from_args(([2, -1],), [2, 4, 8]) == [2, 32]
+
+
+def test_normalize_reshape_shape_rejects_invalid_inference():
+    with pytest.raises(ValueError, match="only one dimension"):
+        _normalize_reshape_shape_from_args((-1, -1), [2, 4])
+    with pytest.raises(ValueError, match="invalid"):
+        _normalize_reshape_shape_from_args((-1, 3), [2, 4])
 
 
 def test_js_meta_to_tuple_from_dict():

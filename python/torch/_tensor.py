@@ -463,23 +463,27 @@ class Tensor:
         from ._tensor_runtime_bridge import clamp_from_tensor
         return clamp_from_tensor(self, min, max)
 
-    def argmax(self) -> "Tensor":
+    def argmax(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
         from ._tensor_runtime_bridge import argmax_from_tensor
-        return argmax_from_tensor(self)
+        if dim is None and not keepdim:
+            return argmax_from_tensor(self)
+        return argmax_from_tensor(self, dim=dim, keepdim=keepdim)
 
-    def argmin(self) -> "Tensor":
+    def argmin(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
         from ._tensor_runtime_bridge import argmin_from_tensor
-        return argmin_from_tensor(self)
+        if dim is None and not keepdim:
+            return argmin_from_tensor(self)
+        return argmin_from_tensor(self, dim=dim, keepdim=keepdim)
 
     def reshape(self, *shape: int | Sequence[int]) -> "Tensor":
         from ._tensor_runtime_bridge import reshape_from_tensor
-        from .tensor_shape_utils import _normalize_shape_from_args
-        normalized = _normalize_shape_from_args(shape)
+        from .tensor_shape_utils import _normalize_reshape_shape_from_args
+        normalized = _normalize_reshape_shape_from_args(shape, self._shape)
         return reshape_from_tensor(self, normalized)
 
     def view(self, *shape: int) -> "Tensor":
-        from .tensor_shape_utils import _normalize_shape_from_args
-        normalized = _normalize_shape_from_args(shape)
+        from .tensor_shape_utils import _normalize_reshape_shape_from_args
+        normalized = _normalize_reshape_shape_from_args(shape, self._shape)
         return self.reshape(normalized)
 
     def flatten(self, start_dim: int = 0, end_dim: int = -1) -> "Tensor":

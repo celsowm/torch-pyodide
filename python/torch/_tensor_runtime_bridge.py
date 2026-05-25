@@ -41,12 +41,28 @@ def clamp_from_tensor(tensor: "Tensor", min_: float, max_: float) -> "Tensor":
     return _mk_tensor(meta)
 
 
-def argmax_from_tensor(tensor: "Tensor") -> "Tensor":
+def argmax_from_tensor(tensor: "Tensor", dim: int | None = None, keepdim: bool = False) -> "Tensor":
+    if dim is not None:
+        from .tensor_ops import topk_from_tensor
+
+        d = dim if dim >= 0 else dim + len(tensor._shape)
+        if d < 0 or d >= len(tensor._shape):
+            raise IndexError(f"Dimension out of range (expected to be in range of [{-len(tensor._shape)}, {len(tensor._shape) - 1}], got {dim})")
+        _, indices = topk_from_tensor(tensor, 1, dim=d, largest=True)
+        return indices if keepdim else indices.squeeze(d)
     meta = _run_js_awaitable(_get_runtime().argmax(tensor._id))
     return _mk_tensor(meta)
 
 
-def argmin_from_tensor(tensor: "Tensor") -> "Tensor":
+def argmin_from_tensor(tensor: "Tensor", dim: int | None = None, keepdim: bool = False) -> "Tensor":
+    if dim is not None:
+        from .tensor_ops import topk_from_tensor
+
+        d = dim if dim >= 0 else dim + len(tensor._shape)
+        if d < 0 or d >= len(tensor._shape):
+            raise IndexError(f"Dimension out of range (expected to be in range of [{-len(tensor._shape)}, {len(tensor._shape) - 1}], got {dim})")
+        _, indices = topk_from_tensor(tensor, 1, dim=d, largest=False)
+        return indices if keepdim else indices.squeeze(d)
     meta = _run_js_awaitable(_get_runtime().argmin(tensor._id))
     return _mk_tensor(meta)
 

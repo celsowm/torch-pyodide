@@ -62,6 +62,38 @@ def _normalize_shape_from_args(shape: Sequence[int]) -> list[int]:
     return _normalize_shape([int(v) for v in shape])
 
 
+def _normalize_reshape_shape_from_args(shape: Sequence[int], input_shape: Sequence[int]) -> list[int]:
+    raw = list(shape[0]) if len(shape) == 1 and isinstance(shape[0], (list, tuple)) else [int(v) for v in shape]
+    unknown = [i for i, v in enumerate(raw) if int(v) == -1]
+    if len(unknown) > 1:
+        raise ValueError("only one dimension can be inferred")
+    if any(int(v) < -1 for v in raw):
+        raise ValueError("shape values must be >= -1")
+
+    numel = 1
+    for dim in input_shape:
+        numel *= int(dim)
+
+    normalized = [int(v) for v in raw]
+    if unknown:
+        known = 1
+        for v in normalized:
+            if v != -1:
+                known *= v
+        if known == 0 or numel % known != 0:
+            raise ValueError(f"shape {raw} is invalid for input of size {numel}")
+        normalized[unknown[0]] = numel // known
+    elif normalized:
+        product = 1
+        for v in normalized:
+            product *= v
+        if product != numel:
+            raise ValueError(f"shape {raw} is invalid for input of size {numel}")
+    elif numel != 1:
+        raise ValueError(f"shape {raw} is invalid for input of size {numel}")
+    return normalized
+
+
 def _coerce_out_value(value: float, dtype: str) -> object:
     if dtype == "bool":
         return bool(value)

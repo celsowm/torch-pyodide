@@ -186,6 +186,53 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(consoleFailures).toEqual([]);
   });
 
+  test("autoregressive argmax generation extends token context", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_autoregressive_argmax_generation");
+    await expect(page.locator("#example-select")).toHaveValue("nn_autoregressive_argmax_generation");
+
+    const { output } = await runSelectedExample(page, "nn_autoregressive_argmax_generation");
+
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+    const generated = output.match(/generated:\s*(\[\[.*\]\])/);
+    expect(generated).not.toBeNull();
+    const tokens = JSON.parse(generated?.[1] ?? "[]") as number[][];
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0].slice(0, 3)).toEqual([5, 11, 7]);
+    expect(tokens[0].length).toBeGreaterThanOrEqual(4);
+    expect(tokens[0].length).toBeLessThanOrEqual(8);
+    for (const token of tokens[0]) {
+      expect(Number.isInteger(token)).toBe(true);
+      expect(token).toBeGreaterThanOrEqual(0);
+      expect(token).toBeLessThan(32);
+    }
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("adamw token classifier trains with inferred view shape", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_adamw_token_classifier");
+    await expect(page.locator("#example-select")).toHaveValue("nn_adamw_token_classifier");
+
+    const { output } = await runSelectedExample(page, "nn_adamw_token_classifier");
+
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+    const losses = [...output.matchAll(/step=(\d+) loss=([0-9.]+)/g)].map((match) => ({
+      step: Number(match[1]),
+      loss: Number(match[2]),
+    }));
+    expect(losses).toHaveLength(4);
+    expect(losses.map((entry) => entry.step)).toEqual([0, 1, 2, 3]);
+    expect(losses[3].loss).toBeLessThan(losses[0].loss);
+    const pred = output.match(/next_token_pred:\s*([0-9.]+)/);
+    expect(pred).not.toBeNull();
+    const token = Number(pred?.[1]);
+    expect(Number.isInteger(token)).toBe(true);
+    expect(token).toBeGreaterThanOrEqual(0);
+    expect(token).toBeLessThan(8);
+    expect(consoleFailures).toEqual([]);
+  });
+
   test("cross entropy backward prints gradient values", async () => {
     consoleFailures.length = 0;
     await page.locator("#example-select").selectOption("autograd_cross_entropy_grad_repr");

@@ -399,12 +399,12 @@ def where(condition: Tensor, x: Tensor | float | int | bool, y: Tensor | float |
     return where_from_tensors(condition, x, y)
 
 
-def argmax(x: Tensor) -> Tensor:
-    return x.argmax()
+def argmax(x: Tensor, dim: int | None = None, keepdim: bool = False) -> Tensor:
+    return x.argmax(dim=dim, keepdim=keepdim)
 
 
-def argmin(x: Tensor) -> Tensor:
-    return x.argmin()
+def argmin(x: Tensor, dim: int | None = None, keepdim: bool = False) -> Tensor:
+    return x.argmin(dim=dim, keepdim=keepdim)
 
 
 def reshape(input: Tensor, shape: int | Sequence[int]) -> Tensor:
