@@ -21,6 +21,18 @@ class Normal(Distribution):
         self.loc = loc if isinstance(loc, Tensor) else torch.tensor(float(loc))
         self.scale = scale if isinstance(scale, Tensor) else torch.tensor(float(scale))
 
+    @property
+    def mean(self) -> Tensor:
+        return self.loc
+
+    @property
+    def variance(self) -> Tensor:
+        return self.scale * self.scale
+
+    @property
+    def stddev(self) -> Tensor:
+        return self.scale
+
     def sample(self, sample_shape: int | list[int] = ()) -> Tensor:
         shape = [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
         eps = torch.randn(shape)
@@ -37,6 +49,15 @@ class Uniform(Distribution):
         self.low = low if isinstance(low, Tensor) else torch.tensor(float(low))
         self.high = high if isinstance(high, Tensor) else torch.tensor(float(high))
 
+    @property
+    def mean(self) -> Tensor:
+        return (self.low + self.high) * 0.5
+
+    @property
+    def variance(self) -> Tensor:
+        width = self.high - self.low
+        return (width * width) / 12.0
+
     def sample(self, sample_shape: int | list[int] = ()) -> Tensor:
         shape = [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
         u = torch.rand(shape)
@@ -50,6 +71,14 @@ class Uniform(Distribution):
 class Bernoulli(Distribution):
     def __init__(self, probs: Tensor | float) -> None:
         self.probs = probs if isinstance(probs, Tensor) else torch.tensor(float(probs))
+
+    @property
+    def mean(self) -> Tensor:
+        return self.probs
+
+    @property
+    def variance(self) -> Tensor:
+        return self.probs * (1.0 - self.probs)
 
     def sample(self, sample_shape: int | list[int] = ()) -> Tensor:
         shape = [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
@@ -70,6 +99,10 @@ class Categorical(Distribution):
             raise ValueError("Either logits or probs must be provided")
         # Compute probs for sampling
         self._probs = torch.softmax(self.logits, dim=-1)
+
+    @property
+    def probs(self) -> Tensor:
+        return self._probs
 
     def sample(self, sample_shape: int | list[int] = ()) -> Tensor:
         shape = [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)

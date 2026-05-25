@@ -107,6 +107,20 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(optionIds).toEqual(examples.map((example) => example.id));
   });
 
+  test("cat expand where backward returns expected gradients", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("autograd_cat_expand_where");
+    await expect(page.locator("#example-select")).toHaveValue("autograd_cat_expand_where");
+
+    const { output } = await runSelectedExample(page, "autograd_cat_expand_where");
+
+    expect(output).toMatch(/grad a:\s*\[4(?:\.0)?, 4(?:\.0)?, 4(?:\.0)?\]/);
+    expect(output).toMatch(/grad b:\s*\[1(?:\.0)?, 1(?:\.0)?, 1(?:\.0)?\]/);
+    expect(output).toMatch(/grad x:\s*\[1(?:\.0)?, 0(?:\.0)?, 1(?:\.0)?\]/);
+    expect(output).toMatch(/grad y:\s*\[0(?:\.0)?, 1(?:\.0)?, 0(?:\.0)?\]/);
+    expect(consoleFailures).toEqual([]);
+  });
+
   test("all playground examples run without Python or WebGPU errors", async () => {
     test.setTimeout(30 * 60 * 1000);
     const failures: string[] = [];
@@ -178,8 +192,8 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(output.half_alias).toBe("float16");
     expect(output.int_alias).toBe("int32");
     expect(output.float_alias).toBe("float32");
-    expect(output.short_alias).toBe("int32");
-    expect(output.char_alias).toBe("int32");
+    expect(output.short_alias).toBe("int16");
+    expect(output.char_alias).toBe("int8");
     expect(output.byte_alias).toBe("uint8");
 
     expect(output.idx_dtype).toBe("int64");

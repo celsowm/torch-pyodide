@@ -593,25 +593,24 @@ def _grad_repeat(grad_output: Tensor, input_tensor: Tensor, sizes: Sequence[int]
 def _reduce_broadcast(grad: Tensor, target_shape: Sequence[int]) -> Tensor:
     """Reduz gradiente de volta ao shape original somando dimensões broadcasted."""
     result = grad
-    grad_ndim = len(result._shape)
-    target_ndim = len(target_shape)
+    target = list(target_shape)
 
     # Somar dimensões extras à esquerda (broadcast de dimensões ausentes)
-    while len(result._shape) > len(target_shape):
+    while len(result._shape) > len(target):
         result = result.sum(dim=0)
 
     # Somar ao longo das dimensões expandidas (onde target_shape[i] == 1)
-    for i in range(len(target_shape)):
-        if target_shape[i] == 1 and result._shape[i] != 1:
+    for i in range(len(target)):
+        if target[i] == 1 and result._shape[i] != 1:
             result = result.sum(dim=i, keepdim=True)
 
     # Remover dimensões keepdim=1 extras que sobraram
-    while len(result._shape) > len(target_shape):
+    while len(result._shape) > len(target):
         result = result.sum(dim=0)
 
     # Reshape para target_shape
-    if result._shape != target_shape:
-        result = result.reshape(target_shape)
+    if result._shape != target:
+        result = result.reshape(target)
 
     return result
 

@@ -32,7 +32,6 @@ import {
   RMSPROP_STEP_SHADER,
   MAXMIN_BACKWARD_SHADER,
   createStorageBuffer,
-  padShapeTo4,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 
@@ -217,22 +216,20 @@ export class ReductionOps {
     const rank = meta.shape.length;
     const resolvedDim = dim < 0 ? dim + rank : dim;
     if (resolvedDim < 0 || resolvedDim >= rank) throw new Error(`dim ${dim} out of range for rank ${rank}`);
-    const inShape = padShapeTo4(meta.shape);
-    const inStrides: number[] = [];
-    let running = 1;
-    for (let i = inShape.length - 1; i >= 0; i--) { inStrides[i] = running; running *= inShape[i]!; }
 
-    const reduceDim = resolvedDim + (4 - rank);
     const reduceSize = meta.shape[resolvedDim]!;
     const outShape = meta.shape.filter((_, i) => i !== resolvedDim);
-    if (outShape.length === 0) outShape.push(1);
     const outLength = product(outShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
 
+    const batchSize = product(meta.shape.slice(0, resolvedDim));
+    const innerSize = product(meta.shape.slice(resolvedDim + 1));
+    const op = mode === "mean" ? 1 : 0;
     const params = new Uint32Array([
-      inShape[0], inShape[1], inShape[2], inShape[3],
-      inStrides[0]!, inStrides[1]!, inStrides[2]!, inStrides[3]!,
-      reduceDim, reduceSize, outLength,
+      batchSize,
+      reduceSize,
+      innerSize,
+      op,
     ]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,

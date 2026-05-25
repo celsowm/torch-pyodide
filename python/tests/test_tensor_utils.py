@@ -1,7 +1,19 @@
 import pytest
 
+from torch._tensor import Tensor
 from torch.tensor_ops import _js_meta_to_tuple
 from torch.tensor_shape_utils import _flatten, _infer_shape, _normalize_shape, _reshape_flat_values
+
+
+def test_scalar_tensor_numeric_conversions_delegate_to_item(monkeypatch):
+    monkeypatch.setattr(Tensor, "item", lambda self: 3.0)
+
+    tensor = Tensor.__new__(Tensor)
+
+    assert int(tensor) == 3
+    assert float(tensor) == 3.0
+    assert tensor.__index__() == 3
+
 
 def test_infer_shape_rectangular():
     assert _infer_shape([[1, 2], [3, 4]]) == [2, 2]

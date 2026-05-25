@@ -129,6 +129,15 @@ class Tensor:
     def __bool__(self) -> bool:
         return self.item() != 0
 
+    def __int__(self) -> int:
+        return int(self.item())
+
+    def __float__(self) -> float:
+        return float(self.item())
+
+    def __index__(self) -> int:
+        return int(self.item())
+
     def __len__(self) -> int:
         return self._shape[0] if self._shape else 0
 
