@@ -160,11 +160,13 @@ async function switchToExample(id: string): Promise<void> {
 
 async function main() {
   try {
+    const params = new URLSearchParams(globalThis.location?.search ?? "");
     runButton.disabled = true;
     resetButton.disabled = true;
     exampleSelect.disabled = true;
     meta.textContent = "Loading Pyodide + runtime...";
     const { pyodide, indexURL, installMode, installDetail } = await bootstrapPyodideTorch({
+      forcePublishedFailure: params.get("force_fallback") === "1",
       preferLocalFallbackInProduction: true
     });
     const defaultId = await loadCatalog();

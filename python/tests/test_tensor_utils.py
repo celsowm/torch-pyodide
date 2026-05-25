@@ -15,6 +15,15 @@ def test_scalar_tensor_numeric_conversions_delegate_to_item(monkeypatch):
     assert tensor.__index__() == 3
 
 
+def test_tensor_repr_prints_values_like_tensor(monkeypatch):
+    monkeypatch.setattr(Tensor, "tolist", lambda self: [[-0.21442, 0.17529, 0.03911]])
+
+    tensor = Tensor(1, [1, 3], "float32")
+
+    assert repr(tensor) == "tensor([[-0.2144, 0.1753, 0.0391]])"
+    assert str(tensor) == repr(tensor)
+
+
 def test_infer_shape_rectangular():
     assert _infer_shape([[1, 2], [3, 4]]) == [2, 2]
 

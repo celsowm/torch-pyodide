@@ -796,7 +796,7 @@ def sum_from_tensor(tensor: "Tensor") -> "Tensor":
 
 def sum_dim_from_tensor(tensor: "Tensor", dim: int, keepdim: bool = False) -> "Tensor":
     from ._tensor import Tensor
-    from .autograd import _Node, is_grad_enabled, _grad_sum
+    from .autograd import _Node, is_grad_enabled, _grad_sum_dim
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.sumDim(tensor._id, int(dim), keepdim))
@@ -804,7 +804,7 @@ def sum_dim_from_tensor(tensor: "Tensor", dim: int, keepdim: bool = False) -> "T
 
     if is_grad_enabled() and tensor._requires_grad:
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
-        result._node = _Node(result, lambda g: (_grad_sum(g, tensor),), [tensor])
+        result._node = _Node(result, lambda g: (_grad_sum_dim(g, tensor, dim, keepdim),), [tensor])
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
@@ -826,7 +826,7 @@ def mean_from_tensor(tensor: "Tensor") -> "Tensor":
 
 def mean_dim_from_tensor(tensor: "Tensor", dim: int, keepdim: bool = False) -> "Tensor":
     from ._tensor import Tensor
-    from .autograd import _Node, is_grad_enabled, _grad_mean
+    from .autograd import _Node, is_grad_enabled, _grad_mean_dim
 
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.meanDim(tensor._id, int(dim), keepdim))
@@ -834,7 +834,7 @@ def mean_dim_from_tensor(tensor: "Tensor", dim: int, keepdim: bool = False) -> "
 
     if is_grad_enabled() and tensor._requires_grad:
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
-        result._node = _Node(result, lambda g: (_grad_mean(g, tensor),), [tensor])
+        result._node = _Node(result, lambda g: (_grad_mean_dim(g, tensor, dim, keepdim),), [tensor])
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 

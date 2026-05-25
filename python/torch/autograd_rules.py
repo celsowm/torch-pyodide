@@ -100,6 +100,17 @@ def _grad_sum(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     return expand_from_tensor(grad_output, input_tensor._shape)
 
 
+def _grad_sum_dim(grad_output: Tensor, input_tensor: Tensor, dim: int, keepdim: bool) -> Tensor | None:
+    """d/dinput sum(input, dim) = broadcast(grad_output, input.shape)"""
+    if not input_tensor._requires_grad:
+        return None
+    from ._tensor import expand_from_tensor
+
+    resolved_dim = dim if dim >= 0 else dim + len(input_tensor._shape)
+    grad = grad_output if keepdim else grad_output.unsqueeze(resolved_dim)
+    return expand_from_tensor(grad, input_tensor._shape)
+
+
 def _grad_mean(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     """d/dinput mean(input) = broadcast(grad_output, input.shape) / numel"""
     if not input_tensor._requires_grad:
@@ -109,6 +120,18 @@ def _grad_mean(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
         numel *= s
     from ._tensor import expand_from_tensor
     scaled = grad_output.div(float(numel))
+    return expand_from_tensor(scaled, input_tensor._shape)
+
+
+def _grad_mean_dim(grad_output: Tensor, input_tensor: Tensor, dim: int, keepdim: bool) -> Tensor | None:
+    """d/dinput mean(input, dim) = broadcast(grad_output / size(dim), input.shape)"""
+    if not input_tensor._requires_grad:
+        return None
+    from ._tensor import expand_from_tensor
+
+    resolved_dim = dim if dim >= 0 else dim + len(input_tensor._shape)
+    grad = grad_output if keepdim else grad_output.unsqueeze(resolved_dim)
+    scaled = grad.div(float(input_tensor._shape[resolved_dim]))
     return expand_from_tensor(scaled, input_tensor._shape)
 
 

@@ -56,8 +56,8 @@ def test_getitem_tuple_mixed_uses_select_slice_and_index_select():
     out = getitem_from_tensor(t, (1, slice(0, 1, None), idx))
     assert out is t
     assert ("select", (0, 1)) in t.calls
-    assert ("slice", (1, 0, 1, 1)) in t.calls
-    assert ("index_select", (2, idx)) in t.calls
+    assert ("slice", (0, 0, 1, 1)) in t.calls
+    assert ("index_select", (1, idx)) in t.calls
 
 
 def test_getitem_invalid_type_raises():

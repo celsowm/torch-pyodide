@@ -591,6 +591,7 @@ class Embedding(Module):
     def forward(self, x: Tensor) -> Tensor:
         # index_select based lookup
         result = torch.index_select(self.weight, 0, x)
+        result = result.reshape(list(x.shape) + [self.embedding_dim])
         if self.padding_idx is not None:
             mask = x == self.padding_idx
             if isinstance(mask, Tensor):

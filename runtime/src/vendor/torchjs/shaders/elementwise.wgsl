@@ -82,9 +82,33 @@ fn heaviside(@builtin(global_invocation_id) global_id: vec3<u32>) {
     result[idx] = select(0.0, 1.0, a[idx] >= 0.0);
 }
 
+fn integer_pow(base: f32, exponent: f32) -> f32 {
+    let rounded = floor(exponent + 0.5);
+    var n = i32(abs(rounded));
+    var acc = 1.0;
+    var factor = base;
+    while (n > 0) {
+        if ((n % 2) == 1) {
+            acc = acc * factor;
+        }
+        factor = factor * factor;
+        n = n / 2;
+    }
+    if (rounded < 0.0) {
+        return 1.0 / acc;
+    }
+    return acc;
+}
+
 @compute @workgroup_size(256)
 fn pow_op(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let idx = global_id.x;
     if (idx >= arrayLength(&result)) { return; }
-    result[idx] = pow(a[idx], b[idx]);
+    let exponent = b[idx];
+    let rounded = floor(exponent + 0.5);
+    if (abs(exponent - rounded) < 0.000001 && abs(rounded) <= 64.0) {
+        result[idx] = integer_pow(a[idx], exponent);
+    } else {
+        result[idx] = pow(a[idx], exponent);
+    }
 }

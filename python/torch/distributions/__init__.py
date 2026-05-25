@@ -8,6 +8,22 @@ from torch import Tensor
 from torch.tensor_factories_ops import tensor_from_data
 
 
+def _as_shape(sample_shape: int | list[int] | tuple[int, ...]) -> list[int]:
+    return [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
+
+
+def _broadcast_shape(*shapes: list[int] | tuple[int, ...]) -> list[int]:
+    result: list[int] = []
+    max_rank = max((len(shape) for shape in shapes), default=0)
+    for offset in range(max_rank):
+        dims = [shape[len(shape) - max_rank + offset] if offset >= max_rank - len(shape) else 1 for shape in shapes]
+        size = max(dims)
+        if any(dim not in (1, size) for dim in dims):
+            raise ValueError(f"Shapes are not broadcastable: {shapes}")
+        result.append(size)
+    return result
+
+
 class Distribution:
     def sample(self) -> Tensor:
         raise NotImplementedError
@@ -33,8 +49,8 @@ class Normal(Distribution):
     def stddev(self) -> Tensor:
         return self.scale
 
-    def sample(self, sample_shape: int | list[int] = ()) -> Tensor:
-        shape = [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
+    def sample(self, sample_shape: int | list[int] | tuple[int, ...] = ()) -> Tensor:
+        shape = _as_shape(sample_shape) + _broadcast_shape(self.loc.shape, self.scale.shape)
         eps = torch.randn(shape)
         return self.loc + eps * self.scale
 
@@ -58,8 +74,8 @@ class Uniform(Distribution):
         width = self.high - self.low
         return (width * width) / 12.0
 
-    def sample(self, sample_shape: int | list[int] = ()) -> Tensor:
-        shape = [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
+    def sample(self, sample_shape: int | list[int] | tuple[int, ...] = ()) -> Tensor:
+        shape = _as_shape(sample_shape) + _broadcast_shape(self.low.shape, self.high.shape)
         u = torch.rand(shape)
         return self.low + u * (self.high - self.low)
 
@@ -80,8 +96,8 @@ class Bernoulli(Distribution):
     def variance(self) -> Tensor:
         return self.probs * (1.0 - self.probs)
 
-    def sample(self, sample_shape: int | list[int] = ()) -> Tensor:
-        shape = [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
+    def sample(self, sample_shape: int | list[int] | tuple[int, ...] = ()) -> Tensor:
+        shape = _as_shape(sample_shape) + list(self.probs.shape)
         u = torch.rand(shape)
         return (u < self.probs).to(self.probs.dtype)
 
@@ -104,20 +120,24 @@ class Categorical(Distribution):
     def probs(self) -> Tensor:
         return self._probs
 
-    def sample(self, sample_shape: int | list[int] = ()) -> Tensor:
-        shape = [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
+    def sample(self, sample_shape: int | list[int] | tuple[int, ...] = ()) -> Tensor:
+        sample = _as_shape(sample_shape)
+        batch_shape = list(self.logits.shape[:-1])
+        out_shape = sample + batch_shape
         # Gumbel-max trick
-        gumbel = -(-torch.rand(list(shape) + list(self.logits.shape)).log()).log()
+        gumbel = -(-torch.rand(sample + list(self.logits.shape)).log()).log()
         samples = self.logits + gumbel
-        # Current Tensor.argmax API does not accept dim yet.
-        if len(shape) == 0:
-            return samples.argmax()
-        rows = samples.reshape(-1, self.logits.shape[-1]).tolist()
+        row_count = 1
+        for size in out_shape:
+            row_count *= size
+        rows = samples.reshape([row_count, self.logits.shape[-1]]).tolist()
         argmax_rows = [max(range(len(row)), key=lambda i: row[i]) for row in rows]
-        return tensor_from_data(argmax_rows, shape, dtype="int64")
+        if len(out_shape) == 0:
+            return tensor_from_data(argmax_rows[0], [], dtype="int64")
+        return tensor_from_data(argmax_rows, out_shape, dtype="int64")
 
     def log_prob(self, value: Tensor) -> Tensor:
-        return torch.nn.functional.nll_loss(self.logits.log_softmax(dim=-1), value)
+        return -torch.nn.functional.nll_loss(self.logits.log_softmax(dim=-1), value, reduction="none")
 
 
 class Transforms:

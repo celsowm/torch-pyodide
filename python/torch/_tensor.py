@@ -9,6 +9,18 @@ if TYPE_CHECKING:
     from .autograd import _Node
 
 
+def _format_tensor_values(value: object) -> str:
+    if isinstance(value, list):
+        return "[" + ", ".join(_format_tensor_values(item) for item in value) + "]"
+    if isinstance(value, bool):
+        return "True" if value else "False"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return f"{value:.4f}"
+    return repr(value)
+
+
 @dataclass(slots=True)
 class Tensor:
     _id: int
@@ -137,6 +149,23 @@ class Tensor:
 
     def __index__(self) -> int:
         return int(self.item())
+
+    def __repr__(self) -> str:
+        try:
+            values = self.tolist()
+        except Exception:
+            return (
+                f"Tensor(_id={self._id}, _shape={self._shape}, "
+                f"_dtype='{self._dtype}', _requires_grad={self._requires_grad})"
+            )
+        suffix = ""
+        if self._dtype not in ("float16", "float32", "float64", "bfloat16"):
+            suffix += f", dtype={self._dtype}"
+        if self._requires_grad:
+            suffix += ", requires_grad=True"
+        return f"tensor({_format_tensor_values(values)}{suffix})"
+
+    __str__ = __repr__
 
     def __len__(self) -> int:
         return self._shape[0] if self._shape else 0
@@ -442,9 +471,11 @@ class Tensor:
         from ._tensor_runtime_bridge import argmin_from_tensor
         return argmin_from_tensor(self)
 
-    def reshape(self, shape: int | Sequence[int]) -> "Tensor":
+    def reshape(self, *shape: int | Sequence[int]) -> "Tensor":
         from ._tensor_runtime_bridge import reshape_from_tensor
-        return reshape_from_tensor(self, shape)
+        from .tensor_shape_utils import _normalize_shape_from_args
+        normalized = _normalize_shape_from_args(shape)
+        return reshape_from_tensor(self, normalized)
 
     def view(self, *shape: int) -> "Tensor":
         from .tensor_shape_utils import _normalize_shape_from_args

@@ -25,7 +25,7 @@ function isIgnoredConsoleMessage(text: string): boolean {
 }
 
 async function waitForPlaygroundReady(page: Page): Promise<void> {
-  await page.goto("/playground/", { timeout: 180000 });
+  await page.goto("/playground/?force_fallback=1", { timeout: 180000 });
   await page.waitForFunction(
     () => {
       const meta = document.getElementById("meta");
@@ -118,6 +118,67 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(output).toMatch(/grad b:\s*\[1(?:\.0)?, 1(?:\.0)?, 1(?:\.0)?\]/);
     expect(output).toMatch(/grad x:\s*\[1(?:\.0)?, 0(?:\.0)?, 1(?:\.0)?\]/);
     expect(output).toMatch(/grad y:\s*\[0(?:\.0)?, 1(?:\.0)?, 0(?:\.0)?\]/);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("reduction broadcast where bool and scatter backward match expected gradients", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("autograd_reduction_broadcast_scatter");
+    await expect(page.locator("#example-select")).toHaveValue("autograd_reduction_broadcast_scatter");
+
+    const { output } = await runSelectedExample(page, "autograd_reduction_broadcast_scatter");
+
+    expect(output).toMatch(/grad sum dim:\s*\[\[1(?:\.0)?, 1(?:\.0)?, 1(?:\.0)?\], \[1(?:\.0)?, 1(?:\.0)?, 1(?:\.0)?\]\]/);
+    expect(output).toMatch(/grad mean dim:\s*\[\[0\.5, 0\.5, 0\.5\], \[0\.5, 0\.5, 0\.5\]\]/);
+    expect(output).toMatch(/grad broadcast row:\s*\[\[2(?:\.0)?, 2(?:\.0)?, 2(?:\.0)?\]\]/);
+    expect(output).toMatch(/grad broadcast col:\s*\[\[4(?:\.0)?\], \[4(?:\.0)?\], \[4(?:\.0)?\]\]/);
+    expect(output).toMatch(/grad broadcast scalar:\s*6(?:\.0)?/);
+    expect(output).toMatch(/grad where bool x:\s*\[1(?:\.0)?, 0(?:\.0)?, 1(?:\.0)?\]/);
+    expect(output).toMatch(/grad where bool y:\s*\[0(?:\.0)?, 1(?:\.0)?, 0(?:\.0)?\]/);
+    expect(output).toMatch(/grad scatter base:\s*\[0(?:\.0)?, 1(?:\.0)?, 0(?:\.0)?\]/);
+    expect(output).toMatch(/grad scatter src:\s*\[1(?:\.0)?, 1(?:\.0)?\]/);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("single parameter SGD step stays finite and updates weight", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("autograd_sgd_single_param");
+    await expect(page.locator("#example-select")).toHaveValue("autograd_sgd_single_param");
+
+    const { output } = await runSelectedExample(page, "autograd_sgd_single_param");
+
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity/);
+    expect(output).toMatch(/loss:\s*4(?:\.0)?/);
+    expect(output).toMatch(/updated_w:\s*0\.4(?:0+)?/);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("embedding linear language-model smoke returns expected shapes", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_embedding_language_model_smoke");
+    await expect(page.locator("#example-select")).toHaveValue("nn_embedding_language_model_smoke");
+
+    const { output } = await runSelectedExample(page, "nn_embedding_language_model_smoke");
+
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+    expect(output).toContain("H: (2, 4, 8)");
+    expect(output).toContain("logits: (2, 4, 100)");
+    expect(output).toContain("flat: (8, 100) (8,)");
+    expect(output).toContain("next: (2, 100)");
+    expect(output).toContain("loss: ()");
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("cross entropy backward prints gradient values", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("autograd_cross_entropy_grad_repr");
+    await expect(page.locator("#example-select")).toHaveValue("autograd_cross_entropy_grad_repr");
+
+    const { output } = await runSelectedExample(page, "autograd_cross_entropy_grad_repr");
+
+    expect(output).toMatch(/loss:\s*0\.24131/);
+    expect(output).toMatch(/grad:\s*tensor\(\[\[-0\.2144, 0\.1753, 0\.0391\]\]\)/);
+    expect(output).not.toContain("Tensor(_id=");
     expect(consoleFailures).toEqual([]);
   });
 

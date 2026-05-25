@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from torch.distributions import Bernoulli, Categorical, Normal, Uniform
+from torch.distributions import _broadcast_shape
 
 
 class _FakeTensor:
@@ -55,3 +56,9 @@ def test_distribution_moment_properties_are_available():
 
     assert bernoulli.mean is bernoulli.probs
     assert bernoulli.variance.value == "(probs*(1.0-probs))"
+
+
+def test_distribution_sample_batch_shapes_broadcast_like_pytorch():
+    assert _broadcast_shape([], []) == []
+    assert _broadcast_shape([2, 1], [1, 3]) == [2, 3]
+    assert _broadcast_shape([3], [2, 3]) == [2, 3]
