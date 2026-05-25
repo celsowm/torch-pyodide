@@ -96,7 +96,55 @@ Wheel gerado em `python/dist/`.
 pip install torch-pyodide
 ```
 
-### Instalação com micropip (Pyodide)
+### Uso no navegador com Pyodide + WebGPU
+
+`torch-pyodide` tem duas partes:
+
+- o pacote Python `torch`, instalado no Pyodide com `micropip`;
+- o runtime JavaScript/WebGPU, que deve ser carregado e registrado em `globalThis` antes de importar `torch`.
+
+Ou seja: `micropip.install("torch-pyodide")` sozinho instala o pacote Python, mas o pacote só executa tensores se `globalThis.__torch_pyodide_runtime__` já tiver sido configurado pelo runtime JS.
+
+Exemplo mínimo:
+
+```html
+<script type="module">
+  import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide.mjs";
+  import { installTorchRuntime } from "./vendor/torch-pyodide/runtime.mjs";
+
+  installTorchRuntime(globalThis);
+
+  const pyodide = await loadPyodide({
+    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.4/full/",
+  });
+
+  await pyodide.loadPackage("micropip");
+  await pyodide.runPythonAsync(`
+import micropip
+await micropip.install("torch-pyodide")
+`);
+
+  await pyodide.runPythonAsync(`
+import torch
+
+x = torch.tensor([1.0, 2.0, 3.0])
+print(torch.cuda.is_available())
+print(x.tolist())
+`);
+</script>
+```
+
+O arquivo `runtime.mjs` deve ser um bundle ESM do runtime deste repositório. Para gerar um bundle local:
+
+```powershell
+npm run build:runtime
+```
+
+Depois copie ou publique o bundle de runtime junto da sua aplicação. O playground do projeto usa a mesma sequência via `runtime/demo/shared.ts`: instala o runtime JS, instala o pacote Python e só então executa código com `import torch`.
+
+O navegador/dispositivo precisa disponibilizar WebGPU. Se não houver adapter WebGPU, operações como `torch.tensor(...)` falharão no runtime.
+
+### Instalação do pacote Python com micropip
 
 ```python
 import micropip

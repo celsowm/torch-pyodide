@@ -33,6 +33,7 @@
     { "id": "nn_nll_loss", "label": "NLL Loss + Cross Entropy", "file": "examples/nn_nll_loss.py" },
     { "id": "nn_embedding_language_model_smoke", "label": "nn Embedding + Linear LM smoke", "file": "examples/nn_embedding_language_model_smoke.py" },
     { "id": "nn_tiny_bigram_lm_training", "label": "nn Tiny Bigram LM training", "file": "examples/nn_tiny_bigram_lm_training.py" },
+    { "id": "nn_tiny_bigram_lm_deterministic", "label": "nn Tiny Bigram LM deterministic parity", "file": "examples/nn_tiny_bigram_lm_deterministic.py" },
     { "id": "nn_autoregressive_argmax_generation", "label": "nn Autoregressive argmax generation", "file": "examples/nn_autoregressive_argmax_generation.py" },
     { "id": "nn_adamw_token_classifier", "label": "nn AdamW token classifier", "file": "examples/nn_adamw_token_classifier.py" },
     { "id": "nn_batchnorm_training", "label": "BatchNorm Training vs Eval", "file": "examples/nn_batchnorm_training.py" },

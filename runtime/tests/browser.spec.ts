@@ -1,4 +1,7 @@
 import { expect, test, Page } from "@playwright/test";
+import { spawnSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 type ExampleMeta = {
   id: string;
@@ -9,6 +12,18 @@ type ExampleMeta = {
 type Catalog = {
   examples: ExampleMeta[];
 };
+
+type DeterministicParityOutput = {
+  loss_before: number;
+  loss_after: number;
+  generated_ids: number[];
+  generated_text: string;
+  last_logits: number[];
+};
+
+const testDir = path.dirname(fileURLToPath(import.meta.url));
+const runtimeRoot = path.resolve(testDir, "..");
+const repoRoot = path.resolve(runtimeRoot, "..");
 
 const ignoredConsoleFragments = [
   "Failed to load resource: the server responded with a status of 404",
@@ -22,6 +37,42 @@ const ignoredConsoleFragments = [
 
 function isIgnoredConsoleMessage(text: string): boolean {
   return ignoredConsoleFragments.some((fragment) => text.includes(fragment));
+}
+
+function parseJsonOutput<T>(output: string): T {
+  return JSON.parse(output.trim()) as T;
+}
+
+function runExampleWithRealTorch(exampleFile: string): { output?: DeterministicParityOutput; skipReason?: string } {
+  const python = process.env.PYTHON ?? "python";
+  const examplePath = path.join(runtimeRoot, "playground", "public", "examples", exampleFile);
+  const env = { ...process.env };
+  delete env.PYTHONPATH;
+  const result = spawnSync(python, [examplePath], {
+    cwd: repoRoot,
+    env,
+    encoding: "utf-8",
+    timeout: 120000,
+  });
+
+  const combinedError = `${result.stderr ?? ""}\n${result.stdout ?? ""}`;
+  if (result.error) {
+    if ((result.error as { code?: string }).code === "ENOENT") {
+      return { skipReason: `Python executable not found: ${python}` };
+    }
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    if (
+      combinedError.includes("ModuleNotFoundError: No module named 'torch'") ||
+      combinedError.includes("ImportError: No module named torch")
+    ) {
+      return { skipReason: "PyTorch real is not installed in the local Python environment." };
+    }
+    throw new Error(`Real PyTorch example failed with exit code ${result.status}:\n${combinedError}`);
+  }
+
+  return { output: parseJsonOutput<DeterministicParityOutput>(result.stdout) };
 }
 
 async function waitForPlaygroundReady(page: Page): Promise<void> {
@@ -183,6 +234,34 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(after).not.toBeNull();
     expect(Number(after?.[1])).toBeLessThan(Number(before?.[1]));
     expect(output).toMatch(/generated:\s*I(?:\s+(?:\.|AI|I|like|pytorch)){6}/);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("tiny bigram deterministic parity matches real PyTorch", async () => {
+    const reference = runExampleWithRealTorch("nn_tiny_bigram_lm_deterministic.py");
+    if (reference.skipReason) {
+      test.skip(true, reference.skipReason);
+    }
+    expect(reference.output).toBeDefined();
+
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_tiny_bigram_lm_deterministic");
+    await expect(page.locator("#example-select")).toHaveValue("nn_tiny_bigram_lm_deterministic");
+
+    const { output } = await runSelectedExample(page, "nn_tiny_bigram_lm_deterministic", 120000);
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+
+    const actual = parseJsonOutput<DeterministicParityOutput>(output);
+    const expected = reference.output!;
+
+    expect(actual.generated_ids).toEqual(expected.generated_ids);
+    expect(actual.generated_text).toBe(expected.generated_text);
+    expect(actual.loss_before).toBeCloseTo(expected.loss_before, 4);
+    expect(actual.loss_after).toBeCloseTo(expected.loss_after, 4);
+    expect(actual.last_logits).toHaveLength(expected.last_logits.length);
+    for (let i = 0; i < expected.last_logits.length; i += 1) {
+      expect(actual.last_logits[i]).toBeCloseTo(expected.last_logits[i]!, 4);
+    }
     expect(consoleFailures).toEqual([]);
   });
 
