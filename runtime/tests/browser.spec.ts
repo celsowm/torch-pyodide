@@ -169,6 +169,23 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(consoleFailures).toEqual([]);
   });
 
+  test("tiny bigram language model trains and generates finite text", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_tiny_bigram_lm_training");
+    await expect(page.locator("#example-select")).toHaveValue("nn_tiny_bigram_lm_training");
+
+    const { output } = await runSelectedExample(page, "nn_tiny_bigram_lm_training", 120000);
+
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+    const before = output.match(/loss before:\s*([0-9.]+)/);
+    const after = output.match(/loss after:\s*([0-9.]+)/);
+    expect(before).not.toBeNull();
+    expect(after).not.toBeNull();
+    expect(Number(after?.[1])).toBeLessThan(Number(before?.[1]));
+    expect(output).toMatch(/generated:\s*I(?:\s+(?:\.|AI|I|like|pytorch)){6}/);
+    expect(consoleFailures).toEqual([]);
+  });
+
   test("cross entropy backward prints gradient values", async () => {
     consoleFailures.length = 0;
     await page.locator("#example-select").selectOption("autograd_cross_entropy_grad_repr");

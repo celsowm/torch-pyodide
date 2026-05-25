@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Sequence
+import random as _random
 
 from ._runtime import _get_runtime
 from ._tensor import Tensor
@@ -53,6 +54,7 @@ def randn(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: 
 
 
 def manual_seed(seed: int) -> None:
+    _random.seed(int(seed))
     _get_runtime().setSeed(seed)
 
 
@@ -130,6 +132,52 @@ def randperm(n: int, dtype: str = "int64") -> Tensor:
     r = rand([n])
     _, indices = r.sort(dim=0)
     return indices.to(dtype)
+
+
+def _sample_multinomial_row(weights: Sequence[float], num_samples: int, replacement: bool) -> list[int]:
+    if num_samples < 0:
+        raise ValueError("num_samples must be non-negative")
+    if not replacement and num_samples > len(weights):
+        raise ValueError("cannot sample n_sample > prob_dist.size(-1) samples without replacement")
+
+    available = [(i, max(float(w), 0.0)) for i, w in enumerate(weights)]
+    result: list[int] = []
+    for _ in range(num_samples):
+        total = sum(weight for _, weight in available)
+        if total <= 0.0:
+            raise RuntimeError("invalid multinomial distribution (sum of probabilities <= 0)")
+        threshold = _random.random() * total
+        cumulative = 0.0
+        chosen_pos = len(available) - 1
+        for pos, (_, weight) in enumerate(available):
+            cumulative += weight
+            if threshold <= cumulative:
+                chosen_pos = pos
+                break
+        result.append(available[chosen_pos][0])
+        if not replacement:
+            available.pop(chosen_pos)
+    return result
+
+
+def multinomial(
+    input: Tensor,
+    num_samples: int,
+    replacement: bool = False,
+    *,
+    generator: object = None,
+) -> Tensor:
+    if generator is not None:
+        raise NotImplementedError("multinomial(generator=...) is not supported")
+    if len(input.shape) not in (1, 2):
+        raise RuntimeError("prob_dist must be 1 or 2 dim")
+
+    values = input.tolist()
+    if len(input.shape) == 1:
+        return tensor(_sample_multinomial_row(values, int(num_samples), replacement), dtype="int64")
+
+    rows = [_sample_multinomial_row(row, int(num_samples), replacement) for row in values]
+    return tensor(rows, dtype="int64")
 
 
 def linspace(start: float, end: float, steps: int, dtype: str = "float32") -> Tensor:

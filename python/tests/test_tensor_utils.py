@@ -1,5 +1,7 @@
 import pytest
 
+import torch
+from torch.grad_mode import is_grad_enabled
 from torch._tensor import Tensor
 from torch.tensor_ops import _js_meta_to_tuple
 from torch.tensor_shape_utils import _flatten, _infer_shape, _normalize_shape, _reshape_flat_values
@@ -22,6 +24,15 @@ def test_tensor_repr_prints_values_like_tensor(monkeypatch):
 
     assert repr(tensor) == "tensor([[-0.2144, 0.1753, 0.0391]])"
     assert str(tensor) == repr(tensor)
+
+
+def test_no_grad_can_be_used_as_decorator():
+    @torch.no_grad()
+    def decorated() -> bool:
+        return is_grad_enabled()
+
+    assert decorated() is False
+    assert is_grad_enabled() is True
 
 
 def test_infer_shape_rectangular():

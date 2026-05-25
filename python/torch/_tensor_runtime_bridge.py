@@ -72,9 +72,15 @@ def repeat_from_tensor(tensor: "Tensor", sizes: list[int]) -> "Tensor":
 
 
 def reshape_from_tensor(tensor: "Tensor", shape: int | list[int] | tuple[int, ...]) -> "Tensor":
+    from .autograd import _Node, is_grad_enabled, _grad_reshape
+
     normalized = _normalize_shape(shape)
     meta = _run_js_awaitable(_get_runtime().reshape(tensor._id, normalized))
-    return _mk_tensor(meta)
+    result = _mk_tensor(meta)
+    if is_grad_enabled() and tensor._requires_grad:
+        result._requires_grad = True
+        result._node = _Node(result, lambda g: (_grad_reshape(g, tensor, normalized),), [tensor])
+    return result
 
 
 def flatten_from_tensor(tensor: "Tensor", start_dim: int = 0, end_dim: int = -1) -> "Tensor":

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import wraps
+
 _grad_enabled = True
 
 
@@ -24,6 +26,14 @@ class no_grad:
     def __exit__(self, *args: object) -> None:
         global _grad_enabled
         _grad_enabled = self._prev
+
+    def __call__(self, func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            with type(self)():
+                return func(*args, **kwargs)
+
+        return wrapper
 
 
 class inference_mode:

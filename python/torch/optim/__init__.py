@@ -66,12 +66,15 @@ class Optimizer:
                     "Use `param.requires_grad = True` to enable gradients."
                 )
 
-    def zero_grad(self) -> None:
+    def zero_grad(self, set_to_none: bool = True) -> None:
         """Zera os gradientes de todos os parâmetros."""
         for group in self.param_groups:
             for p in group["params"]:
-                if p.grad is not None:
+                if set_to_none:
                     p.grad = None
+                elif p.grad is not None:
+                    import torch
+                    p.grad = torch.zeros_like(p.grad)
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         """Performs a single optimization step.
