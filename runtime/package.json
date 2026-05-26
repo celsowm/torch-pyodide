@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "build:distribution": "vite build --config vite.runtime.config.ts",
     "demo": "vite --host 127.0.0.1 --port 4173",
     "validate:shaders": "node scripts/validate-shaders.mjs",
     "validate:api": "node scripts/validate-runtime-api.mjs",

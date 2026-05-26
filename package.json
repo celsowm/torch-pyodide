@@ -8,8 +8,13 @@
   "scripts": {
     "sync:torchjs": "node scripts/sync_torchjs_assets.mjs",
     "sync:version": "node scripts/sync_torch_version.mjs",
+    "check:release:parity": "node scripts/check_release_parity.mjs",
     "setup:pyodide:dist": "node scripts/setup_pyodide_dist.mjs",
     "build:runtime": "npm run sync:version && npm --workspace runtime run build",
+    "build:runtime:distribution": "npm run sync:version && npm --workspace runtime run build:distribution",
+    "build:release:metadata": "npm run sync:version && node scripts/generate_release_metadata.mjs",
+    "verify:release:metadata": "node scripts/verify_release_metadata_integrity.mjs",
+    "smoke:manifest-client": "node scripts/smoke_manifest_client.mjs",
     "build:wheel": "npm run sync:version && cd python && python -m pip install --upgrade build && python -m build",
     "demo": "npm --workspace runtime run demo",
     "test:browser": "npm --workspace runtime run test",

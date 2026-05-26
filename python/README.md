@@ -22,6 +22,20 @@ y = x.matmul(w)
 print(y.shape)  # (3, 5)
 ```
 
+Important: in browser, the Python wheel alone is not enough.  
+Load and install the JavaScript runtime (`runtime.mjs`) first, then import `torch`.
+
+Official manifest channel:
+
+- `https://celsowm.github.io/torch-pyodide/latest.json`
+
+The manifest provides:
+
+- `runtimeUrl`
+- `wheelUrl`
+- `runtimeSha256`
+- `wheelSha256`
+
 ### Locally (with Python + Node.js)
 
 ```bash

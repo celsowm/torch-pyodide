@@ -34,6 +34,9 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Check wheel/runtime version parity
+        run: npm run check:release:parity
+
       - name: Setup Pyodide dist
         run: npm run setup:pyodide:dist
 
@@ -41,6 +44,40 @@ jobs:
         env:
           VITE_BASE_PATH: /torch-pyodide/
         run: npm run build:runtime
+
+      - name: Build distribution runtime
+        run: npm run build:runtime:distribution
+
+      - name: Generate release metadata (runtime + manifests + hashes)
+        env:
+          RELEASE_PAGES_BASE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          RELEASE_PRESERVE_PRIOR_VERSIONS: "1"
+          PYPI_MAX_ATTEMPTS: "40"
+          PYPI_RETRY_DELAY_MS: "15000"
+        run: npm run build:release:metadata
+
+      - name: Verify release metadata integrity
+        env:
+          RELEASE_MANIFEST_PATH: runtime/dist-channel/latest.json
+        run: >-
+          VERSION=$(node -e "const fs=require('node:fs');const m=fs.readFileSync('python/pyproject.toml','utf8').match(/^\\s*version\\s*=\\s*\"([^\"]+)\"/m);if(!m){process.exit(1)}process.stdout.write(m[1]);")
+          && RELEASE_RUNTIME_LOCAL_PATH="runtime/dist-channel/runtime/$VERSION/runtime.mjs"
+          npm run verify:release:metadata
+
+      - name: Merge distribution artifacts into Pages bundle
+        run: cp -r runtime/dist-channel/. runtime/dist/
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke test manifest-based client flow
+        run: |
+          python3 -m http.server 4180 --directory runtime/dist >/tmp/pages-smoke-http.log 2>&1 &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID" EXIT
+          MANIFEST_BASE_URL=http://127.0.0.1:4180 \
+          MANIFEST_FORCE_RUNTIME_BASE_URL=http://127.0.0.1:4180 \
+          npm run smoke:manifest-client
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

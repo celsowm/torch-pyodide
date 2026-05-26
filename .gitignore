@@ -10,4 +10,6 @@ playwright-report/
 test-results/
 runtime/.vite/
 runtime/public/pyodide/
+runtime/dist-channel/
+runtime/dist-distribution/
 external/upstream/

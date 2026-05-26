@@ -8,7 +8,8 @@ import { dirname, resolve } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const pyprojectPath = resolve(root, "python/pyproject.toml");
-const versionPath = resolve(root, "python/torch/_version.py");
+const pythonVersionPath = resolve(root, "python/torch/_version.py");
+const runtimeVersionPath = resolve(root, "runtime/src/version.ts");
 
 const pyproject = readFileSync(pyprojectPath, "utf8");
 const match = pyproject.match(/^\s*version\s*=\s*"([^"]+)"/m);
@@ -18,10 +19,17 @@ if (!match) {
 }
 const version = match[1];
 
-const content =
+const pythonContent =
   "# Auto-generated from python/pyproject.toml by scripts/sync_torch_version.mjs.\n" +
   "# Do not edit manually.\n" +
   `__version__ = "${version}"\n`;
 
-writeFileSync(versionPath, content);
-console.log(`[sync_torch_version] wrote ${versionPath} -> __version__ = "${version}"`);
+const runtimeContent =
+  "// Auto-generated from python/pyproject.toml by scripts/sync_torch_version.mjs.\n" +
+  "// Do not edit manually.\n" +
+  `export const TORCH_PYODIDE_VERSION = "${version}" as const;\n`;
+
+writeFileSync(pythonVersionPath, pythonContent);
+writeFileSync(runtimeVersionPath, runtimeContent);
+console.log(`[sync_torch_version] wrote ${pythonVersionPath} -> __version__ = "${version}"`);
+console.log(`[sync_torch_version] wrote ${runtimeVersionPath} -> TORCH_PYODIDE_VERSION = "${version}"`);

@@ -36,11 +36,17 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Check wheel/runtime version parity
+        run: npm run check:release:parity
+
       - name: Setup Pyodide dist
         run: npm run setup:pyodide:dist
 
       - name: Build runtime
         run: npm run build:runtime
+
+      - name: Build distribution runtime
+        run: npm run build:runtime:distribution
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -56,6 +62,9 @@ jobs:
 
       - name: Sync torch._version from pyproject.toml
         run: node scripts/sync_torch_version.mjs
+
+      - name: Check wheel/runtime/tag parity
+        run: npm run check:release:parity
 
       - name: Build dist
         run: >-
@@ -90,7 +99,25 @@ jobs:
         with:
           packages-dir: python/dist/
 
+      - name: Generate release metadata (runtime + manifests + hashes)
+        env:
+          RELEASE_PAGES_BASE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          PYPI_MAX_ATTEMPTS: "40"
+          PYPI_RETRY_DELAY_MS: "15000"
+        run: npm run build:release:metadata
+
+      - name: Verify release metadata integrity
+        env:
+          RELEASE_MANIFEST_PATH: runtime/dist-channel/latest.json
+        run: >-
+          VERSION=${GITHUB_REF_NAME#v}
+          && RELEASE_RUNTIME_LOCAL_PATH="runtime/dist-channel/runtime/$VERSION/runtime.mjs"
+          npm run verify:release:metadata
+
       - name: Upload wheel to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: python/dist/*.whl
+          files: |
+            python/dist/*.whl
+            runtime/dist-channel/release-assets/runtime.mjs
+            runtime/dist-channel/release-assets/manifest.json
