@@ -41,6 +41,10 @@ class Tensor:
         return self._dtype
 
     @property
+    def device(self) -> str:
+        return "cpu"
+
+    @property
     def ndim(self) -> int:
         return len(self._shape)
 

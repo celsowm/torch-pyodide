@@ -35,11 +35,21 @@ def _normalize_factory_shape_args(size: tuple[object, ...], dtype: str) -> tuple
     return _normalize_shape_from_args(size), dtype
 
 
-def tensor(data: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+def _normalize_device(device: object = None) -> None:
+    if device is None:
+        return
+    if str(device).lower() == "cpu":
+        return
+    raise RuntimeError(f"Only CPU device is supported, received: {device!r}.")
+
+
+def tensor(data: object, dtype: str = "float32", requires_grad: bool = False, device: object = None) -> Tensor:
+    _normalize_device(device)
     return tensor_from_data(data, dtype=dtype, requires_grad=requires_grad)
 
 
-def zeros(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+def zeros(*size: object, dtype: str = "float32", device: object = None, requires_grad: bool = False) -> Tensor:
+    _normalize_device(device)
     normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
     result = zeros_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
@@ -47,7 +57,8 @@ def zeros(*size: object, dtype: str = "float32", requires_grad: bool = False) ->
     return result
 
 
-def ones(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+def ones(*size: object, dtype: str = "float32", device: object = None, requires_grad: bool = False) -> Tensor:
+    _normalize_device(device)
     normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
     result = ones_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
@@ -55,7 +66,8 @@ def ones(*size: object, dtype: str = "float32", requires_grad: bool = False) -> 
     return result
 
 
-def rand(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+def rand(*size: object, dtype: str = "float32", device: object = None, requires_grad: bool = False) -> Tensor:
+    _normalize_device(device)
     normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
     result = rand_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
@@ -63,7 +75,8 @@ def rand(*size: object, dtype: str = "float32", requires_grad: bool = False) -> 
     return result
 
 
-def randn(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+def randn(*size: object, dtype: str = "float32", device: object = None, requires_grad: bool = False) -> Tensor:
+    _normalize_device(device)
     normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
     result = randn_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
@@ -89,30 +102,44 @@ def arange(
     end: float | None = None,
     step: float = 1.0,
     dtype: str = "float32",
+    device: object = None,
 ) -> Tensor:
+    _normalize_device(device)
     return arange_from_values(start=start, end=end, step=step, dtype=dtype)
 
 
-def full(size: int | Sequence[int], fill_value: float, dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
+def full(
+    size: int | Sequence[int],
+    fill_value: float,
+    dtype: str = "float32",
+    *,
+    device: object = None,
+    requires_grad: bool = False,
+) -> Tensor:
+    _normalize_device(device)
     result = full_from_shape(shape=size, fill_value=fill_value, dtype=dtype)
     if requires_grad:
         result.requires_grad_()
     return result
 
 
-def full_like(input: Tensor, fill_value: float, dtype: str | None = None) -> Tensor:
+def full_like(input: Tensor, fill_value: float, dtype: str | None = None, device: object = None) -> Tensor:
+    _normalize_device(device)
     return full_like_from_tensor(input, fill_value=fill_value, dtype=dtype)
 
 
-def zeros_like(input: Tensor, dtype: str | None = None) -> Tensor:
+def zeros_like(input: Tensor, dtype: str | None = None, device: object = None) -> Tensor:
+    _normalize_device(device)
     return zeros_like_from_tensor(input, dtype=dtype)
 
 
-def ones_like(input: Tensor, dtype: str | None = None) -> Tensor:
+def ones_like(input: Tensor, dtype: str | None = None, device: object = None) -> Tensor:
+    _normalize_device(device)
     return ones_like_from_tensor(input, dtype=dtype)
 
 
-def empty(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+def empty(*size: object, dtype: str = "float32", device: object = None, requires_grad: bool = False) -> Tensor:
+    _normalize_device(device)
     normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
     result = empty_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
@@ -120,11 +147,13 @@ def empty(*size: object, dtype: str = "float32", requires_grad: bool = False) ->
     return result
 
 
-def empty_like(input: Tensor, dtype: str | None = None) -> Tensor:
+def empty_like(input: Tensor, dtype: str | None = None, device: object = None) -> Tensor:
+    _normalize_device(device)
     return empty_like_from_tensor(input, dtype=dtype)
 
 
-def eye(n: int, m: int | None = None, dtype: str = "float32") -> Tensor:
+def eye(n: int, m: int | None = None, dtype: str = "float32", device: object = None) -> Tensor:
+    _normalize_device(device)
     rows = n
     cols = m if m is not None else n
     result = zeros([rows, cols], dtype=dtype)
@@ -134,7 +163,14 @@ def eye(n: int, m: int | None = None, dtype: str = "float32") -> Tensor:
     return result
 
 
-def randint(low: int, high: int | None = None, size: int | Sequence[int] | None = None, dtype: str = "int64") -> Tensor:
+def randint(
+    low: int,
+    high: int | None = None,
+    size: int | Sequence[int] | None = None,
+    dtype: str = "int64",
+    device: object = None,
+) -> Tensor:
+    _normalize_device(device)
     if high is None:
         low, high = 0, low
     if size is None:
@@ -147,7 +183,8 @@ def randint(low: int, high: int | None = None, size: int | Sequence[int] | None 
     return scaled.to(dtype)
 
 
-def randperm(n: int, dtype: str = "int64") -> Tensor:
+def randperm(n: int, dtype: str = "int64", device: object = None) -> Tensor:
+    _normalize_device(device)
     r = rand([n])
     _, indices = r.sort(dim=0)
     return indices.to(dtype)
@@ -199,12 +236,14 @@ def multinomial(
     return tensor(rows, dtype="int64")
 
 
-def linspace(start: float, end: float, steps: int, dtype: str = "float32") -> Tensor:
+def linspace(start: float, end: float, steps: int, dtype: str = "float32", device: object = None) -> Tensor:
+    _normalize_device(device)
     if steps < 2:
         return full([steps], start, dtype=dtype)
     step = (end - start) / (steps - 1)
     return arange(start=start, end=end + step * 0.5, step=step, dtype=dtype)
 
 
-def logspace(start: float, end: float, steps: int, dtype: str = "float32") -> Tensor:
+def logspace(start: float, end: float, steps: int, dtype: str = "float32", device: object = None) -> Tensor:
+    _normalize_device(device)
     return linspace(start, end, steps, dtype=dtype).pow(10.0)
