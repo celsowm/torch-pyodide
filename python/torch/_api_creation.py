@@ -5,6 +5,7 @@ import random as _random
 
 from ._runtime import _get_runtime
 from ._tensor import Tensor
+from .tensor_shape_utils import _normalize_shape_from_args
 from .tensor_factories_ops import (
     arange_from_values,
     empty_from_shape,
@@ -21,33 +22,50 @@ from .tensor_factories_ops import (
 )
 
 
+def _normalize_factory_shape_args(size: tuple[object, ...], dtype: str) -> tuple[list[int], str]:
+    if not size:
+        raise TypeError("missing required size argument")
+    if isinstance(size[-1], str):
+        if dtype != "float32":
+            raise TypeError("dtype specified both positionally and by keyword")
+        dtype = size[-1]
+        size = size[:-1]
+        if not size:
+            raise TypeError("missing required size argument")
+    return _normalize_shape_from_args(size), dtype
+
+
 def tensor(data: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
     return tensor_from_data(data, dtype=dtype, requires_grad=requires_grad)
 
 
-def zeros(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = zeros_from_shape(shape, dtype=dtype)
+def zeros(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+    normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
+    result = zeros_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
         result.requires_grad_()
     return result
 
 
-def ones(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = ones_from_shape(shape, dtype=dtype)
+def ones(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+    normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
+    result = ones_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
         result.requires_grad_()
     return result
 
 
-def rand(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = rand_from_shape(shape, dtype=dtype)
+def rand(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+    normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
+    result = rand_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
         result.requires_grad_()
     return result
 
 
-def randn(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = randn_from_shape(shape, dtype=dtype)
+def randn(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+    normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
+    result = randn_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
         result.requires_grad_()
     return result
@@ -75,8 +93,8 @@ def arange(
     return arange_from_values(start=start, end=end, step=step, dtype=dtype)
 
 
-def full(shape: int | Sequence[int], fill_value: float, dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = full_from_shape(shape=shape, fill_value=fill_value, dtype=dtype)
+def full(size: int | Sequence[int], fill_value: float, dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
+    result = full_from_shape(shape=size, fill_value=fill_value, dtype=dtype)
     if requires_grad:
         result.requires_grad_()
     return result
@@ -94,8 +112,9 @@ def ones_like(input: Tensor, dtype: str | None = None) -> Tensor:
     return ones_like_from_tensor(input, dtype=dtype)
 
 
-def empty(shape: int | Sequence[int], dtype: str = "float32", *, requires_grad: bool = False) -> Tensor:
-    result = empty_from_shape(shape, dtype=dtype)
+def empty(*size: object, dtype: str = "float32", requires_grad: bool = False) -> Tensor:
+    normalized_shape, dtype = _normalize_factory_shape_args(size, dtype)
+    result = empty_from_shape(normalized_shape, dtype=dtype)
     if requires_grad:
         result.requires_grad_()
     return result
