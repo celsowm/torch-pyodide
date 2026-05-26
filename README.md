@@ -1,15 +1,15 @@
 # torch-pyodide (MVP)
 
-Projeto MVP de um módulo `torch` em Python rodando no Pyodide com backend WebGPU.
+MVP project for a Python `torch` module running on Pyodide with a WebGPU backend.
 
-## Estrutura
+## Structure
 
-- `python/`: pacote Python `torch` (API síncrona usando `pyodide.ffi.run_sync`).
-- `runtime/`: bridge JS/WebGPU + demo + testes browser.
-- `external/pyodide`: submódulo Git do repositório Pyodide.
-- `scripts/`: sync de assets, setup de dist e build completo opcional.
+- `python/`: Python `torch` package (sync API using `pyodide.ffi.run_sync`).
+- `runtime/`: JS/WebGPU bridge + demo + browser tests.
+- `external/pyodide`: Git submodule of the Pyodide repository.
+- `scripts/`: asset sync, dist setup, and optional full build scripts.
 
-## Requisitos
+## Requirements
 
 - Node 24+
 - npm 11+
@@ -17,57 +17,57 @@ Projeto MVP de um módulo `torch` em Python rodando no Pyodide com backend WebGP
 
 ## Setup
 
-1. Instalar dependências JS:
+1. Install JS dependencies:
 
 ```powershell
 npm install
 ```
 
-2. Sincronizar shaders/helpers do projeto base:
+2. Sync shaders/helpers from the base project:
 
 ```powershell
 npm run sync:torchjs
 ```
 
-3. Baixar artefatos do runtime Pyodide para `external/pyodide/dist` e `runtime/public/pyodide`:
+3. Download Pyodide runtime artifacts to `external/pyodide/dist` and `runtime/public/pyodide`:
 
 ```powershell
 npm run setup:pyodide:dist
 ```
 
-## Executar demo
+## Run demo
 
 ```powershell
 npm run demo
 ```
 
-Abra `http://127.0.0.1:4173/demo/index.html`.
+Open `http://127.0.0.1:4173/demo/index.html`.
 
-## Testes browser
+## Browser tests
 
 ```powershell
 npm run test:browser
 ```
 
-## Testes browser com GPU visível (local)
+## Browser tests with visible GPU (local)
 
 ```powershell
 npm run test:browser:gpu
 ```
 
-## Testes Python (utilitários locais)
+## Python tests (local utilities)
 
 ```powershell
 npm run test:python
 ```
 
-## Compatibilidade com PyTorch (percentual)
+## PyTorch compatibility report (percentage)
 
 ```powershell
 npm run compat:report
 ```
 
-Saídas:
+Outputs:
 - `python/compatibility/report.json`
 - `python/compatibility/report.md`
 
@@ -77,56 +77,56 @@ Saídas:
 npm run build:runtime
 ```
 
-## Build runtime de distribuição (`runtime.mjs`)
+## Build distribution runtime (`runtime.mjs`)
 
 ```powershell
 npm run build:runtime:distribution
 ```
 
-## Build wheel local
+## Build wheel locally
 
 ```powershell
 npm run build:wheel
 ```
 
-Wheel gerado em `python/dist/`.
+Wheel is generated in `python/dist/`.
 
-## Publicação automática (PyPI + runtime + manifests)
+## Automated publishing (PyPI + runtime + manifests)
 
-- CI (`.github/workflows/ci.yml`) valida paridade de versão wheel/runtime e gera wheel em push/PR.
-- Pages (`.github/workflows/deploy-pages.yml`) publica:
-  - `latest.json` estável;
-  - `manifests/<versao>.json`;
-  - `runtime/<versao>/runtime.mjs`.
-- Release Python (`.github/workflows/publish-python.yml`) publica no PyPI em tag `v*` e anexa `wheel`, `runtime.mjs` e `manifest.json` no GitHub Release.
+- CI (`.github/workflows/ci.yml`) validates wheel/runtime version parity and builds wheel on every push/PR.
+- Pages (`.github/workflows/deploy-pages.yml`) publishes:
+  - stable `latest.json`;
+  - `manifests/<version>.json`;
+  - `runtime/<version>/runtime.mjs`.
+- Python release (`.github/workflows/publish-python.yml`) publishes to PyPI on `v*` tags and attaches `wheel`, `runtime.mjs`, and `manifest.json` to GitHub Release.
 
-Endpoint estável do canal:
+Stable channel endpoint:
 
 - `https://celsowm.github.io/torch-pyodide/latest.json`
-- `https://celsowm.github.io/torch-pyodide/manifests/<versao>.json`
+- `https://celsowm.github.io/torch-pyodide/manifests/<version>.json`
 
-### Instalação com pip
+## Install with pip
 
 ```bash
 pip install torch-pyodide
 ```
 
-### Uso no navegador com Pyodide + WebGPU
+## Browser usage with Pyodide + WebGPU
 
-`torch-pyodide` tem duas partes:
+`torch-pyodide` has two parts:
 
-- pacote Python (`wheel`), instalado no Pyodide com `micropip`;
-- runtime JavaScript/WebGPU (`runtime.mjs`), que precisa ser carregado antes de `import torch`.
+- Python package (wheel), installed in Pyodide with `micropip`;
+- JavaScript/WebGPU runtime (`runtime.mjs`), which must be loaded before `import torch`.
 
-O cliente **não precisa hardcodar versão/URL**. Fluxo recomendado:
+Clients do not need to hardcode version or URLs. Recommended flow:
 
-1. buscar `latest.json`;
-2. baixar `runtimeUrl` + `wheelUrl` do mesmo manifest;
-3. validar `runtimeSha256` + `wheelSha256`;
-4. instalar runtime e wheel;
-5. opcionalmente remover wheels antigos do seu cache local (manter só 1 versão).
+1. fetch `latest.json`;
+2. download `runtimeUrl` + `wheelUrl` from the same manifest;
+3. validate `runtimeSha256` + `wheelSha256`;
+4. install runtime and wheel;
+5. optionally remove old wheels from local cache (keep one version).
 
-Exemplo mínimo:
+Minimal example:
 
 ```html
 <script type="module">
@@ -157,9 +157,9 @@ print(x.tolist())
 </script>
 ```
 
-O navegador/dispositivo precisa disponibilizar WebGPU. Se não houver adapter WebGPU, operações como `torch.tensor(...)` falharão no runtime.
+Your browser/device must expose WebGPU. If no WebGPU adapter is available, operations such as `torch.tensor(...)` will fail in the runtime.
 
-Schema do manifest:
+Manifest schema:
 
 - `torchVersion`
 - `runtimeUrl`
@@ -167,7 +167,7 @@ Schema do manifest:
 - `runtimeSha256`
 - `wheelSha256`
 
-## Build completo do Pyodide (opcional)
+## Full Pyodide build (optional)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/build_pyodide_full.ps1
