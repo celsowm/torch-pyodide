@@ -12,11 +12,13 @@ from torch._tensor import softmax_from_tensor, log_softmax_from_tensor
 class Module:
     _parameters: dict[str, Tensor]
     _modules: dict[str, Module]
+    _buffers: dict[str, Tensor]
     training: bool
 
     def __init__(self) -> None:
         self._parameters = {}
         self._modules = {}
+        self._buffers = {}
         self.training = True
 
     def register_parameter(self, name: str, param: Tensor | None) -> Tensor | None:
@@ -29,11 +31,150 @@ class Module:
     def register_module(self, name: str, module: Module) -> None:
         self._modules[name] = module
 
+    def register_buffer(self, name: str, tensor: Tensor | None, persistent: bool = True) -> Tensor | None:
+        """Register a buffer (non-parameter persistent state)."""
+        if tensor is not None:
+            self._buffers[name] = tensor
+        return tensor
+
     def parameters(self) -> list[Tensor]:
         params = list(self._parameters.values())
         for m in self._modules.values():
             params.extend(m.parameters())
         return params
+
+    def named_parameters(self, prefix: str = "", recurse: bool = True) -> list[tuple[str, Tensor]]:
+        """Yield (qualified_name, parameter) pairs, recursing into submodules."""
+        out: list[tuple[str, Tensor]] = []
+        for name, p in self._parameters.items():
+            full = f"{prefix}{name}" if not prefix else f"{prefix}.{name}"
+            out.append((full, p))
+        if recurse:
+            for mod_name, m in self._modules.items():
+                sub_prefix = f"{prefix}{mod_name}" if not prefix else f"{prefix}.{mod_name}"
+                out.extend(m.named_parameters(prefix=sub_prefix, recurse=True))
+        return out
+
+    def named_modules(self, prefix: str = "", recurse: bool = True) -> list[tuple[str, "Module"]]:
+        """Yield (qualified_name, module) pairs, including self with empty prefix."""
+        out: list[tuple[str, Module]] = []
+        out.append((prefix, self))
+        if recurse:
+            for name, m in self._modules.items():
+                sub_prefix = name if not prefix else f"{prefix}.{name}"
+                out.extend(m.named_modules(prefix=sub_prefix, recurse=True))
+        return out
+
+    def buffers(self, recurse: bool = True) -> list[Tensor]:
+        out = list(self._buffers.values())
+        if recurse:
+            for m in self._modules.values():
+                out.extend(m.buffers(recurse=True))
+        return out
+
+    def named_buffers(self, prefix: str = "", recurse: bool = True) -> list[tuple[str, Tensor]]:
+        out: list[tuple[str, Tensor]] = []
+        for name, b in self._buffers.items():
+            full = f"{prefix}{name}" if not prefix else f"{prefix}.{name}"
+            out.append((full, b))
+        if recurse:
+            for mod_name, m in self._modules.items():
+                sub_prefix = f"{prefix}{mod_name}" if not prefix else f"{prefix}.{mod_name}"
+                out.extend(m.named_buffers(prefix=sub_prefix, recurse=True))
+        return out
+
+    def state_dict(self, destination=None, prefix: str = "", keep_vars: bool = False) -> dict[str, object]:
+        """Return a serializable state dictionary of parameters and buffers.
+
+        Each entry is {shape: list[int], data: list[float], dtype: str}.
+        Compatible with load_state_dict (round-trip).
+        """
+        out: dict[str, object] = {} if destination is None else destination
+        for name, p in self._parameters.items():
+            full = f"{prefix}{name}" if not prefix else f"{prefix}.{name}"
+            if keep_vars:
+                out[full] = p
+            else:
+                out[full] = _serialize_tensor(p)
+        for name, b in self._buffers.items():
+            full = f"{prefix}{name}" if not prefix else f"{prefix}.{name}"
+            if keep_vars:
+                out[full] = b
+            else:
+                out[full] = _serialize_tensor(b)
+        for mod_name, m in self._modules.items():
+            sub_prefix = mod_name if not prefix else f"{prefix}.{mod_name}"
+            m.state_dict(destination=out, prefix=sub_prefix, keep_vars=keep_vars)
+        return out
+
+    def load_state_dict(self, state_dict: dict[str, object], strict: bool = True) -> object:
+        """Load a state_dict previously produced by self.state_dict().
+
+        Returns an _IncompatibleKeys-like object with .missing_keys and
+        .unexpected_keys (always empty for strict=False; for strict=True
+        raises on mismatch).
+        """
+        missing: list[str] = []
+        unexpected: list[str] = []
+        # Build a flat name -> Module map for quick lookup
+        named_params = dict(self.named_parameters())
+        named_buffers = dict(self.named_buffers())
+        all_known = set(named_params) | set(named_buffers)
+        seen: set[str] = set()
+        for key, value in state_dict.items():
+            if key in named_params:
+                _load_into_tensor(named_params[key], value)
+                seen.add(key)
+            elif key in named_buffers:
+                _load_into_tensor(named_buffers[key], value)
+                seen.add(key)
+            else:
+                unexpected.append(key)
+        for key in all_known:
+            if key not in seen:
+                missing.append(key)
+        if strict and (missing or unexpected):
+            raise RuntimeError(
+                f"Error(s) in loading state_dict for {type(self).__name__}: "
+                f"missing keys: {missing}; unexpected keys: {unexpected}"
+            )
+        return _IncompatibleKeys(missing, unexpected)
+
+    def apply(self, fn: "Callable[[Module], Module]") -> "Module":
+        """Apply fn to each submodule (including self) — children-first, then self.
+        Matches PyTorch's depth-first pre-order traversal semantics.
+        """
+        for _, child in self._modules.items():
+            child.apply(fn)
+        fn(self)
+        return self
+
+    def to(self, device=None, dtype=None, non_blocking: bool = False) -> "Module":
+        """Move/cast all parameters and buffers. Only CPU and float32 are supported."""
+        # We are CPU-only; only honor dtype for the float32 case.
+        if dtype is not None and str(dtype) != "float32":
+            raise NotImplementedError(
+                f"dtype {dtype!r} is not supported by this runtime "
+                f"(only float32 / torch.float32 is available)."
+            )
+        if device is not None and str(device) != "cpu":
+            raise RuntimeError(f"Only CPU device is supported, got: {device!r}")
+        return self
+
+    def cpu(self) -> "Module":
+        return self.to("cpu")
+
+    def cuda(self, device: int | None = None) -> "Module":
+        # Stub: no GPU device API for now; return self.
+        return self
+
+    def double(self) -> "Module":
+        raise NotImplementedError(
+            "float64 is not supported by this runtime; only float32 is available."
+        )
+
+    def float(self) -> "Module":
+        return self.to(dtype="float32")
 
     def train(self, mode: bool = True) -> Module:
         self.training = mode
@@ -44,6 +185,19 @@ class Module:
     def eval(self) -> Module:
         return self.train(False)
 
+    def requires_grad_(self, requires_grad: bool = True) -> Module:
+        for p in self.parameters():
+            p.requires_grad_(requires_grad)
+        return self
+
+    def zero_grad(self, set_to_none: bool = True) -> None:
+        for p in self.parameters():
+            if set_to_none:
+                p.grad = None
+            elif p.grad is not None:
+                import torch
+                p.grad = torch.zeros_like(p.grad)
+
     def __call__(self, *args: object, **kwargs: object) -> Tensor:
         return self.forward(*args, **kwargs)  # type: ignore
 
@@ -52,10 +206,72 @@ class Module:
 
     def __setattr__(self, name: str, value: object) -> None:
         if isinstance(value, Tensor):
-            value = self.register_parameter(name, value)
+            # If this tensor is already a registered buffer, don't re-register
+            # it as a parameter; just rebind the attribute to the same object.
+            if name in self._buffers:
+                self._buffers[name] = value
+            else:
+                value = self.register_parameter(name, value)
         elif isinstance(value, Module):
             self.register_module(name, value)
         super().__setattr__(name, value)
+
+
+# ── Serialization helpers ──────────────────────────────────────────
+
+class _IncompatibleKeys:
+    def __init__(self, missing: list[str], unexpected: list[str]) -> None:
+        self.missing_keys = missing
+        self.unexpected_keys = unexpected
+
+    def __repr__(self) -> str:
+        return f"_IncompatibleKeys(missing_keys={self.missing_keys}, unexpected_keys={self.unexpected_keys})"
+
+
+def _serialize_tensor(t: Tensor) -> dict[str, object]:
+    """Snapshot a tensor into a JSON-serializable dict."""
+    return {
+        "shape": list(t.shape),
+        "data": t.tolist(),
+        "dtype": t.dtype,
+    }
+
+
+def _load_into_tensor(target: Tensor, value: object) -> None:
+    """Replace a tensor's storage with serialized data (shape + flat values).
+
+    Accepts both the torch-pyodide native state_dict format
+    ({shape, data, dtype} dicts) and real-PyTorch format
+    (raw Tensors, e.g. returned by `torch.load`).
+    """
+    from torch import Tensor as _Tensor
+
+    if isinstance(value, _Tensor):
+        # Real-PyTorch format: a live Tensor. Copy its data into target.
+        flat = value.tolist()
+        if not isinstance(flat, list):
+            flat = [flat]
+        target_shape = list(value.shape)
+        target_dtype = str(value.dtype).replace("torch.", "")
+        import torch
+        new_t = torch.tensor(flat, dtype=target_dtype)
+        if list(new_t.shape) != target_shape:
+            new_t = new_t.reshape(target_shape)
+        target._set(new_t)
+        return
+    if not isinstance(value, dict) or "shape" not in value or "data" not in value:
+        raise RuntimeError(f"Cannot load state value into tensor: {value!r}")
+    target_shape = list(value["shape"])
+    target_data = value["data"]
+    if not isinstance(target_data, list):
+        raise RuntimeError("State tensor data must be a list")
+    target_dtype = value.get("dtype", target.dtype)
+    import torch
+    new_t = torch.tensor(target_data, dtype=target_dtype)
+    # Reshape to the recorded shape
+    if list(new_t.shape) != target_shape:
+        new_t = new_t.reshape(target_shape)
+    target._set(new_t)
 
 
 # ── Containers ────────────────────────────────────────────────────
@@ -334,8 +550,14 @@ class _BatchNorm(Module):
         self.momentum = momentum
         self.weight = torch.ones((num_features,))
         self.bias = torch.zeros((num_features,))
-        self.running_mean = torch.zeros((num_features,))
-        self.running_var = torch.ones((num_features,))
+        # running stats are buffers (not parameters)
+        self.register_buffer("running_mean", torch.zeros((num_features,)))
+        self.register_buffer("running_var", torch.ones((num_features,)))
+        # Re-attach as attributes for downstream functional calls (the
+        # __setattr__ short-circuited to register_parameter when we used
+        # `self.running_mean = ...` directly).
+        self.running_mean = self._buffers["running_mean"]
+        self.running_var = self._buffers["running_var"]
 
     def forward(self, x: Tensor) -> Tensor:
         from .functional import batch_norm

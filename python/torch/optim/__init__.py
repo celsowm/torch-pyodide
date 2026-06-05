@@ -484,3 +484,356 @@ class RMSprop(Optimizer):
                         p._set(new_p)
         _end_runtime_frame(runtime, frame_started, run_js)
         return loss
+
+
+class Adagrad(Optimizer):
+    """Adagrad optimizer."""
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 0.01,
+        lr_decay: float = 0.0,
+        weight_decay: float = 0.0,
+        initial_accumulator_value: float = 0.0,
+        eps: float = 1e-10,
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if lr_decay < 0.0:
+            raise ValueError(f"Invalid lr_decay value: {lr_decay}")
+        if weight_decay < 0.0:
+            raise ValueError(f"Invalid weight_decay value: {weight_decay}")
+        if eps < 0.0:
+            raise ValueError(f"Invalid epsilon value: {eps}")
+        defaults = {
+            "lr": lr,
+            "lr_decay": lr_decay,
+            "weight_decay": weight_decay,
+            "initial_accumulator_value": initial_accumulator_value,
+            "eps": eps,
+        }
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                lr_decay = float(group["lr_decay"])
+                weight_decay = float(group["weight_decay"])
+                init_accum = float(group["initial_accumulator_value"])
+                eps = float(group["eps"])
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if id(p) not in self.state:
+                        import torch
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "sum": torch.full_like(p, init_accum),
+                        }
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    sum_sq = state["sum"]
+                    step = state["step"]
+                    clr = lr / (1.0 + (step - 1) * lr_decay)
+                    try:
+                        run_js(runtime.adagradStep(
+                            p._id,
+                            grad._id,
+                            sum_sq._id,
+                            float(clr),
+                            float(eps),
+                            float(weight_decay),
+                        ))
+                    except Exception:
+                        if weight_decay != 0:
+                            grad = grad.add(p.mul(weight_decay))
+                        sum_sq = sum_sq.add(grad.mul(grad))
+                        state["sum"] = sum_sq
+                        std_ = sum_sq.sqrt().add(eps)
+                        new_p = p.sub(grad.div(std_).mul(clr))
+                        p._set(new_p)
+        _end_runtime_frame(runtime, frame_started, run_js)
+        return loss
+
+
+class Adamax(Optimizer):
+    """Adamax optimizer (L-infinity variant of Adam)."""
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 0.002,
+        betas: tuple[float, float] = (0.9, 0.999),
+        eps: float = 1e-8,
+        weight_decay: float = 0.0,
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if not (0.0 <= betas[0] < 1.0):
+            raise ValueError(f"Invalid beta1 value: {betas[0]}")
+        if not (0.0 <= betas[1] < 1.0):
+            raise ValueError(f"Invalid beta2 value: {betas[1]}")
+        if eps < 0.0:
+            raise ValueError(f"Invalid epsilon value: {eps}")
+        defaults = {
+            "lr": lr,
+            "betas": betas,
+            "eps": eps,
+            "weight_decay": weight_decay,
+        }
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                beta1, beta2 = group["betas"]
+                eps = float(group["eps"])
+                weight_decay = float(group["weight_decay"])
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if id(p) not in self.state:
+                        import torch
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "exp_avg": torch.zeros_like(p),
+                            "exp_inf": torch.zeros_like(p),
+                        }
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    exp_avg = state["exp_avg"]
+                    exp_inf = state["exp_inf"]
+                    step = state["step"]
+                    bias_correction1 = 1.0 - beta1 ** step
+                    step_size = lr / bias_correction1
+                    try:
+                        run_js(runtime.adamaxStep(
+                            p._id,
+                            grad._id,
+                            exp_avg._id,
+                            exp_inf._id,
+                            float(lr),
+                            float(beta1),
+                            float(beta2),
+                            float(eps),
+                            float(weight_decay),
+                            float(step_size),
+                            float(1.0),  # bias_correction1 is folded into step_size on the shader side
+                        ))
+                    except Exception:
+                        if weight_decay != 0:
+                            grad = grad.add(p.mul(weight_decay))
+                        exp_avg = exp_avg.mul(beta1).add(grad.mul(1.0 - beta1))
+                        state["exp_avg"] = exp_avg
+                        # exp_inf: max of (beta2 * exp_inf, |grad|)
+                        import torch as _torch
+                        new_exp_inf = _torch.maximum(exp_inf.mul(beta2), grad.abs())
+                        state["exp_inf"] = new_exp_inf
+                        denom = new_exp_inf.add(eps)
+                        update = exp_avg.div(denom).mul(step_size)
+                        new_p = p.sub(update)
+                        p._set(new_p)
+        _end_runtime_frame(runtime, frame_started, run_js)
+        return loss
+
+
+class NAdam(Optimizer):
+    """NAdam optimizer (Nesterov-Adam)."""
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 0.002,
+        betas: tuple[float, float] = (0.9, 0.999),
+        eps: float = 1e-8,
+        weight_decay: float = 0.0,
+        momentum_decay: float = 4e-3,
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if not (0.0 <= betas[0] < 1.0):
+            raise ValueError(f"Invalid beta1 value: {betas[0]}")
+        if not (0.0 <= betas[1] < 1.0):
+            raise ValueError(f"Invalid beta2 value: {betas[1]}")
+        if eps < 0.0:
+            raise ValueError(f"Invalid epsilon value: {eps}")
+        defaults = {
+            "lr": lr,
+            "betas": betas,
+            "eps": eps,
+            "weight_decay": weight_decay,
+            "momentum_decay": momentum_decay,
+        }
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                beta1, beta2 = group["betas"]
+                eps = float(group["eps"])
+                weight_decay = float(group["weight_decay"])
+                momentum_decay = float(group["momentum_decay"])
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if id(p) not in self.state:
+                        import torch
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "exp_avg": torch.zeros_like(p),
+                            "exp_avg_sq": torch.zeros_like(p),
+                        }
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    exp_avg = state["exp_avg"]
+                    exp_avg_sq = state["exp_avg_sq"]
+                    step = state["step"]
+                    # PyTorch NAdam: mu_t = beta1 * (1 - 0.5 * 0.96^(t * momentum_decay))
+                    mu = beta1 * (1.0 - 0.5 * (0.96 ** (step * momentum_decay)))
+                    mu_next = beta1 * (1.0 - 0.5 * (0.96 ** ((step + 1) * momentum_decay)))
+                    bias_correction1 = 1.0 - beta1 ** step
+                    bias_correction2 = 1.0 - beta2 ** step
+                    step_size = lr / bias_correction1
+                    try:
+                        run_js(runtime.nadamStep(
+                            p._id,
+                            grad._id,
+                            exp_avg._id,
+                            exp_avg_sq._id,
+                            float(lr),
+                            float(beta1),
+                            float(beta2),
+                            float(eps),
+                            float(weight_decay),
+                            float(step_size),
+                            float(mu_next),
+                        ))
+                    except Exception:
+                        if weight_decay != 0:
+                            grad = grad.add(p.mul(weight_decay))
+                        exp_avg = exp_avg.mul(beta1).add(grad.mul(1.0 - beta1))
+                        state["exp_avg"] = exp_avg
+                        grad_sq = grad.mul(grad)
+                        exp_avg_sq = exp_avg_sq.mul(beta2).add(grad_sq.mul(1.0 - beta2))
+                        state["exp_avg_sq"] = exp_avg_sq
+                        denom = exp_avg_sq.div(bias_correction2).sqrt().add(eps)
+                        # Nesterov look-ahead
+                        m_hat = exp_avg.mul(mu_next).add(grad.mul(1.0 - mu_next)).div(bias_correction1)
+                        update = m_hat.div(denom).mul(step_size)
+                        new_p = p.sub(update)
+                        p._set(new_p)
+        _end_runtime_frame(runtime, frame_started, run_js)
+        return loss
+
+
+class RAdam(Optimizer):
+    """RAdam optimizer (Rectified Adam)."""
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 0.001,
+        betas: tuple[float, float] = (0.9, 0.999),
+        eps: float = 1e-8,
+        weight_decay: float = 0.0,
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if not (0.0 <= betas[0] < 1.0):
+            raise ValueError(f"Invalid beta1 value: {betas[0]}")
+        if not (0.0 <= betas[1] < 1.0):
+            raise ValueError(f"Invalid beta2 value: {betas[1]}")
+        if eps < 0.0:
+            raise ValueError(f"Invalid epsilon value: {eps}")
+        defaults = {
+            "lr": lr,
+            "betas": betas,
+            "eps": eps,
+            "weight_decay": weight_decay,
+        }
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                beta1, beta2 = group["betas"]
+                eps = float(group["eps"])
+                weight_decay = float(group["weight_decay"])
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if id(p) not in self.state:
+                        import torch
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "exp_avg": torch.zeros_like(p),
+                            "exp_avg_sq": torch.zeros_like(p),
+                        }
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    exp_avg = state["exp_avg"]
+                    exp_avg_sq = state["exp_avg_sq"]
+                    step = state["step"]
+                    bias_correction1 = 1.0 - beta1 ** step
+                    bias_correction2 = 1.0 - beta2 ** step
+                    step_size = lr / bias_correction1
+                    try:
+                        run_js(runtime.radamStep(
+                            p._id,
+                            grad._id,
+                            exp_avg._id,
+                            exp_avg_sq._id,
+                            float(lr),
+                            float(beta1),
+                            float(beta2),
+                            float(eps),
+                            float(weight_decay),
+                            float(step_size),
+                            float(beta1 ** step),
+                            float(beta2 ** step),
+                        ))
+                    except Exception:
+                        if weight_decay != 0:
+                            grad = grad.add(p.mul(weight_decay))
+                        exp_avg = exp_avg.mul(beta1).add(grad.mul(1.0 - beta1))
+                        state["exp_avg"] = exp_avg
+                        grad_sq = grad.mul(grad)
+                        exp_avg_sq = exp_avg_sq.mul(beta2).add(grad_sq.mul(1.0 - beta2))
+                        state["exp_avg_sq"] = exp_avg_sq
+                        v_hat = exp_avg_sq.div(bias_correction2)
+                        m_hat = exp_avg.div(bias_correction1)
+                        # RAdam rectification
+                        beta2_pow_t = beta2 ** step
+                        rho_inf = 2.0 / (1.0 - beta2) - 1.0
+                        import math
+                        t_approx = max(step, 1)
+                        rho_t = rho_inf - 2.0 * t_approx * beta2_pow_t / max(1.0 - beta2_pow_t, 1e-10)
+                        if rho_t > 5.0:
+                            rect = math.sqrt(
+                                (rho_t - 4.0) * (rho_t - 2.0) * rho_inf
+                                / ((rho_inf - 4.0) * (rho_inf - 2.0) * rho_t)
+                            )
+                            update = m_hat.mul(rect).mul(lr)
+                        else:
+                            update = m_hat.mul(lr)
+                        new_p = p.sub(update)
+                        p._set(new_p)
+        _end_runtime_frame(runtime, frame_started, run_js)
+        return loss

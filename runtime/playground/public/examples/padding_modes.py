@@ -2,7 +2,8 @@ import json
 import torch
 
 # Padding modes: constant, reflect, replicate, circular
-x = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+# Real PyTorch requires 3D or 4D input for reflect/replicate/circular with 4-tuple padding.
+x = torch.tensor([[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]])
 
 # Constant padding
 c = torch.nn.functional.pad(x, (1, 1, 1, 1), mode="constant", value=0.0)

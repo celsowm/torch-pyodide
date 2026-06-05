@@ -8,10 +8,14 @@ from ._tensor import Tensor
 from .tensor_shape_utils import _normalize_shape_from_args
 from .tensor_factories_ops import (
     arange_from_values,
+    bernoulli_from_shape,
     empty_from_shape,
     empty_like_from_tensor,
+    exponential_from_shape,
     full_from_shape,
     full_like_from_tensor,
+    log_normal_from_shape,
+    normal_from_shape,
     ones_from_shape,
     ones_like_from_tensor,
     rand_from_shape,
@@ -247,3 +251,103 @@ def linspace(start: float, end: float, steps: int, dtype: str = "float32", devic
 def logspace(start: float, end: float, steps: int, dtype: str = "float32", device: object = None) -> Tensor:
     _normalize_device(device)
     return linspace(start, end, steps, dtype=dtype).pow(10.0)
+
+
+def normal(
+    mean: float | Tensor,
+    std: float | Tensor,
+    *,
+    size: int | Sequence[int] | None = None,
+    dtype: str = "float32",
+    device: object = None,
+) -> Tensor:
+    """torch.normal(mean, std, size=...) compatibility wrapper.
+
+    When given two scalars, uses size; when given a Tensor mean/std, draws one
+    sample per element of the broadcasted shape (PyTorch behavior).
+    """
+    _normalize_device(device)
+    from ._tensor import Tensor
+
+    if isinstance(mean, Tensor) or isinstance(std, Tensor):
+        if not isinstance(mean, Tensor) or not isinstance(std, Tensor):
+            raise TypeError("mean and std must both be Tensor or both be numbers")
+        return _normal_tensor(mean, std, dtype=dtype)
+
+    if size is None:
+        raise TypeError("size is required when mean and std are both numbers")
+    result = normal_from_shape(shape=size, mean=float(mean), std=float(std), dtype=dtype)
+    if result.requires_grad is False:
+        pass
+    return result
+
+
+def _normal_tensor(mean: "Tensor", std: "Tensor", dtype: str = "float32") -> "Tensor":
+    """Sample a normal with per-element mean/std (PyTorch broadcast behavior)."""
+    from ._runtime import _get_runtime, _run_js_awaitable
+    from .tensor_factories_ops import _mk
+    runtime = _get_runtime()
+    out = randn_from_shape(list(mean.shape), dtype=dtype)
+    std_num = std.tolist() if isinstance(std, Tensor) else float(std)
+    mean_num = mean.tolist() if isinstance(mean, Tensor) else float(mean)
+    # Decompose: out * std + mean. PyTorch treats std as broadcastable.
+    return out.mul(std).add(mean)
+
+
+def bernoulli(
+    input: Tensor | float = 0.5,
+    *,
+    size: int | Sequence[int] | None = None,
+    dtype: str = "float32",
+    device: object = None,
+) -> Tensor:
+    """torch.bernoulli(input, size=...) compatibility wrapper."""
+    _normalize_device(device)
+    from ._tensor import Tensor
+    if isinstance(input, Tensor):
+        # Per-element Bernoulli from a probability tensor.
+        probs = input.tolist()
+        # Flatten arbitrarily nested lists.
+        def _flatten_probs(values):
+            if isinstance(values, (list, tuple)):
+                out = []
+                for v in values:
+                    out.extend(_flatten_probs(v))
+                return out
+            return [float(values)]
+        flat_probs = _flatten_probs(probs)
+        flat = [1.0 if (p > 0) and ((p >= 1.0) or (_random.random() < p)) else 0.0 for p in flat_probs]
+        from .tensor_factories_ops import tensor_from_data
+        return tensor_from_data(flat, shape=list(input.shape), dtype=dtype)
+    p = float(input)
+    if size is None:
+        size = [1]
+    return bernoulli_from_shape(shape=size, p=p, dtype=dtype)
+
+
+def exponential(
+    lambd: float = 1.0,
+    *,
+    size: int | Sequence[int] | None = None,
+    dtype: str = "float32",
+    device: object = None,
+) -> Tensor:
+    """torch.exponential(lambd, size=...) compatibility wrapper."""
+    _normalize_device(device)
+    if size is None:
+        size = [1]
+    return exponential_from_shape(shape=size, lambd=lambd, dtype=dtype)
+
+
+def log_normal(
+    mean: float = 0.0,
+    std: float = 1.0,
+    size: int | Sequence[int] | None = None,
+    dtype: str = "float32",
+    device: object = None,
+) -> Tensor:
+    """torch.log_normal(mean, std, size=...) compatibility wrapper."""
+    _normalize_device(device)
+    if size is None:
+        size = [1]
+    return log_normal_from_shape(shape=size, mean=mean, std=std, dtype=dtype)

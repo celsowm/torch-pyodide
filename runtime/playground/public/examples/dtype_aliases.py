@@ -8,18 +8,18 @@ x = torch.tensor([1.0, 2.0, 3.0], dtype=torch.float32)
 selected = torch.masked_select(x, mask)
 
 out = {
-  "long_alias": torch.long,
-  "bool_alias": torch.bool,
-  "double_alias": torch.double,
-  "half_alias": torch.half,
-  "int_alias": torch.int,
-  "float_alias": torch.float,
-  "short_alias": torch.short,
-  "char_alias": torch.char,
-  "byte_alias": torch.byte,
-  "idx_dtype": idx.dtype,
-  "roundtrip_dtype": roundtrip.dtype,
-  "mask_dtype": mask.dtype,
+  "long_alias": str(torch.long).replace("torch.", ""),
+  "bool_alias": str(torch.bool).replace("torch.", ""),
+  "double_alias": str(torch.double).replace("torch.", ""),
+  "half_alias": str(torch.half).replace("torch.", ""),
+  "int_alias": str(torch.int).replace("torch.", ""),
+  "float_alias": str(torch.float).replace("torch.", ""),
+  "short_alias": str(torch.short).replace("torch.", ""),
+  "int8_alias": str(torch.int8).replace("torch.", ""),
+  "uint8_alias": str(torch.uint8).replace("torch.", ""),
+  "idx_dtype": str(idx.dtype).replace("torch.", ""),
+  "roundtrip_dtype": str(roundtrip.dtype).replace("torch.", ""),
+  "mask_dtype": str(mask.dtype).replace("torch.", ""),
   "selected": selected.tolist(),
 }
 

@@ -1,19 +1,19 @@
 {
-  "implemented": 300,
-  "total": 300,
+  "implemented": 367,
+  "total": 367,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
-      "implemented": 122,
-      "total": 122
+      "implemented": 151,
+      "total": 151
     },
     "cuda_func": {
       "implemented": 11,
       "total": 11
     },
     "tensor_method": {
-      "implemented": 115,
-      "total": 115
+      "implemented": 138,
+      "total": 138
     },
     "tensor_property": {
       "implemented": 4,
@@ -28,8 +28,8 @@
       "total": 23
     },
     "nn_class_method": {
-      "implemented": 1,
-      "total": 1
+      "implemented": 16,
+      "total": 16
     }
   },
   "targets": [
@@ -1830,6 +1830,408 @@
     {
       "id": "nn.init.uniform_",
       "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.atan2",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.hypot",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fmod",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.remainder",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fmax",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fmin",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logaddexp",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logaddexp2",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.lerp",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.addcmul",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.addcdiv",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.xlogy",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.copysign",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.nextafter",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.floor_divide",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.true_divide",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_and",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_or",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_xor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_and",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_or",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_xor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_not",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.normal",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bernoulli",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.exponential",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log_normal",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.atan2",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.hypot",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.fmod",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.remainder",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.fmax",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.fmin",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logaddexp",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logaddexp2",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.lerp",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.addcmul",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.addcdiv",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.xlogy",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.copysign",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.nextafter",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.floor_divide",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.true_divide",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logical_and",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logical_or",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logical_xor",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.bitwise_and",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.bitwise_or",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.bitwise_xor",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.bitwise_not",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.save",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.load",
+      "kind": "module_func",
       "implemented": true,
       "note": "ok"
     }

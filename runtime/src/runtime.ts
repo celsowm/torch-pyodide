@@ -71,6 +71,22 @@ export class TorchPyodideRuntime {
     return this.creationOps.randn(shape, dtype);
   }
 
+  async normal(shape: number[], dtype: string, mean: number, std: number): Promise<TensorHandle> {
+    return this.creationOps.normal(shape, dtype, mean, std);
+  }
+
+  async bernoulli(shape: number[], dtype: string, p: number): Promise<TensorHandle> {
+    return this.creationOps.bernoulli(shape, dtype, p);
+  }
+
+  async exponential(shape: number[], dtype: string, rate: number): Promise<TensorHandle> {
+    return this.creationOps.exponential(shape, dtype, rate);
+  }
+
+  async logNormal(shape: number[], dtype: string, mean: number, std: number): Promise<TensorHandle> {
+    return this.creationOps.logNormal(shape, dtype, mean, std);
+  }
+
   async arange(start: number, end: number, step: number, dtype: string): Promise<TensorHandle> {
     return this.creationOps.arange(start, end, step, dtype);
   }
@@ -145,6 +161,98 @@ export class TorchPyodideRuntime {
 
   async heaviside(inputId: number, valuesId: number): Promise<TensorHandle> {
     return this.arithmeticOps.heaviside(inputId, valuesId);
+  }
+
+  async atan2(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.atan2(aId, bId);
+  }
+
+  async hypot(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.hypot(aId, bId);
+  }
+
+  async logaddexp(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.logaddexp(aId, bId);
+  }
+
+  async logaddexp2(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.logaddexp2(aId, bId);
+  }
+
+  async fmod(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.fmod(aId, bId);
+  }
+
+  async remainder(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.remainder(aId, bId);
+  }
+
+  async xlogy(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.xlogy(aId, bId);
+  }
+
+  async copysign(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.copysign(aId, bId);
+  }
+
+  async floorDivide(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.floorDivide(aId, bId);
+  }
+
+  async trueDivide(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.trueDivide(aId, bId);
+  }
+
+  async nextafter(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.nextafter(aId, bId);
+  }
+
+  async logicalAnd(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.logicalAnd(aId, bId);
+  }
+
+  async logicalOr(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.logicalOr(aId, bId);
+  }
+
+  async logicalXor(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.logicalXor(aId, bId);
+  }
+
+  async bitwiseAnd(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.bitwiseAnd(aId, bId);
+  }
+
+  async bitwiseOr(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.bitwiseOr(aId, bId);
+  }
+
+  async bitwiseXor(aId: number, bId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.bitwiseXor(aId, bId);
+  }
+
+  async bitwiseNot(aId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.bitwiseNot(aId);
+  }
+
+  async lerpScalar(startId: number, endId: number, weight: number): Promise<TensorHandle> {
+    return this.arithmeticOps.lerpScalar(startId, endId, weight);
+  }
+
+  async lerpTensor(startId: number, endId: number, weightId: number): Promise<TensorHandle> {
+    return this.arithmeticOps.lerpTensor(startId, endId, weightId);
+  }
+
+  async addcmul(inputId: number, t1Id: number, t2Id: number, value: number): Promise<TensorHandle> {
+    return this.arithmeticOps.addcmul(inputId, t1Id, t2Id, value);
+  }
+
+  async addcdiv(inputId: number, t1Id: number, t2Id: number, value: number): Promise<TensorHandle> {
+    return this.arithmeticOps.addcdiv(inputId, t1Id, t2Id, value);
+  }
+
+  async mulScalar(tensorId: number, value: number): Promise<TensorHandle> {
+    return this.arithmeticOps.mulScalar(tensorId, value);
   }
 
   async relu(tensorId: number): Promise<TensorHandle> {
@@ -590,6 +698,103 @@ export class TorchPyodideRuntime {
       eps,
       weightDecay,
       momentum,
+    );
+  }
+
+  async adagradStep(
+    paramId: number,
+    gradId: number,
+    sumSquaresId: number,
+    lr: number,
+    eps: number,
+    weightDecay: number,
+  ): Promise<void> {
+    return this.reductionOps.adagradStep(paramId, gradId, sumSquaresId, lr, eps, weightDecay);
+  }
+
+  async adamaxStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expInfId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    biasCorrection1: number,
+  ): Promise<void> {
+    return this.reductionOps.adamaxStep(
+      paramId,
+      gradId,
+      expAvgId,
+      expInfId,
+      lr,
+      beta1,
+      beta2,
+      eps,
+      weightDecay,
+      stepSize,
+      biasCorrection1,
+    );
+  }
+
+  async nadamStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expAvgSqId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    mu: number,
+  ): Promise<void> {
+    return this.reductionOps.nadamStep(
+      paramId,
+      gradId,
+      expAvgId,
+      expAvgSqId,
+      lr,
+      beta1,
+      beta2,
+      eps,
+      weightDecay,
+      stepSize,
+      mu,
+    );
+  }
+
+  async radamStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expAvgSqId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    beta1PowT: number,
+    beta2PowT: number,
+  ): Promise<void> {
+    return this.reductionOps.radamStep(
+      paramId,
+      gradId,
+      expAvgId,
+      expAvgSqId,
+      lr,
+      beta1,
+      beta2,
+      eps,
+      weightDecay,
+      stepSize,
+      beta1PowT,
+      beta2PowT,
     );
   }
 

@@ -31,6 +31,7 @@ import {
   SGD_STEP_SHADER,
   RMSPROP_STEP_SHADER,
   MAXMIN_BACKWARD_SHADER,
+  EXTENDED_STEP_SHADER,
   createStorageBuffer,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
@@ -644,6 +645,173 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
     const pipeline = getOrCreatePipeline(RMSPROP_STEP_SHADER, "rmsprop_step");
     dispatchCompute(pipeline, [param.buffer, grad.buffer, squareAvg.buffer, momentumBuf.buffer, dimsBuffer, hpBuffer, extraBuffer], calculateWorkgroups(n));
+    await syncDevice();
+    dimsBuffer.destroy();
+    hpBuffer.destroy();
+    extraBuffer.destroy();
+  }
+
+  async adagradStep(
+    paramId: number,
+    gradId: number,
+    sumSquaresId: number,
+    lr: number,
+    eps: number,
+    weightDecay: number,
+  ): Promise<void> {
+    await this.deviceMgr.ensureReady();
+    const param = this.deviceMgr.getTensorMeta(paramId);
+    const grad = this.deviceMgr.getTensorMeta(gradId);
+    const sumSquares = this.deviceMgr.getTensorMeta(sumSquaresId);
+    const n = param.length;
+    if (grad.length !== n || sumSquares.length !== n) {
+      throw new Error("adagradStep: tensor lengths must match");
+    }
+    const dims = new Uint32Array([n, 0, 0, 0]);
+    const hp = new Float32Array([lr, 0, 0, eps]);
+    const extra = new Float32Array([weightDecay, 0, 0, 0]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({ size: dims.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const hpBuffer = this.deviceMgr.device!.createBuffer({ size: hp.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const extraBuffer = this.deviceMgr.device!.createBuffer({ size: extra.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
+    this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
+    const pipeline = getOrCreatePipeline(EXTENDED_STEP_SHADER, "adagrad_step");
+    dispatchCompute(
+      pipeline,
+      [param.buffer, grad.buffer, sumSquares.buffer, param.buffer, dimsBuffer, hpBuffer, extraBuffer],
+      calculateWorkgroups(n),
+    );
+    await syncDevice();
+    dimsBuffer.destroy();
+    hpBuffer.destroy();
+    extraBuffer.destroy();
+  }
+
+  async adamaxStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expInfId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    biasCorrection1: number,
+  ): Promise<void> {
+    await this.deviceMgr.ensureReady();
+    const param = this.deviceMgr.getTensorMeta(paramId);
+    const grad = this.deviceMgr.getTensorMeta(gradId);
+    const expAvg = this.deviceMgr.getTensorMeta(expAvgId);
+    const expInf = this.deviceMgr.getTensorMeta(expInfId);
+    const n = param.length;
+    if (grad.length !== n || expAvg.length !== n || expInf.length !== n) {
+      throw new Error("adamaxStep: tensor lengths must match");
+    }
+    const dims = new Uint32Array([n, 0, 0, 0]);
+    const hp = new Float32Array([lr, beta1, beta2, eps]);
+    const extra = new Float32Array([weightDecay, stepSize, biasCorrection1, 0]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({ size: dims.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const hpBuffer = this.deviceMgr.device!.createBuffer({ size: hp.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const extraBuffer = this.deviceMgr.device!.createBuffer({ size: extra.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
+    this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
+    const pipeline = getOrCreatePipeline(EXTENDED_STEP_SHADER, "adamax_step");
+    dispatchCompute(
+      pipeline,
+      [param.buffer, grad.buffer, expAvg.buffer, expInf.buffer, dimsBuffer, hpBuffer, extraBuffer],
+      calculateWorkgroups(n),
+    );
+    await syncDevice();
+    dimsBuffer.destroy();
+    hpBuffer.destroy();
+    extraBuffer.destroy();
+  }
+
+  async nadamStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expAvgSqId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    mu: number,
+  ): Promise<void> {
+    await this.deviceMgr.ensureReady();
+    const param = this.deviceMgr.getTensorMeta(paramId);
+    const grad = this.deviceMgr.getTensorMeta(gradId);
+    const expAvg = this.deviceMgr.getTensorMeta(expAvgId);
+    const expAvgSq = this.deviceMgr.getTensorMeta(expAvgSqId);
+    const n = param.length;
+    if (grad.length !== n || expAvg.length !== n || expAvgSq.length !== n) {
+      throw new Error("nadamStep: tensor lengths must match");
+    }
+    const dims = new Uint32Array([n, 0, 0, 0]);
+    const hp = new Float32Array([lr, beta1, beta2, eps]);
+    const extra = new Float32Array([weightDecay, stepSize, mu, 0]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({ size: dims.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const hpBuffer = this.deviceMgr.device!.createBuffer({ size: hp.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const extraBuffer = this.deviceMgr.device!.createBuffer({ size: extra.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
+    this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
+    const pipeline = getOrCreatePipeline(EXTENDED_STEP_SHADER, "nadam_step");
+    dispatchCompute(
+      pipeline,
+      [param.buffer, grad.buffer, expAvg.buffer, expAvgSq.buffer, dimsBuffer, hpBuffer, extraBuffer],
+      calculateWorkgroups(n),
+    );
+    await syncDevice();
+    dimsBuffer.destroy();
+    hpBuffer.destroy();
+    extraBuffer.destroy();
+  }
+
+  async radamStep(
+    paramId: number,
+    gradId: number,
+    expAvgId: number,
+    expAvgSqId: number,
+    lr: number,
+    beta1: number,
+    beta2: number,
+    eps: number,
+    weightDecay: number,
+    stepSize: number,
+    beta1PowT: number,
+    beta2PowT: number,
+  ): Promise<void> {
+    await this.deviceMgr.ensureReady();
+    const param = this.deviceMgr.getTensorMeta(paramId);
+    const grad = this.deviceMgr.getTensorMeta(gradId);
+    const expAvg = this.deviceMgr.getTensorMeta(expAvgId);
+    const expAvgSq = this.deviceMgr.getTensorMeta(expAvgSqId);
+    const n = param.length;
+    if (grad.length !== n || expAvg.length !== n || expAvgSq.length !== n) {
+      throw new Error("radamStep: tensor lengths must match");
+    }
+    const dims = new Uint32Array([n, 0, 0, 0]);
+    const hp = new Float32Array([lr, beta1, beta2, eps]);
+    const extra = new Float32Array([weightDecay, stepSize, beta1PowT, beta2PowT]);
+    const dimsBuffer = this.deviceMgr.device!.createBuffer({ size: dims.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const hpBuffer = this.deviceMgr.device!.createBuffer({ size: hp.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    const extraBuffer = this.deviceMgr.device!.createBuffer({ size: extra.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
+    this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
+    this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
+    this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
+    const pipeline = getOrCreatePipeline(EXTENDED_STEP_SHADER, "radam_step");
+    dispatchCompute(
+      pipeline,
+      [param.buffer, grad.buffer, expAvg.buffer, expAvgSq.buffer, dimsBuffer, hpBuffer, extraBuffer],
+      calculateWorkgroups(n),
+    );
     await syncDevice();
     dimsBuffer.destroy();
     hpBuffer.destroy();

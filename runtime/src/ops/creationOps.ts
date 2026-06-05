@@ -45,37 +45,55 @@ export class CreationOps {
   }
 
   async rand(shape: number[], dtype: string): Promise<TensorHandle> {
-    await this.deviceMgr.ensureReady();
-    assertDType(dtype);
-    const length = product(shape);
-    const seed = this.randomSeed++;
-    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const paramsData = new Uint32Array([seed >>> 0, length, 0, 0]);
-    const paramsBuffer = this.deviceMgr.device!.createBuffer({
-      size: paramsData.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramsBuffer, 0, paramsData);
-    const pipeline = getOrCreatePipeline(RANDOM_SHADER, "rand");
-    dispatchCompute(pipeline, [out, paramsBuffer], calculateWorkgroups(length));
-    await syncDevice();
-    paramsBuffer.destroy();
-    return this.deviceMgr.registerTensorAsHandle(out, shape, dtype, length);
+    return this.sampleOp(shape, dtype, "rand", 0.0, 1.0);
   }
 
   async randn(shape: number[], dtype: string): Promise<TensorHandle> {
+    return this.sampleOp(shape, dtype, "randn", 0.0, 1.0);
+  }
+
+  async normal(shape: number[], dtype: string, mean: number, std: number): Promise<TensorHandle> {
+    return this.sampleOp(shape, dtype, "normal_sample", mean, std);
+  }
+
+  async bernoulli(shape: number[], dtype: string, p: number): Promise<TensorHandle> {
+    return this.sampleOp(shape, dtype, "bernoulli_sample", p, 0.0);
+  }
+
+  async exponential(shape: number[], dtype: string, rate: number): Promise<TensorHandle> {
+    return this.sampleOp(shape, dtype, "exponential_sample", rate, 0.0);
+  }
+
+  async logNormal(shape: number[], dtype: string, mean: number, std: number): Promise<TensorHandle> {
+    return this.sampleOp(shape, dtype, "log_normal_sample", mean, std);
+  }
+
+  private async sampleOp(
+    shape: number[],
+    dtype: string,
+    entrypoint: string,
+    param0: number,
+    param1: number,
+  ): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     assertDType(dtype);
     const length = product(shape);
     const seed = this.randomSeed++;
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const paramsData = new Uint32Array([seed >>> 0, length, 0, 0]);
+    // RNGParams = { seed: u32, length: u32, param0: f32, param1: f32 } = 16 bytes
+    const params = new ArrayBuffer(16);
+    const u32 = new Uint32Array(params);
+    const f32 = new Float32Array(params);
+    u32[0] = seed >>> 0;
+    u32[1] = length;
+    f32[2] = param0;
+    f32[3] = param1;
     const paramsBuffer = this.deviceMgr.device!.createBuffer({
-      size: paramsData.byteLength,
+      size: 16,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
-    this.deviceMgr.writeBuffer(paramsBuffer, 0, paramsData);
-    const pipeline = getOrCreatePipeline(RANDOM_SHADER, "randn");
+    this.deviceMgr.writeBuffer(paramsBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(RANDOM_SHADER, entrypoint);
     dispatchCompute(pipeline, [out, paramsBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramsBuffer.destroy();

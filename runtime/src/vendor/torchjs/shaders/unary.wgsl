@@ -483,3 +483,10 @@ fn digamma_op(@builtin(global_invocation_id) global_id: vec3<u32>) {
     }
     result[idx] = psi;
 }
+
+@compute @workgroup_size(256)
+fn bitwise_not_op(@builtin(global_invocation_id) global_id: vec3<u32>) {
+    let idx = global_id.x;
+    if (idx >= arrayLength(&result)) { return; }
+    result[idx] = bitcast<f32>(~bitcast<i32>(input[idx]));
+}

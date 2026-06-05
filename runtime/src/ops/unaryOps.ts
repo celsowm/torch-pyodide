@@ -376,4 +376,8 @@ export class UnaryOps {
     this.deviceMgr.device!.queue.writeBuffer(buffer, 0, data);
     return this.deviceMgr.registerTensorAsHandle(buffer, meta.shape, dtype, length);
   }
+
+  async bitwiseNot(tensorId: number): Promise<TensorHandle> {
+    return this.unary(tensorId, "bitwise_not_op");
+  }
 }

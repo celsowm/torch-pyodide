@@ -1,15 +1,16 @@
 import torch
+import torch.nn.functional as F
 
 # Activation backward: sigmoid, tanh, gelu, silu, leaky_relu, softmax
 x = torch.tensor([-1.0, -0.5, 0.0, 0.5, 1.0], requires_grad=True)
 
 for name, fn in [
-    ("sigmoid", x.sigmoid),
-    ("tanh", x.tanh),
-    ("gelu", x.gelu),
-    ("silu", x.silu),
-    ("leaky_relu", lambda: x.leaky_relu(0.1)),
-    ("softmax", lambda: x.softmax(dim=-1)),
+    ("sigmoid", lambda: F.sigmoid(x)),
+    ("tanh", lambda: F.tanh(x)),
+    ("gelu", lambda: F.gelu(x)),
+    ("silu", lambda: F.silu(x)),
+    ("leaky_relu", lambda: F.leaky_relu(x, 0.1)),
+    ("softmax", lambda: F.softmax(x, dim=-1)),
 ]:
     y = fn()
     loss = y.sum()

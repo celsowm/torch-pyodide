@@ -180,33 +180,28 @@ def pad(x: Tensor, pad: Sequence[int], mode: str = "constant", value: float = 0.
 
 
 def _pad_reflect(x: Tensor, dim: int, left: int, right: int) -> Tensor:
-    """Reflect padding: pads with reflection of tensor at boundaries."""
+    """Reflect padding: pads with reflection of tensor at boundaries.
+
+    Uses `narrow` (slice) + `flip` instead of `index_select` so it works
+    on tensors of any rank (the WebGPU `indexSelect` op is limited to 2D).
+    """
     dim_size = x.shape[dim]
     parts = []
-    # Left padding: reflect from left boundary
     if left > 0:
-        # indices: 1, 2, ..., left (modulated to reflect)
-        indices = []
-        for i in range(left, 0, -1):
-            idx = i % (2 * dim_size)
-            if idx >= dim_size:
-                idx = 2 * dim_size - 1 - idx
-            indices.append(idx)
-        left_part = x.index_select(dim, torch.tensor(indices, dtype=torch.int32))
-        parts.append(left_part)
+        # Take the first (left+1) elements, drop the boundary, reverse to mirror.
+        # E.g. dim_size=3, left=2 -> take [0,1,2], drop [0], reverse [1,2] -> [2,1].
+        left_slice = x.narrow(dim, 0, min(left + 1, dim_size)).flip([dim])
+        if left_slice.shape[dim] > left:
+            left_slice = left_slice.narrow(dim, left_slice.shape[dim] - left, left)
+        parts.append(left_slice)
     parts.append(x)
-    # Right padding: reflect from right boundary
     if right > 0:
-        indices = []
-        for i in range(right):
-            idx = (dim_size - 2 - i) % (2 * dim_size)
-            if idx < 0:
-                idx = -1 - idx
-            if idx >= dim_size:
-                idx = 2 * dim_size - 1 - idx
-            indices.append(idx)
-        right_part = x.index_select(dim, torch.tensor(indices, dtype=torch.int32))
-        parts.append(right_part)
+        # Take the last (right+1) elements, drop the boundary, reverse to mirror.
+        # E.g. dim_size=3, right=2 -> take [0,1,2], drop [2], reverse [0,1] -> [1,0].
+        right_slice = x.narrow(dim, max(0, dim_size - right - 1), min(right + 1, dim_size)).flip([dim])
+        if right_slice.shape[dim] > right:
+            right_slice = right_slice.narrow(dim, 0, right)
+        parts.append(right_slice)
     if len(parts) == 1:
         return parts[0]
     return torch.cat(parts, dim=dim)
@@ -216,14 +211,22 @@ def _pad_replicate(x: Tensor, dim: int, left: int, right: int) -> Tensor:
     """Replicate padding: pads with replication of edge values."""
     parts = []
     if left > 0:
-        left_idx = [0] * left
-        left_part = x.index_select(dim, torch.tensor(left_idx, dtype=torch.int32))
+        # Repeat the first element `left` times along `dim` via narrow+cat loop.
+        first = x.narrow(dim, 0, 1)
+        left_part = first
+        while left_part.shape[dim] < left:
+            left_part = torch.cat([left_part, first], dim=dim)
+        if left_part.shape[dim] > left:
+            left_part = left_part.narrow(dim, 0, left)
         parts.append(left_part)
     parts.append(x)
     if right > 0:
-        size = x.shape[dim]
-        right_idx = [size - 1] * right
-        right_part = x.index_select(dim, torch.tensor(right_idx, dtype=torch.int32))
+        last = x.narrow(dim, x.shape[dim] - 1, 1)
+        right_part = last
+        while right_part.shape[dim] < right:
+            right_part = torch.cat([right_part, last], dim=dim)
+        if right_part.shape[dim] > right:
+            right_part = right_part.narrow(dim, 0, right)
         parts.append(right_part)
     if len(parts) == 1:
         return parts[0]
@@ -235,13 +238,13 @@ def _pad_circular(x: Tensor, dim: int, left: int, right: int) -> Tensor:
     parts = []
     size = x.shape[dim]
     if left > 0:
-        left_indices = list(range(size - left, size))
-        left_part = x.index_select(dim, torch.tensor(left_indices, dtype=torch.int32))
+        # Take the last `left` elements.
+        left_part = x.narrow(dim, size - left, left)
         parts.append(left_part)
     parts.append(x)
     if right > 0:
-        right_indices = list(range(right))
-        right_part = x.index_select(dim, torch.tensor(right_indices, dtype=torch.int32))
+        # Take the first `right` elements.
+        right_part = x.narrow(dim, 0, right)
         parts.append(right_part)
     if len(parts) == 1:
         return parts[0]

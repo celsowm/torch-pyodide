@@ -63,6 +63,8 @@
     { "id": "autograd_cross_entropy_grad_repr", "label": "Autograd: cross entropy grad repr", "file": "examples/autograd_cross_entropy_grad_repr.py" },
     { "id": "autograd_reduction_broadcast_scatter", "label": "Autograd: reduction, broadcast, scatter", "file": "examples/autograd_reduction_broadcast_scatter.py" },
     { "id": "autograd_sgd_single_param", "label": "Autograd: single parameter SGD", "file": "examples/autograd_sgd_single_param.py" },
-    { "id": "autograd_cat_expand_where", "label": "Autograd: cat, expand, where", "file": "examples/autograd_cat_expand_where.py" }
+    { "id": "autograd_cat_expand_where", "label": "Autograd: cat, expand, where", "file": "examples/autograd_cat_expand_where.py" },
+    { "id": "nn_module_state_dict", "label": "nn Module state_dict / named_* / apply / to", "file": "examples/nn_module_state_dict.py" },
+    { "id": "save_load_state_dict", "label": "torch.save / torch.load roundtrip", "file": "examples/save_load_state_dict.py" }
   ]
 }

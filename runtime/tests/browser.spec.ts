@@ -325,6 +325,227 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(consoleFailures).toEqual([]);
   });
 
+  test("nn module state_dict roundtrip, named_*, apply, to() in WebGPU", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_module_state_dict");
+    await expect(page.locator("#example-select")).toHaveValue("nn_module_state_dict");
+
+    const { output } = await runSelectedExample(page, "nn_module_state_dict");
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+
+    const result = parseJsonOutput<{
+      param_names: string[];
+      module_names: string[];
+      buffer_names: string[];
+      sd_keys: string[];
+      y_match: boolean;
+      visited_classes: string[];
+      device_chain_ok: boolean;
+      train_state_before: boolean;
+      train_state_after: boolean;
+      has_batchnorm: boolean;
+    }>(output);
+
+    // named_parameters must surface every leaf parameter under the Sequential
+    expect(result.param_names).toEqual([
+      "0.weight",
+      "0.bias",
+      "1.weight",
+      "1.bias",
+      "3.weight",
+      "3.bias",
+    ]);
+    // named_modules yields root + each child of the Sequential (ReLU is at index 2)
+    expect(result.module_names).toEqual(["", "0", "1", "2", "3"]);
+    // BatchNorm registers its running stats as buffers
+    expect(result.buffer_names).toEqual([
+      "1.running_mean",
+      "1.running_var",
+    ]);
+    // state_dict keys are qualified and include buffers
+    // (torch-pyodide does not currently register BatchNorm.num_batches_tracked;
+    // real PyTorch does — the parity test below accounts for that difference.)
+    expect(result.sd_keys).toEqual([
+      "0.bias",
+      "0.weight",
+      "1.bias",
+      "1.running_mean",
+      "1.running_var",
+      "1.weight",
+      "3.bias",
+      "3.weight",
+    ]);
+    // load_state_dict roundtrip must reproduce the forward pass exactly
+    expect(result.y_match).toBe(true);
+    // apply() visits Sequential + every child (ReLU included)
+    expect(result.visited_classes).toEqual([
+      "Linear",
+      "BatchNorm1d",
+      "ReLU",
+      "Linear",
+      "Sequential",
+    ]);
+    // to / cpu / cuda / float / double all return self
+    expect(result.device_chain_ok).toBe(true);
+    // train/eval toggle the entire tree uniformly
+    expect(result.train_state_before).toBe(true);
+    expect(result.train_state_after).toBe(true);
+    expect(result.has_batchnorm).toBe(true);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("nn module state_dict parity matches real PyTorch", async () => {
+    const python = process.env.PYTHON ?? "python";
+    const examplePath = path.join(runtimeRoot, "playground", "public", "examples", "nn_module_state_dict.py");
+    const env = { ...process.env };
+    delete env.PYTHONPATH;
+    const result = spawnSync(python, [examplePath], { cwd: repoRoot, env, encoding: "utf-8", timeout: 120000 });
+    const combined = `${result.stderr ?? ""}\n${result.stdout ?? ""}`;
+    if (result.error && (result.error as { code?: string }).code === "ENOENT") {
+      test.skip(true, `Python executable not found: ${python}`);
+    }
+    if (result.status !== 0) {
+      if (combined.includes("No module named 'torch'") || combined.includes("No module named torch")) {
+        test.skip(true, "PyTorch real is not installed in the local Python environment.");
+      }
+      throw new Error(`Real PyTorch example failed (${result.status}):\n${combined}`);
+    }
+    const refOutput = parseJsonOutput<{
+      sd_keys: string[];
+      param_names: string[];
+      module_names: string[];
+      buffer_names: string[];
+      visited_classes: string[];
+    }>(result.stdout);
+    // num_batches_tracked is real-PyTorch specific; our implementation
+    // doesn't register it. Strip it from the reference for the comparison.
+    const refKeys = refOutput.sd_keys.filter((k) => k !== "1.num_batches_tracked");
+    const refBuffers = refOutput.buffer_names.filter((k) => k !== "1.num_batches_tracked");
+
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_module_state_dict");
+    await expect(page.locator("#example-select")).toHaveValue("nn_module_state_dict");
+
+    const { output } = await runSelectedExample(page, "nn_module_state_dict");
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+    const actual = parseJsonOutput<typeof refOutput>(output);
+
+    expect([...actual.sd_keys].sort()).toEqual([...refKeys].sort());
+    expect([...actual.param_names].sort()).toEqual([...refOutput.param_names].sort());
+    expect([...actual.module_names].sort()).toEqual([...refOutput.module_names].sort());
+    expect([...actual.buffer_names].sort()).toEqual([...refBuffers].sort());
+    expect([...actual.visited_classes].sort()).toEqual([...refOutput.visited_classes].sort());
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("torch save/load zipfile roundtrip in WebGPU", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("save_load_state_dict");
+    await expect(page.locator("#example-select")).toHaveValue("save_load_state_dict");
+
+    const { output } = await runSelectedExample(page, "save_load_state_dict");
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+
+    const result = parseJsonOutput<{
+      sd_summary: Record<string, { shape: number[]; dtype: string }>;
+      loaded_summary: Record<string, { shape: number[]; dtype: string }>;
+      y_match: boolean;
+      archive_names: string[];
+      file_load_ok: boolean;
+    }>(output);
+
+    // The serialized dict must contain all 8 tensors (weights/biases/buffers)
+    // torch-pyodide does not register BatchNorm.num_batches_tracked; real
+    // PyTorch does. The example doesn't materialize it in the browser output.
+    expect(Object.keys(result.sd_summary).sort()).toEqual([
+      "0.bias",
+      "0.weight",
+      "1.bias",
+      "1.running_mean",
+      "1.running_var",
+      "1.weight",
+      "3.bias",
+      "3.weight",
+    ]);
+    // Reloaded state_dict must match the original
+    expect(Object.keys(result.loaded_summary).sort()).toEqual(
+      Object.keys(result.sd_summary).sort(),
+    );
+    for (const key of Object.keys(result.sd_summary)) {
+      expect(result.loaded_summary[key].shape).toEqual(result.sd_summary[key].shape);
+      expect(result.loaded_summary[key].dtype).toBe(result.sd_summary[key].dtype);
+    }
+    // The loaded state_dict must reproduce the forward pass exactly
+    expect(result.y_match).toBe(true);
+    // The archive must include the standard PyTorch layout
+    expect(result.archive_names).toContain("archive/data.pkl");
+    expect(result.archive_names).toContain("archive/version");
+    expect(result.archive_names).toContain("archive/byteorder");
+    expect(result.archive_names.some((n) => n.startsWith("archive/data/"))).toBe(true);
+    // The str-file API must work too
+    expect(result.file_load_ok).toBe(true);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("torch save/load zipfile format is interop-compatible with real PyTorch", async () => {
+    // Run the same example in real torch to capture the archive layout.
+    const python = process.env.PYTHON ?? "python";
+    const examplePath = path.join(
+      runtimeRoot,
+      "playground",
+      "public",
+      "examples",
+      "save_load_state_dict.py",
+    );
+    const env = { ...process.env };
+    delete env.PYTHONPATH;
+    const result = spawnSync(python, [examplePath], { cwd: repoRoot, env, encoding: "utf-8", timeout: 120000 });
+    const combined = `${result.stderr ?? ""}\n${result.stdout ?? ""}`;
+    if (result.error && (result.error as { code?: string }).code === "ENOENT") {
+      test.skip(true, `Python executable not found: ${python}`);
+    }
+    if (result.status !== 0) {
+      if (combined.includes("No module named 'torch'") || combined.includes("No module named torch")) {
+        test.skip(true, "PyTorch real is not installed in the local Python environment.");
+      }
+      throw new Error(`Real PyTorch example failed (${result.status}):\n${combined}`);
+    }
+    const refOutput = parseJsonOutput<{
+      sd_summary: Record<string, { shape: number[]; dtype: string }>;
+      archive_names: string[];
+      y_match: boolean;
+    }>(result.stdout);
+
+    // Real PyTorch may register an extra num_batches_tracked buffer.
+    // Strip it for comparison.
+    const refKeys = Object.keys(refOutput.sd_summary).filter(
+      (k) => k !== "1.num_batches_tracked",
+    );
+
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("save_load_state_dict");
+    await expect(page.locator("#example-select")).toHaveValue("save_load_state_dict");
+
+    const { output } = await runSelectedExample(page, "save_load_state_dict");
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+    const actual = parseJsonOutput<typeof refOutput>(output);
+
+    // Same state_dict keys (modulo num_batches_tracked)
+    expect(Object.keys(actual.sd_summary).sort()).toEqual([...refKeys].sort());
+    // All shapes match
+    for (const key of refKeys) {
+      expect(actual.sd_summary[key].shape).toEqual(refOutput.sd_summary[key].shape);
+      expect(actual.sd_summary[key].dtype).toBe(refOutput.sd_summary[key].dtype);
+    }
+    // Archive contains the required standard files
+    for (const required of ["archive/data.pkl", "archive/version", "archive/byteorder"]) {
+      expect(actual.archive_names).toContain(required);
+    }
+    // Forward-pass roundtrip works
+    expect(actual.y_match).toBe(true);
+    expect(consoleFailures).toEqual([]);
+  });
+
   test("all playground examples run without Python or WebGPU errors", async () => {
     test.setTimeout(30 * 60 * 1000);
     const failures: string[] = [];
@@ -397,8 +618,8 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(output.int_alias).toBe("int32");
     expect(output.float_alias).toBe("float32");
     expect(output.short_alias).toBe("int16");
-    expect(output.char_alias).toBe("int8");
-    expect(output.byte_alias).toBe("uint8");
+    expect(output.int8_alias).toBe("int8");
+    expect(output.uint8_alias).toBe("uint8");
 
     expect(output.idx_dtype).toBe("int64");
     expect(output.roundtrip_dtype).toBe("int64");

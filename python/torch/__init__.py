@@ -17,15 +17,19 @@ from .autograd import (
 from . import cuda
 from ._api_creation import (
     arange,
+    bernoulli,
     empty,
     empty_like,
+    exponential,
     eye,
     full,
     full_like,
     linspace,
+    log_normal,
     logspace,
     manual_seed,
     multinomial,
+    normal,
     ones,
     ones_like,
     rand,
@@ -42,10 +46,14 @@ from ._runtime import _get_runtime
 from ._tensor import Tensor
 from .tensor_factories_ops import (
     arange_from_values,
+    bernoulli_from_shape,
     empty_from_shape,
     empty_like_from_tensor,
+    exponential_from_shape,
     full_from_shape,
     full_like_from_tensor,
+    log_normal_from_shape,
+    normal_from_shape,
     ones_from_shape,
     ones_like_from_tensor,
     rand_from_shape,
@@ -141,6 +149,28 @@ from .tensor_ops import (
     sort_from_tensor,
     gather_from_tensor,
     scatter_from_tensor,
+    atan2_from_tensors,
+    hypot_from_tensors,
+    logaddexp_from_tensors,
+    logaddexp2_from_tensors,
+    fmod_from_tensors,
+    remainder_from_tensors,
+    xlogy_from_tensors,
+    copysign_from_tensors,
+    floor_divide_from_tensors,
+    true_divide_from_tensors,
+    nextafter_from_tensors,
+    logical_and_from_tensors,
+    logical_or_from_tensors,
+    logical_xor_from_tensors,
+    bitwise_and_from_tensors,
+    bitwise_or_from_tensors,
+    bitwise_xor_from_tensors,
+    bitwise_not_from_tensor,
+    lerp_from_tensors,
+    addcmul_from_tensors,
+    addcdiv_from_tensors,
+    mul_scalar_from_tensor,
 )
 
 __all__ = [
@@ -164,12 +194,39 @@ __all__ = [
     "multinomial",
     "linspace",
     "logspace",
+    "normal",
+    "bernoulli",
+    "exponential",
+    "log_normal",
     "add",
     "sub",
     "mul",
     "div",
     "pow",
     "matmul",
+    "atan2",
+    "hypot",
+    "fmod",
+    "remainder",
+    "fmax",
+    "fmin",
+    "logaddexp",
+    "logaddexp2",
+    "lerp",
+    "addcmul",
+    "addcdiv",
+    "xlogy",
+    "copysign",
+    "nextafter",
+    "floor_divide",
+    "true_divide",
+    "logical_and",
+    "logical_or",
+    "logical_xor",
+    "bitwise_and",
+    "bitwise_or",
+    "bitwise_xor",
+    "bitwise_not",
     "relu",
     "abs",
     "sqrt",
@@ -669,6 +726,98 @@ def rad2deg(x: Tensor) -> Tensor:
 
 def pow(a: Tensor, b: Tensor) -> Tensor:
     return pow_from_tensors(a, b)
+
+
+def atan2(a: Tensor, b: Tensor) -> Tensor:
+    return atan2_from_tensors(a, b)
+
+
+def hypot(a: Tensor, b: Tensor) -> Tensor:
+    return hypot_from_tensors(a, b)
+
+
+def fmod(a: Tensor, b: Tensor) -> Tensor:
+    return fmod_from_tensors(a, b)
+
+
+def remainder(a: Tensor, b: Tensor) -> Tensor:
+    return remainder_from_tensors(a, b)
+
+
+def fmax(a: Tensor, b: Tensor) -> Tensor:
+    return maximum_from_tensors(a, b)
+
+
+def fmin(a: Tensor, b: Tensor) -> Tensor:
+    return minimum_from_tensors(a, b)
+
+
+def logaddexp(a: Tensor, b: Tensor) -> Tensor:
+    return logaddexp_from_tensors(a, b)
+
+
+def logaddexp2(a: Tensor, b: Tensor) -> Tensor:
+    return logaddexp2_from_tensors(a, b)
+
+
+def lerp(start: Tensor, end: Tensor, weight: Tensor | float) -> Tensor:
+    return lerp_from_tensors(start, end, weight)
+
+
+def addcmul(input: Tensor, t1: Tensor, t2: Tensor, value: float = 1.0) -> Tensor:
+    return addcmul_from_tensors(input, t1, t2, value)
+
+
+def addcdiv(input: Tensor, t1: Tensor, t2: Tensor, value: float = 1.0) -> Tensor:
+    return addcdiv_from_tensors(input, t1, t2, value)
+
+
+def xlogy(x: Tensor, y: Tensor) -> Tensor:
+    return xlogy_from_tensors(x, y)
+
+
+def copysign(a: Tensor, b: Tensor) -> Tensor:
+    return copysign_from_tensors(a, b)
+
+
+def nextafter(a: Tensor, b: Tensor) -> Tensor:
+    return nextafter_from_tensors(a, b)
+
+
+def floor_divide(a: Tensor, b: Tensor) -> Tensor:
+    return floor_divide_from_tensors(a, b)
+
+
+def true_divide(a: Tensor, b: Tensor) -> Tensor:
+    return true_divide_from_tensors(a, b)
+
+
+def logical_and(a: Tensor, b: Tensor) -> Tensor:
+    return logical_and_from_tensors(a, b)
+
+
+def logical_or(a: Tensor, b: Tensor) -> Tensor:
+    return logical_or_from_tensors(a, b)
+
+
+def logical_xor(a: Tensor, b: Tensor) -> Tensor:
+    return logical_xor_from_tensors(a, b)
+
+
+def bitwise_and(a: Tensor, b: Tensor) -> Tensor:
+    return bitwise_and_from_tensors(a, b)
+
+
+def bitwise_or(a: Tensor, b: Tensor) -> Tensor:
+    return bitwise_or_from_tensors(a, b)
+
+
+def bitwise_xor(a: Tensor, b: Tensor) -> Tensor:
+    return bitwise_xor_from_tensors(a, b)
+
+
+def bitwise_not(x: Tensor) -> Tensor:
+    return x.bitwise_not()
 
 
 def heaviside(input: Tensor, values: Tensor) -> Tensor:

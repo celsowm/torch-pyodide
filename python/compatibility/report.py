@@ -79,15 +79,30 @@ def _check_target(torch_mod: Any, tensor_cls: Any, target: dict[str, str]) -> Ta
         return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
 
     if kind == "nn_class_method":
-        # e.g. "Linear.reset_parameters" -> torch.nn.Linear.reset_parameters
-        name = target_id  # e.g. "Linear.reset_parameters"
-        module_path = "nn"
-        class_and_method = name
-        class_name, method_name = class_and_method.split(".")
-        cls = getattr(getattr(torch_mod, module_path), class_name, None)
-        if cls is None:
-            return TargetResult(target_id, kind, False, "class missing")
-        method = getattr(cls, method_name, None)
+        # Supports "Linear.reset_parameters" (implicit nn) and
+        # "nn.Module.state_dict" (explicit nn).
+        name = target_id
+        parts = name.split(".")
+        if len(parts) < 2:
+            return TargetResult(target_id, kind, False, "invalid id")
+        method_name = parts[-1]
+        # If the first segment is "nn", the path lives at torch.nn.<...>.
+        # Otherwise, treat the whole prefix as relative to torch.nn.
+        if parts[0] == "nn":
+            current = getattr(torch_mod, "nn", None)
+            path_parts = parts[1:-1]
+        else:
+            current = getattr(torch_mod, "nn", None)
+            path_parts = parts[:-1]
+        if current is None:
+            return TargetResult(target_id, kind, False, "torch.nn missing")
+        for part in path_parts:
+            if not hasattr(current, part):
+                return TargetResult(target_id, kind, False, f"missing path segment: {part}")
+            current = getattr(current, part)
+        if not isinstance(current, type):
+            return TargetResult(target_id, kind, False, "not a class")
+        method = getattr(current, method_name, None)
         ok = callable(method)
         return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
 

@@ -189,6 +189,194 @@ def any_from_tensor(tensor: "Tensor") -> "Tensor":
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
+def atan2_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.atan2(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def hypot_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.hypot(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def logaddexp_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.logaddexp(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def logaddexp2_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.logaddexp2(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def fmod_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.fmod(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def remainder_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.remainder(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def xlogy_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.xlogy(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def copysign_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.copysign(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def floor_divide_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.floorDivide(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def true_divide_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.trueDivide(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def nextafter_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.nextafter(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def logical_and_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.logicalAnd(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def logical_or_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.logicalOr(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def logical_xor_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.logicalXor(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def bitwise_and_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.bitwiseAnd(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def bitwise_or_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.bitwiseOr(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def bitwise_xor_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.bitwiseXor(a._id, b._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def bitwise_not_from_tensor(tensor: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.bitwiseNot(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def lerp_from_tensors(start: "Tensor", end: "Tensor", weight: "Tensor | float") -> "Tensor":
+    """torch.lerp(start, end, weight): linear interpolation."""
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    if isinstance(weight, Tensor):
+        meta = _run_js_awaitable(runtime.lerpTensor(start._id, end._id, weight._id))
+    else:
+        meta = _run_js_awaitable(runtime.lerpScalar(start._id, end._id, float(weight)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def addcmul_from_tensors(input_: "Tensor", t1: "Tensor", t2: "Tensor", value: float = 1.0) -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.addcmul(input_._id, t1._id, t2._id, float(value)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def addcdiv_from_tensors(input_: "Tensor", t1: "Tensor", t2: "Tensor", value: float = 1.0) -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.addcdiv(input_._id, t1._id, t2._id, float(value)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def mul_scalar_from_tensor(tensor: "Tensor", value: float) -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.mulScalar(tensor._id, float(value)))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def any_from_tensor(tensor: "Tensor") -> "Tensor":
+    from ._tensor import Tensor
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.any(tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, out_shape, out_dtype)
+
+
 def all_from_tensor(tensor: "Tensor") -> "Tensor":
     from ._tensor import Tensor
     runtime = _get_runtime()

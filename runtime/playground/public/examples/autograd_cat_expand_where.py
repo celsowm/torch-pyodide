@@ -5,7 +5,7 @@ a = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
 b = torch.tensor([4.0, 5.0, 6.0], requires_grad=True)
 
 c = torch.cat([a, b])
-e = torch.expand(a, [3, 3])
+e = a.expand([3, 3])
 print("cat:", c.tolist())
 print("expand:", e.tolist())
 
@@ -15,7 +15,7 @@ print("grad a:", a.grad.tolist())
 print("grad b:", b.grad.tolist())
 
 # Where
-cond = torch.tensor([1.0, 0.0, 1.0])
+cond = torch.tensor([True, False, True])
 x = torch.tensor([10.0, 20.0, 30.0], requires_grad=True)
 y = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
 w = torch.where(cond, x, y)

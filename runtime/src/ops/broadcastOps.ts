@@ -81,7 +81,7 @@ export class BroadcastOps {
     return result;
   }
 
-  private async broadcastTensor(tensor: TensorMeta, targetShape: number[]): Promise<TensorMeta> {
+  async broadcastTensor(tensor: TensorMeta, targetShape: number[]): Promise<TensorMeta> {
     const rankDiff = targetShape.length - tensor.shape.length;
     const paddedShape = [...new Array(rankDiff).fill(1), ...tensor.shape];
     const outLength = product(targetShape);

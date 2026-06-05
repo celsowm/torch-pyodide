@@ -9,6 +9,7 @@ import {
   syncDevice,
   BufferUsage,
   ELEMENTWISE_SHADER,
+  TERNARY_SHADER,
   WHERE_SHADER,
   MATMUL_SHADER,
   CLAMP_SHADER,
@@ -16,12 +17,15 @@ import {
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
 import { BroadcastOps } from "./broadcastOps.js";
+import { UnaryOps } from "./unaryOps.js";
 
 export class ArithmeticOps {
   private broadcastOps: BroadcastOps;
+  private unaryOps: UnaryOps;
 
   constructor(private deviceMgr: DeviceManager) {
     this.broadcastOps = new BroadcastOps(deviceMgr);
+    this.unaryOps = new UnaryOps(deviceMgr);
   }
 
   async add(aId: number, bId: number): Promise<TensorHandle> {
@@ -38,6 +42,166 @@ export class ArithmeticOps {
 
   async div(aId: number, bId: number): Promise<TensorHandle> {
     return this.elementwise(aId, bId, "div_op");
+  }
+
+  async atan2(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "atan2_op");
+  }
+
+  async hypot(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "hypot_op");
+  }
+
+  async logaddexp(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "logaddexp");
+  }
+
+  async logaddexp2(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "logaddexp2_op");
+  }
+
+  async fmod(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "fmod_op");
+  }
+
+  async remainder(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "remainder_op");
+  }
+
+  async xlogy(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "xlogy_op");
+  }
+
+  async copysign(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "copysign_op");
+  }
+
+  async floorDivide(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "floor_divide_op");
+  }
+
+  async trueDivide(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "true_divide_op");
+  }
+
+  async nextafter(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "nextafter_op");
+  }
+
+  async logicalAnd(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "logical_and_op");
+  }
+
+  async logicalOr(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "logical_or_op");
+  }
+
+  async logicalXor(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "logical_xor_op");
+  }
+
+  async bitwiseAnd(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "bitwise_and");
+  }
+
+  async bitwiseOr(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "bitwise_or");
+  }
+
+  async bitwiseXor(aId: number, bId: number): Promise<TensorHandle> {
+    return this.elementwise(aId, bId, "bitwise_xor");
+  }
+
+  async bitwiseNot(aId: number): Promise<TensorHandle> {
+    return this.unaryOps.bitwiseNot(aId);
+  }
+
+  /**
+   * lerp(start, end, weight) = start + weight * (end - start)
+   * Implemented as 3 elementwise dispatches (sub, mul_scalar, add) for the
+   * common scalar-weight case.
+   */
+  async lerpScalar(startId: number, endId: number, weight: number): Promise<TensorHandle> {
+    const diff = await this.sub(endId, startId);
+    const scaled = await this.mulScalar(diff.id, weight);
+    return this.add(startId, scaled.id);
+  }
+
+  /**
+   * lerp(start, end, weight) where weight is a tensor (broadcasted).
+   */
+  async lerpTensor(startId: number, endId: number, weightId: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const a = this.deviceMgr.getTensorMeta(startId);
+    const b = this.deviceMgr.getTensorMeta(endId);
+    const c = this.deviceMgr.getTensorMeta(weightId);
+    // Broadcast a, b, c to the common shape
+    const outShape = this.broadcastOps.broadcastShapes(
+      this.broadcastOps.broadcastShapes(a.shape, b.shape),
+      c.shape,
+    );
+    const length = product(outShape);
+    const aExpanded = a.shape.join(",") !== outShape.join(",")
+      ? await this.broadcastOps.broadcastTensor(a, outShape)
+      : a;
+    const bExpanded = b.shape.join(",") !== outShape.join(",")
+      ? await this.broadcastOps.broadcastTensor(b, outShape)
+      : b;
+    const cExpanded = c.shape.join(",") !== outShape.join(",")
+      ? await this.broadcastOps.broadcastTensor(c, outShape)
+      : c;
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const pipeline = getOrCreatePipeline(TERNARY_SHADER, "lerp_op");
+    dispatchCompute(pipeline, [aExpanded.buffer, bExpanded.buffer, cExpanded.buffer, out], calculateWorkgroups(length));
+    await syncDevice();
+    return this.deviceMgr.registerTensorAsHandle(out, outShape, a.dtype, length);
+  }
+
+  /**
+   * addcmul(input, t1, t2, value=1) = input + value * t1 * t2
+   * For value=1 (most common), uses 2 dispatches: mul(t1,t2) + add(input, _).
+   * For value != 1, decompose into mul + mul_scalar + add.
+   */
+  async addcmul(inputId: number, t1Id: number, t2Id: number, value: number): Promise<TensorHandle> {
+    const product = await this.mul(t1Id, t2Id);
+    if (value === 1.0) {
+      return this.add(inputId, product.id);
+    }
+    const scaled = await this.mulScalar(product.id, value);
+    return this.add(inputId, scaled.id);
+  }
+
+  /**
+   * addcdiv(input, t1, t2, value=1) = input + value * (t1 / t2)
+   */
+  async addcdiv(inputId: number, t1Id: number, t2Id: number, value: number): Promise<TensorHandle> {
+    const quotient = await this.div(t1Id, t2Id);
+    if (value === 1.0) {
+      return this.add(inputId, quotient.id);
+    }
+    const scaled = await this.mulScalar(quotient.id, value);
+    return this.add(inputId, scaled.id);
+  }
+
+  /**
+   * mul by a scalar value (broadcasts the scalar across the tensor).
+   */
+  async mulScalar(tensorId: number, value: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const a = this.deviceMgr.getTensorMeta(tensorId);
+    const length = product(a.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    const params = new Float32Array([value, length, 0, 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, "mul");
+    dispatchCompute(pipeline, [a.buffer, paramBuffer, out], calculateWorkgroups(length));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, length);
   }
 
   async where(conditionId: number, xId: number, yId: number): Promise<TensorHandle> {

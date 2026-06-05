@@ -101,3 +101,31 @@ def empty_from_shape(shape: int | Sequence[int], dtype: str = "float32") -> "Ten
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.empty(_normalize_shape(shape), dtype))
     return _mk(meta)
+
+
+def normal_from_shape(shape: int | Sequence[int], mean: float, std: float, dtype: str = "float32") -> "Tensor":
+    from ._runtime import _get_runtime, _run_js_awaitable
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.normal(_normalize_shape(shape), dtype, float(mean), float(std)))
+    return _mk(meta)
+
+
+def bernoulli_from_shape(shape: int | Sequence[int], p: float = 0.5, dtype: str = "float32") -> "Tensor":
+    from ._runtime import _get_runtime, _run_js_awaitable
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.bernoulli(_normalize_shape(shape), dtype, float(p)))
+    return _mk(meta)
+
+
+def exponential_from_shape(shape: int | Sequence[int], lambd: float = 1.0, dtype: str = "float32") -> "Tensor":
+    from ._runtime import _get_runtime, _run_js_awaitable
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.exponential(_normalize_shape(shape), dtype, float(lambd)))
+    return _mk(meta)
+
+
+def log_normal_from_shape(shape: int | Sequence[int], mean: float = 0.0, std: float = 1.0, dtype: str = "float32") -> "Tensor":
+    from ._runtime import _get_runtime, _run_js_awaitable
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.logNormal(_normalize_shape(shape), dtype, float(mean), float(std)))
+    return _mk(meta)

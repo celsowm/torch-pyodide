@@ -4,8 +4,8 @@ import torch.nn as nn
 
 # BatchNorm in training vs eval mode
 bn = nn.BatchNorm1d(4)
-bn.weight = torch.ones((4,))
-bn.bias = torch.zeros((4,))
+bn.weight = nn.Parameter(torch.ones((4,)))
+bn.bias = nn.Parameter(torch.zeros((4,)))
 
 x = torch.tensor([[1.0, 2.0, 3.0, 4.0],
                   [5.0, 6.0, 7.0, 8.0],

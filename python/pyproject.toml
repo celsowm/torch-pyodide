@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torch-pyodide"
-version = "0.0.75"
+version = "0.0.76"
 description = "PyTorch-compatible module with autograd, interpolate/upsample, pooling 1D, loss modules, gradient clipping, nn.init, ModuleList, and float16/bfloat16 — via Pyodide + WebGPU."
 requires-python = ">=3.11"
 readme = "README.md"

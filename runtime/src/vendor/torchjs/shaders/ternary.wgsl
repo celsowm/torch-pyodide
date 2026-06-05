@@ -1,0 +1,16 @@
+// Ternary elementwise ops: 3 input tensors -> 1 output.
+// Used for ops like lerp(start, end, weight).
+// Bindings: a=start, b=end, c=weight (broadcasted to tensor shape).
+
+@group(0) @binding(0) var<storage,read> a: array<f32>;
+@group(0) @binding(1) var<storage,read> b: array<f32>;
+@group(0) @binding(2) var<storage,read> c: array<f32>;
+@group(0) @binding(3) var<storage,read_write> result: array<f32>;
+
+@compute @workgroup_size(256)
+fn lerp_op(@builtin(global_invocation_id) global_id: vec3<u32>) {
+    let idx = global_id.x;
+    if (idx >= arrayLength(&result)) { return; }
+    // lerp(start, end, weight) = start + weight * (end - start)
+    result[idx] = a[idx] + c[idx] * (b[idx] - a[idx]);
+}

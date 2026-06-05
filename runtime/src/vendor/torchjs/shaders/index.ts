@@ -82,6 +82,8 @@ import NLL_LOSS_REDUCED_SHADER from './nll_loss_reduced.wgsl';
 import SGD_STEP_SHADER from './sgd_step.wgsl';
 import RMSPROP_STEP_SHADER from './rmsprop_step.wgsl';
 import MAXMIN_BACKWARD_SHADER from './maxmin_backward.wgsl';
+import TERNARY_SHADER from './ternary.wgsl';
+import EXTENDED_STEP_SHADER from './extended_step.wgsl';
 
 export {
   ELEMENTWISE_SHADER,
@@ -162,4 +164,6 @@ export {
   SGD_STEP_SHADER,
   RMSPROP_STEP_SHADER,
   MAXMIN_BACKWARD_SHADER,
+  TERNARY_SHADER,
+  EXTENDED_STEP_SHADER,
 };
