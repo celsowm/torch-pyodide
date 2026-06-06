@@ -1,6 +1,6 @@
 {
-  "implemented": 367,
-  "total": 367,
+  "implemented": 385,
+  "total": 385,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
@@ -16,20 +16,28 @@
       "total": 138
     },
     "tensor_property": {
-      "implemented": 4,
-      "total": 4
+      "implemented": 6,
+      "total": 6
     },
     "nn_func": {
-      "implemented": 24,
-      "total": 24
+      "implemented": 25,
+      "total": 25
     },
     "nn_class": {
       "implemented": 23,
       "total": 23
     },
     "nn_class_method": {
-      "implemented": 16,
-      "total": 16
+      "implemented": 19,
+      "total": 19
+    },
+    "optim_class": {
+      "implemented": 8,
+      "total": 8
+    },
+    "optim_class_method": {
+      "implemented": 4,
+      "total": 4
     }
   },
   "targets": [
@@ -2232,6 +2240,114 @@
     {
       "id": "torch.load",
       "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.numel",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.device",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.reset_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.SGD",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.Adam",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.AdamW",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.RMSprop",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.Adagrad",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.Adamax",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.NAdam",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.RAdam",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.elu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Optimizer.step",
+      "kind": "optim_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Optimizer.zero_grad",
+      "kind": "optim_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Optimizer.state_dict",
+      "kind": "optim_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Optimizer.load_state_dict",
+      "kind": "optim_class_method",
       "implemented": true,
       "note": "ok"
     }

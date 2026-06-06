@@ -1,3 +1,5 @@
+import json
+
 import torch
 import torch.nn.functional as F
 
@@ -7,5 +9,7 @@ target = torch.tensor([0])
 loss = F.cross_entropy(logits, target)
 loss.backward()
 
-print("loss:", float(loss.detach()))
-print("grad:", logits.grad)
+print(json.dumps({
+    "loss": round(float(loss.detach()), 5),
+    "grad": [round(v, 4) for v in logits.grad.tolist()[0]],
+}, sort_keys=True))

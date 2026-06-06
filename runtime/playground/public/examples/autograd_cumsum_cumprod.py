@@ -1,25 +1,24 @@
+import json
+
 import torch
 
-# Cumsum + Cumprod + Tril + Triu + Flip backward
-x = torch.tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
-
-cs = x.cumsum(0)
-cp = x.cumprod(0)
-print("cumsum:", cs.tolist())
-print("cumprod:", cp.tolist())
-
-loss = cs.sum() + cp.sum()
-loss.backward()
-print("grad:", x.grad.tolist())
-
-# 2d ops
+torch.manual_seed(42)
 y = torch.tensor([[1.0, 2.0], [3.0, 4.0]], requires_grad=True)
 tr = y.tril()
 tu = y.triu()
-print("tril:", tr.tolist())
-print("triu:", tu.tolist())
-
 loss2 = tr.sum() + tu.sum()
 y.grad = None
 loss2.backward()
-print("grad 2d:", y.grad.tolist())
+grad_2d = [[round(v, 4) for v in row] for row in y.grad.tolist()]
+
+x = torch.tensor([1.0, 2.0, 3.0, 4.0])
+cs = x.cumsum(0).tolist()
+cp = x.cumprod(0).tolist()
+
+print(json.dumps({
+"tril": tr.tolist(),
+"triu": tu.tolist(),
+"grad_2d": grad_2d,
+"cumsum": cs,
+"cumprod": cp,
+}, sort_keys=True))

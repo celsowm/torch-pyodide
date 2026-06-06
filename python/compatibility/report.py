@@ -116,6 +116,38 @@ def _check_target(torch_mod: Any, tensor_cls: Any, target: dict[str, str]) -> Ta
         ok = callable(current)
         return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
 
+    if kind == "optim_class_method":
+        # Path is anchored under torch.optim (e.g. "Optimizer.state_dict",
+        # "SGD.step", "AdamW.zero_grad"). Method name is the last segment.
+        parts = target_id.split(".")
+        if len(parts) < 2:
+            return TargetResult(target_id, kind, False, "invalid id")
+        method_name = parts[-1]
+        path_parts = parts[:-1]
+        current = getattr(torch_mod, "optim", None)
+        if current is None:
+            return TargetResult(target_id, kind, False, "torch.optim missing")
+        for part in path_parts:
+            if not hasattr(current, part):
+                return TargetResult(target_id, kind, False, f"missing path segment: {part}")
+            current = getattr(current, part)
+        if not isinstance(current, type):
+            return TargetResult(target_id, kind, False, "not a class")
+        method = getattr(current, method_name, None)
+        ok = callable(method)
+        return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
+
+    if kind == "optim_class":
+        # Path drops the leading "torch" (e.g. "torch.optim.SGD" → "optim.SGD")
+        parts = target_id.split(".")[1:]  # drop "torch"
+        current = torch_mod
+        for part in parts:
+            if not hasattr(current, part):
+                return TargetResult(target_id, kind, False, "missing")
+            current = getattr(current, part)
+        ok = isinstance(current, type)
+        return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
+
     return TargetResult(target_id, kind, False, f"unknown kind: {kind}")
 
 

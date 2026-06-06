@@ -162,20 +162,18 @@ def _grad_tanh(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
 
 
 def _grad_gelu(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
-    """d/dinput gelu(input) = grad_output * gelu'(input)"""
     if not input_tensor._requires_grad:
         return None
     from ._tensor import sigmoid_from_tensor, tanh_from_tensor
-    # gelu'(x) = 0.5 * (1 + tanh(sqrt(2/pi) * (x + 0.044715 * x³)))
-    #          + 0.5 * x * sech²(...) * sqrt(2/pi) * (1 + 0.134145 * x²)
-    # Simplificação: usar a derivada numérica aproximada
     x = input_tensor
-    x_cubed = x.mul(x).mul(x)
-    inner = x.add(x_cubed.mul(0.044715)).mul(1.128379)  # sqrt(2/pi) ≈ 1.128379
+    x_sq = x.mul(x)
+    x_cubed = x_sq.mul(x)
+    inner = x.add(x_cubed.mul(0.044715)).mul(1.1283791670955126)
     tanh_inner = tanh_from_tensor(inner)
     sech_sq = tanh_inner.mul(tanh_inner).neg().add(1)
+    d_inner_dx = x_sq.mul(0.134145).add(1).mul(1.1283791670955126)
     grad = x.mul(0.5).add(0.5).add(
-        x.mul(0.5).mul(sech_sq).mul(inner.div(x).add(0.134145 * x.mul(x)))
+        x.mul(0.5).mul(sech_sq).mul(d_inner_dx)
     )
     return grad_output.mul(grad)
 

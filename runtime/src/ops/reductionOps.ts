@@ -84,14 +84,14 @@ export class ReductionOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const length = product(meta.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const params = new Uint32Array([length, 0, 0, 0]);
+    const params = new Uint32Array([1, length, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(CUMSUM_SHADER, "main");
-    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(1));
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
@@ -102,14 +102,14 @@ export class ReductionOps {
     const meta = this.deviceMgr.getTensorMeta(tensorId);
     const length = product(meta.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const params = new Uint32Array([length, 0, 0, 0]);
+    const params = new Uint32Array([1, length, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(CUMPROD_SHADER, "main");
-    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(1));
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
@@ -677,9 +677,21 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
     this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
     const pipeline = getOrCreatePipeline(EXTENDED_STEP_SHADER, "adagrad_step");
+    // Adagrad's entrypoint only references bindings 0, 1, 2, 4, 5, 6
+    // (state1 @binding(3) is declared but unused in the function body,
+    // so the auto-generated bind group layout omits it). We pass an
+    // explicit entries array instead of a sequential buffer list to
+    // avoid "binding index 3 not present in the bind group layout".
     dispatchCompute(
       pipeline,
-      [param.buffer, grad.buffer, sumSquares.buffer, param.buffer, dimsBuffer, hpBuffer, extraBuffer],
+      [
+        { binding: 0, resource: { buffer: param.buffer } },
+        { binding: 1, resource: { buffer: grad.buffer } },
+        { binding: 2, resource: { buffer: sumSquares.buffer } },
+        { binding: 4, resource: { buffer: dimsBuffer } },
+        { binding: 5, resource: { buffer: hpBuffer } },
+        { binding: 6, resource: { buffer: extraBuffer } },
+      ],
       calculateWorkgroups(n),
     );
     await syncDevice();

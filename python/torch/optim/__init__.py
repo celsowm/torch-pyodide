@@ -96,7 +96,14 @@ class Optimizer:
 
     def load_state_dict(self, state_dict: dict[str, object]) -> None:
         """Carrega o estado do otimizador."""
-        self.state = state_dict["state"]
+        raw_state = state_dict["state"]
+        # Pickle round-trip converts int keys to strings (Python's default
+        # pickle protocol preserves dicts as a stream of (key, value)
+        # pairs and Python pickles ints and strings as different opcodes
+        # but the high-level dict reconstruction accepts both). The
+        # optimizer's step() indexes self.state by id(p) (an int), so
+        # convert any stringified keys back to ints.
+        self.state = {int(k) if isinstance(k, str) and k.isdigit() else k: v for k, v in raw_state.items()}
         self.param_groups = state_dict["param_groups"]
 
 

@@ -182,25 +182,24 @@ def pad(x: Tensor, pad: Sequence[int], mode: str = "constant", value: float = 0.
 def _pad_reflect(x: Tensor, dim: int, left: int, right: int) -> Tensor:
     """Reflect padding: pads with reflection of tensor at boundaries.
 
-    Uses `narrow` (slice) + `flip` instead of `index_select` so it works
-    on tensors of any rank (the WebGPU `indexSelect` op is limited to 2D).
+    Mirrors about the boundary without repeating the edge value.
+    E.g. input [1,2,3,4] with left=2, right=2 -> [3,2,1,2,3,4,3,2].
     """
     dim_size = x.shape[dim]
     parts = []
     if left > 0:
-        # Take the first (left+1) elements, drop the boundary, reverse to mirror.
-        # E.g. dim_size=3, left=2 -> take [0,1,2], drop [0], reverse [1,2] -> [2,1].
-        left_slice = x.narrow(dim, 0, min(left + 1, dim_size)).flip([dim])
-        if left_slice.shape[dim] > left:
-            left_slice = left_slice.narrow(dim, left_slice.shape[dim] - left, left)
+        left_slice = x.narrow(dim, 1, min(left, dim_size - 1)).flip([dim])
+        if left_slice.shape[dim] < left:
+            extra = x.narrow(dim, 0, left - left_slice.shape[dim]).flip([dim])
+            left_slice = torch.cat([extra, left_slice], dim=dim)
         parts.append(left_slice)
     parts.append(x)
     if right > 0:
-        # Take the last (right+1) elements, drop the boundary, reverse to mirror.
-        # E.g. dim_size=3, right=2 -> take [0,1,2], drop [2], reverse [0,1] -> [1,0].
-        right_slice = x.narrow(dim, max(0, dim_size - right - 1), min(right + 1, dim_size)).flip([dim])
-        if right_slice.shape[dim] > right:
-            right_slice = right_slice.narrow(dim, 0, right)
+        right_slice = x.narrow(dim, max(0, dim_size - 1 - right), min(right, dim_size - 1)).flip([dim])
+        if right_slice.shape[dim] < right:
+            remaining = right - right_slice.shape[dim]
+            extra = x.narrow(dim, dim_size - remaining, remaining).flip([dim])
+            right_slice = torch.cat([right_slice, extra], dim=dim)
         parts.append(right_slice)
     if len(parts) == 1:
         return parts[0]
@@ -262,7 +261,31 @@ def elu(x: Tensor, alpha: float = 1.0) -> Tensor:
 
 
 def celu(x: Tensor, alpha: float = 1.0) -> Tensor:
-    return torch.max(x, torch.zeros_like(x)) + alpha * (torch.min(x, torch.zeros_like(x)) / alpha).exp().sub(1.0).mul(alpha)
+    return torch.maximum(x, torch.zeros_like(x)) + alpha * (torch.minimum(x, torch.zeros_like(x)) / alpha).exp().sub(1.0).mul(alpha)
+
+
+def softplus(x: Tensor, beta: float = 1.0, threshold: float = 20.0) -> Tensor:
+    return x.softplus()
+
+
+def mish(x: Tensor) -> Tensor:
+    return x.mish()
+
+
+def hardswish(x: Tensor) -> Tensor:
+    return x.hardswish()
+
+
+def hardsigmoid(x: Tensor) -> Tensor:
+    return x.hardsigmoid()
+
+
+def softsign(x: Tensor) -> Tensor:
+    return x.softsign()
+
+
+def tanhshrink(x: Tensor) -> Tensor:
+    return x.tanhshrink()
 
 
 def rrelu(x: Tensor, lower: float = 0.125, upper: float = 0.3333333333333333, training: bool = True) -> Tensor:
@@ -308,7 +331,7 @@ def mse_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
 
 def binary_cross_entropy_with_logits(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
     # sigmoid + BCE fused
-    max_val = torch.clamp(-input, 0.0)
+    max_val = torch.clamp(-input, 0.0, float("inf"))
     loss = input - input * target + max_val + ((-max_val).exp() + (-input - max_val).exp()).log()
     if reduction == "none":
         return loss

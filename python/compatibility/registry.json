@@ -1946,6 +1946,78 @@
     {
       "id": "torch.load",
       "kind": "module_func"
+    },
+    {
+      "id": "Tensor.numel",
+      "kind": "tensor_property"
+    },
+    {
+      "id": "Tensor.device",
+      "kind": "tensor_property"
+    },
+    {
+      "id": "nn.Module.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.reset_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "torch.optim.SGD",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.Adam",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.AdamW",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.RMSprop",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.Adagrad",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.Adamax",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.NAdam",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.RAdam",
+      "kind": "optim_class"
+    },
+    {
+      "id": "nn.functional.elu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "Optimizer.step",
+      "kind": "optim_class_method"
+    },
+    {
+      "id": "Optimizer.zero_grad",
+      "kind": "optim_class_method"
+    },
+    {
+      "id": "Optimizer.state_dict",
+      "kind": "optim_class_method"
+    },
+    {
+      "id": "Optimizer.load_state_dict",
+      "kind": "optim_class_method"
     }
   ]
 }

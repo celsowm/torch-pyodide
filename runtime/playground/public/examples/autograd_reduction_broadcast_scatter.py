@@ -1,43 +1,62 @@
+import json
+
 import torch
 
 # Reduction backward by dimension
 m = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], requires_grad=True)
 s = m.sum(dim=1)
-print("sum dim:", s.tolist())
-s.sum().backward()
-print("grad sum dim:", m.grad.tolist())
-
-m.grad = None
 mean0 = m.mean(dim=0)
-print("mean dim:", mean0.tolist())
-mean0.sum().backward()
-print("grad mean dim:", m.grad.tolist())
 
 # Broadcast backward
 row = torch.tensor([[1.0, 2.0, 3.0]], requires_grad=True)
-(row + torch.ones([2, 3])).sum().backward()
-print("grad broadcast row:", row.grad.tolist())
-
-col = torch.tensor([[1.0], [2.0], [3.0]], requires_grad=True)
-(col * torch.ones([3, 4])).sum().backward()
-print("grad broadcast col:", col.grad.tolist())
-
+(col := None)
+(col := torch.tensor([[1.0], [2.0], [3.0]], requires_grad=True))
 scalar = torch.tensor(2.0, requires_grad=True)
-(scalar + torch.ones([2, 3])).sum().backward()
-print("grad broadcast scalar:", scalar.grad.tolist())
 
 # Boolean condition where backward
 cond = torch.tensor([True, False, True], dtype=torch.bool)
-x = torch.tensor([10.0, 20.0, 30.0], requires_grad=True)
-y = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
-torch.where(cond, x, y).sum().backward()
-print("grad where bool x:", x.grad.tolist())
-print("grad where bool y:", y.grad.tolist())
+xb = torch.tensor([10.0, 20.0, 30.0], requires_grad=True)
+yb = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
 
 # Scatter backward
 base = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
 index = torch.tensor([0, 2], dtype=torch.int64)
 src = torch.tensor([10.0, 20.0], requires_grad=True)
+
+# Now run all backward passes
+s.sum().backward()
+grad_sum_dim = m.grad.tolist()
+m.grad = None
+
+mean0.sum().backward()
+grad_mean_dim = m.grad.tolist()
+m.grad = None
+
+(row + torch.ones([2, 3])).sum().backward()
+grad_broadcast_row = row.grad.tolist()
+
+(col * torch.ones([3, 4])).sum().backward()
+grad_broadcast_col = col.grad.tolist()
+
+(scalar + torch.ones([2, 3])).sum().backward()
+grad_broadcast_scalar = scalar.grad.tolist()
+
+torch.where(cond, xb, yb).sum().backward()
+grad_where_bool_x = xb.grad.tolist()
+grad_where_bool_y = yb.grad.tolist()
+
 torch.scatter(base, 0, index, src).sum().backward()
-print("grad scatter base:", base.grad.tolist())
-print("grad scatter src:", src.grad.tolist())
+grad_scatter_base = base.grad.tolist()
+grad_scatter_src = src.grad.tolist()
+
+print(json.dumps({
+    "grad_sum_dim": [[round(v, 4) for v in row] for row in grad_sum_dim],
+    "grad_mean_dim": [[round(v, 4) for v in row] for row in grad_mean_dim],
+    "grad_broadcast_row": [[round(v, 4) for v in row] for row in grad_broadcast_row],
+    "grad_broadcast_col": [[round(v, 4) for v in row] for row in grad_broadcast_col],
+    "grad_broadcast_scalar": round(grad_broadcast_scalar, 4),
+    "grad_where_bool_x": [round(v, 4) for v in grad_where_bool_x],
+    "grad_where_bool_y": [round(v, 4) for v in grad_where_bool_y],
+    "grad_scatter_base": [round(v, 4) for v in grad_scatter_base],
+    "grad_scatter_src": [round(v, 4) for v in grad_scatter_src],
+}, sort_keys=True))
