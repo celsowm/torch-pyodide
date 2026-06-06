@@ -1031,4 +1031,67 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(Math.abs(actual.smooth_l1_loss - ref.output!.smooth_l1_loss)).toBeLessThan(0.01);
     expect(consoleFailures).toEqual([]);
   });
+
+  test("real pretrained tiny CNN loads and matches real PyTorch predictions", async () => {
+    // The example embeds a state_dict produced by real PyTorch, reconstructs
+    // the same architecture in the browser, and compares its predictions to
+    // the reference ones baked into the bundle. We additionally cross-check
+    // against the live real-PyTorch run to catch any drift.
+    const ref = runExampleWithRealTorch<{
+      bundle_version: number;
+      n_samples: number;
+      preds: number[];
+      ref_preds: number[];
+      preds_match: boolean;
+      logits_max_abs_diff: number;
+      first_pred: number;
+      first_pred_prob: number;
+      first_ref_pred: number;
+      state_dict_keys: string[];
+    }>("real_model_pretrained_tiny_cnn.py");
+    if (ref.skipReason) test.skip(true, ref.skipReason);
+    expect(ref.output).toBeDefined();
+
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("real_model_pretrained_tiny_cnn");
+    await expect(page.locator("#example-select")).toHaveValue("real_model_pretrained_tiny_cnn");
+    const { output } = await runSelectedExample(page, "real_model_pretrained_tiny_cnn", 60000);
+
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+
+    const actual = parseJsonOutput<{
+      bundle_version: number;
+      n_samples: number;
+      preds: number[];
+      ref_preds: number[];
+      preds_match: boolean;
+      logits_max_abs_diff: number;
+      first_pred: number;
+      first_pred_prob: number;
+      first_ref_pred: number;
+      state_dict_keys: string[];
+    }>(output);
+
+    // The browser must agree with the reference predictions baked into the
+    // bundle (bit-for-bit, since the WGSL conv/linear/etc. match real
+    // PyTorch up to a small f32 epsilon).
+    expect(actual.preds_match).toBe(true);
+    expect(actual.preds).toEqual(ref.output!.preds);
+    expect(actual.preds).toEqual(ref.output!.ref_preds);
+    expect(actual.first_pred).toBe(ref.output!.first_pred);
+    expect(actual.first_ref_pred).toBe(ref.output!.first_ref_pred);
+    expect(actual.n_samples).toBe(ref.output!.n_samples);
+
+    // The state_dict was produced by real PyTorch; loading it and running
+    // it through the browser's TinyCNN must reproduce the reference
+    // predictions with only a tiny WGSL f32 epsilon of drift.
+    expect(actual.logits_max_abs_diff).toBeLessThan(0.05);
+
+    // Cross-check that the live real-PyTorch run agrees with the bundle's
+    // self-check (sanity: the bundle was generated from the same model).
+    expect(actual.preds).toEqual(ref.output!.preds);
+    expect(actual.state_dict_keys).toEqual(ref.output!.state_dict_keys);
+
+    expect(consoleFailures).toEqual([]);
+  });
 });
