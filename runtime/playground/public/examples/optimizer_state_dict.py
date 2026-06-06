@@ -55,7 +55,8 @@ state_b64 = base64.b64encode(opt_state_bytes.getvalue()).decode("ascii")
 
 # ── 2. Rebuild optimizer, restore state, continue training ────────────────
 opt_b = torch.optim.Adam([w, b], lr=0.01)
-opt_b.load_state_dict(torch.load(io.BytesIO(base64.b64decode(state_b64))))
+loaded = torch.load(io.BytesIO(base64.b64decode(state_b64)))
+opt_b.load_state_dict(loaded)
 losses_b_second = _train_n_steps(opt_b, [w, b], 5)
 
 # ── 3. Fresh optimizer (no state restoration) for comparison ──────────────

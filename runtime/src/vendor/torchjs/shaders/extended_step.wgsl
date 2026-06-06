@@ -144,6 +144,11 @@ fn radam_step(@builtin(global_invocation_id) gid: vec3<u32>) {
   let step_size = extra.y;
   let beta1_pow_t = extra.z;
   let beta2_pow_t = extra.w;
+  // dims.y holds the integer step count (u32). Match real PyTorch's RAdam
+  // (uses the integer step in the SMA-length denominator) instead of a
+  // continuous -log(beta2^t)/log(beta2) approximation, which diverges
+  // noticeably from PyTorch at low step counts.
+  let t_int = max(f32(dims.y), 1.0);
 
   let p = param[i];
   var g = grad[i];
@@ -160,21 +165,10 @@ fn radam_step(@builtin(global_invocation_id) gid: vec3<u32>) {
   let m_hat = m / (1.0 - beta1_pow_t);
   let v_hat = v / (1.0 - beta2_pow_t);
 
-  // Compute the rectification term rho_t.
-  // rho_inf = 2 / (1 - beta2) - 1
-  // rho_t = rho_inf - 2 * t * beta2^t / (1 - beta2^t)
-  // We compute rho_t as: rho_t = 2 / (1 - beta2) - 1 - 2 * (1 - beta2_pow_t) * exp_term
-  // For practical use, the Python driver passes `step_size` already scaled by
-  // the SMA-length, and we use the simple variant:
-  //   if rho_t > 5: use sqrt((1 - beta2^t) * v_hat) (with no / sqrt(1 - prod))
-  //   else:         no adaptive learning rate
+  // RAdam rectification using the integer step count for the SMA length.
   let rho_inf = 2.0 / (1.0 - beta2) - 1.0;
   let one_minus_b2t = 1.0 - beta2_pow_t;
-  // Approximate the SMA length: t = -log(beta2_pow_t) / log(beta2)
-  // Avoid log(0): clamp beta2_pow_t away from 0
-  let safe_b2t = max(beta2_pow_t, 1e-10);
-  let t_approx = -log(safe_b2t) / log(max(beta2, 1e-10));
-  let rho_t = rho_inf - 2.0 * t_approx * beta2_pow_t / max(one_minus_b2t, 1e-10);
+  let rho_t = rho_inf - 2.0 * t_int * beta2_pow_t / max(one_minus_b2t, 1e-10);
 
   var update: f32;
   if (rho_t > 5.0) {

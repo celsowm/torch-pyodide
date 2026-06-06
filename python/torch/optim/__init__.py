@@ -104,7 +104,26 @@ class Optimizer:
         # optimizer's step() indexes self.state by id(p) (an int), so
         # convert any stringified keys back to ints.
         self.state = {int(k) if isinstance(k, str) and k.isdigit() else k: v for k, v in raw_state.items()}
-        self.param_groups = state_dict["param_groups"]
+        # Real PyTorch's state_dict stores `param_groups[*]['params']` as
+        # a list of integer indices into the *original* param order; our
+        # own state_dict stores the Tensors directly. In both cases the
+        # saved list is positional — map it back to the *current* param
+        # list so step() iterates over the right objects. (After a pickle
+        # round-trip the loaded Tensors are fresh objects; without this
+        # remap their `.grad` is None and step() silently skips them.)
+        loaded_groups = state_dict["param_groups"]
+        current_groups = self.param_groups
+        for loaded_group, current_group in zip(loaded_groups, current_groups):
+            loaded_params = loaded_group.get("params", [])
+            current_params = list(current_group.get("params", []))
+            rehydrated = []
+            for idx, _ in enumerate(loaded_params):
+                if idx < len(current_params):
+                    rehydrated.append(current_params[idx])
+                else:
+                    rehydrated.append(loaded_params[idx])
+            loaded_group["params"] = rehydrated
+        self.param_groups = loaded_groups
 
 
 class SGD(Optimizer):
@@ -815,6 +834,7 @@ class RAdam(Optimizer):
                             float(step_size),
                             float(beta1 ** step),
                             float(beta2 ** step),
+                            int(step),
                         ))
                     except Exception:
                         if weight_decay != 0:

@@ -261,11 +261,19 @@ def elu(x: Tensor, alpha: float = 1.0) -> Tensor:
 
 
 def celu(x: Tensor, alpha: float = 1.0) -> Tensor:
-    return torch.maximum(x, torch.zeros_like(x)) + alpha * (torch.minimum(x, torch.zeros_like(x)) / alpha).exp().sub(1.0).mul(alpha)
+    # celu(x) = x if x >= 0, else alpha * (exp(x/alpha) - 1)
+    # Using where matches the elu pattern; gradient at x=0 is alpha*exp(0)=1.
+    return torch.where(x > 0.0, x, alpha * (x.div(alpha).exp().sub(1.0)))
 
 
 def softplus(x: Tensor, beta: float = 1.0, threshold: float = 20.0) -> Tensor:
-    return x.softplus()
+    # Numerical stability: when input * beta > threshold, softplus(x) ≈ x.
+    if beta == 1.0 and threshold == 20.0:
+        return x.softplus()
+    scaled = x * beta
+    use_linear = scaled > threshold
+    exact = (scaled.exp().add(1.0).log()) / beta
+    return torch.where(use_linear, x, exact)
 
 
 def mish(x: Tensor) -> Tensor:

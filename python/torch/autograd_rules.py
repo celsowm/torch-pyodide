@@ -164,17 +164,14 @@ def _grad_tanh(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
 def _grad_gelu(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     if not input_tensor._requires_grad:
         return None
-    from ._tensor import sigmoid_from_tensor, tanh_from_tensor
+    from ._tensor import erf_from_tensor
     x = input_tensor
-    x_sq = x.mul(x)
-    x_cubed = x_sq.mul(x)
-    inner = x.add(x_cubed.mul(0.044715)).mul(1.1283791670955126)
-    tanh_inner = tanh_from_tensor(inner)
-    sech_sq = tanh_inner.mul(tanh_inner).neg().add(1)
-    d_inner_dx = x_sq.mul(0.134145).add(1).mul(1.1283791670955126)
-    grad = x.mul(0.5).add(0.5).add(
-        x.mul(0.5).mul(sech_sq).mul(d_inner_dx)
-    )
+    # Exact GELU: 0.5 * x * (1 + erf(x / sqrt(2)))
+    # d/dx = 0.5 * (1 + erf(x/sqrt(2))) + x * exp(-x^2/2) / sqrt(2*pi)
+    erf_part = erf_from_tensor(x.mul(0.7071067811865475))  # 1/sqrt(2)
+    # exp(-x^2/2) / sqrt(2*pi) = 0.3989422804014327
+    gauss = x.mul(x).neg().mul(0.5).exp().mul(0.3989422804014327)
+    grad = erf_part.add(1.0).mul(0.5).add(x.mul(gauss))
     return grad_output.mul(grad)
 
 
@@ -581,19 +578,31 @@ def _grad_prod(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
     return grad_output.mul(input_tensor.prod()).div(input_tensor)
 
 
-def _grad_cumsum(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
-    """d/dinput cumsum(input) = flip(cumsum(flip(grad_output)))"""
+def _grad_cumsum(grad_output: Tensor, input_tensor: Tensor, dim: int = 0) -> Tensor | None:
+    """d/dinput cumsum(input) along the last dim.
+
+    The gradient at index i is the sum of grad_output from i to the end.
+    Computed as: flip(cumsum(flip(grad_output))).
+    """
     if not input_tensor._requires_grad:
         return None
-    # Simplificado: gradiente de cumsum é cumsum reverso
-    return grad_output
+    return grad_output.flip([dim]).cumsum(dim).flip([dim])
 
 
-def _grad_cumprod(grad_output: Tensor, input_tensor: Tensor) -> Tensor | None:
-    """d/dinput cumprod(input) = complex; simplificado"""
+def _grad_cumprod(grad_output: Tensor, input_tensor: Tensor, dim: int = 0) -> Tensor | None:
+    """d/dinput cumprod(input) along the last dim.
+
+    Let c = cumprod(input). Then for j:
+        grad_input[j] = (1/x[j]) * sum_{i >= j} grad_output[i] * c[i]
+                     = flip(cumsum(flip(grad_output * c))) / x
+    """
     if not input_tensor._requires_grad:
         return None
-    return grad_output
+    c = input_tensor.cumprod(dim)
+    safe_x = input_tensor + (input_tensor == 0.0).to(input_tensor.dtype) * 1e-30
+    t = c.mul(grad_output)
+    t_cumsum = t.flip([dim]).cumsum(dim).flip([dim])
+    return t_cumsum.div(safe_x)
 
 
 def _grad_expand(grad_output: Tensor, input_tensor: Tensor, new_shape: Sequence[int]) -> Tensor | None:

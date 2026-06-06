@@ -385,7 +385,7 @@ def all_from_tensor(tensor: "Tensor") -> "Tensor":
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
-def cumsum_from_tensor(tensor: "Tensor") -> "Tensor":
+def cumsum_from_tensor(tensor: "Tensor", dim: int = 0) -> "Tensor":
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_cumsum
 
@@ -395,12 +395,12 @@ def cumsum_from_tensor(tensor: "Tensor") -> "Tensor":
 
     if is_grad_enabled() and tensor._requires_grad:
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
-        result._node = _Node(result, lambda g: (_grad_cumsum(g, tensor),), [tensor])
+        result._node = _Node(result, lambda g: (_grad_cumsum(g, tensor, dim),), [tensor])
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
-def cumprod_from_tensor(tensor: "Tensor") -> "Tensor":
+def cumprod_from_tensor(tensor: "Tensor", dim: int = 0) -> "Tensor":
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_cumprod
 
@@ -410,7 +410,7 @@ def cumprod_from_tensor(tensor: "Tensor") -> "Tensor":
 
     if is_grad_enabled() and tensor._requires_grad:
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
-        result._node = _Node(result, lambda g: (_grad_cumprod(g, tensor),), [tensor])
+        result._node = _Node(result, lambda g: (_grad_cumprod(g, tensor, dim),), [tensor])
         return result
     return Tensor(tensor_id, out_shape, out_dtype)
 

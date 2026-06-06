@@ -7,6 +7,9 @@ target = torch.tensor([0, 2])
 loss_ce = F.cross_entropy(logits, target)
 loss_mse = F.mse_loss(logits, torch.zeros((2, 3)))
 
+log_probs = torch.log_softmax(logits, dim=-1)
+loss_nll = F.nll_loss(log_probs, target)
+
 probs = torch.tensor([0.5, 0.3])
 binary_target = torch.tensor([1.0, 0.0])
 loss_bce = F.binary_cross_entropy(probs, binary_target)
@@ -22,6 +25,7 @@ loss_smooth_l1 = F.smooth_l1_loss(torch.tensor([0.5, -0.2]), z)
 out = {
 "cross_entropy": loss_ce.tolist(),
 "mse_loss": loss_mse.tolist(),
+"nll_loss": loss_nll.tolist(),
 "binary_cross_entropy": loss_bce.tolist(),
 "binary_cross_entropy_with_logits": loss_bce_logits.tolist(),
 "l1_loss": loss_l1.tolist(),

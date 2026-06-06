@@ -784,10 +784,11 @@ test.describe.serial("playground examples @webgpu", () => {
     const exp = ref.output![key]!;
     const act = actual[key]!;
     expect(act).toHaveLength(exp.length);
-    // GELU backward WGSL approximation diverges ~0.12 from closed-form.
-    // F.elu / F.celu are composed of where+exp; at x=0 the WGSL chain
-    // rule diverges by exactly 1.0 from closed-form 1.0 * exp(0) = 1.0.
-    const tol = key === "gelu" ? 0.15 : key === "elu" || key === "celu" ? 1.05 : 0.02;
+    // GELU backward uses exact erf-based gradient (closed-form).
+    // F.elu / F.celu are composed of where+exp; gradient at x=0 matches
+    // closed-form alpha*exp(0)=1.0 (was historically 0.0 due to boundary
+    // handling, fixed by using where instead of max+min for celu).
+    const tol = 0.02;
     for (let i = 0; i < exp.length; i += 1) {
       expect(Math.abs(act[i]! - exp[i]!)).toBeLessThan(tol);
     }
@@ -877,6 +878,8 @@ test.describe.serial("playground examples @webgpu", () => {
       state_b64_length: number;
     }>(output);
     expect(actual.losses_a_first).toEqual(ref.output!.losses_a_first);
+    expect(actual.losses_b_second).toEqual(ref.output!.losses_b_second);
+    expect(actual.losses_fresh_second).toEqual(ref.output!.losses_fresh_second);
     // losses_b_second: in the browser, the WGSL Adam step after a
     // save/load roundtrip is currently a no-op for the loaded state
     // path (the buffer ID is fresh but the WGSL dispatch returns
@@ -997,6 +1000,7 @@ test.describe.serial("playground examples @webgpu", () => {
     const ref = runExampleWithRealTorch<{
       cross_entropy: number;
       mse_loss: number;
+      nll_loss: number;
       binary_cross_entropy: number;
       binary_cross_entropy_with_logits: number;
       l1_loss: number;
@@ -1012,6 +1016,7 @@ test.describe.serial("playground examples @webgpu", () => {
     const actual = parseJsonOutput<{
       cross_entropy: number;
       mse_loss: number;
+      nll_loss: number;
       binary_cross_entropy: number;
       binary_cross_entropy_with_logits: number;
       l1_loss: number;
@@ -1019,6 +1024,7 @@ test.describe.serial("playground examples @webgpu", () => {
     }>(output);
     expect(Math.abs(actual.cross_entropy - ref.output!.cross_entropy)).toBeLessThan(0.05);
     expect(Math.abs(actual.mse_loss - ref.output!.mse_loss)).toBeLessThan(0.01);
+    expect(Math.abs(actual.nll_loss - ref.output!.nll_loss)).toBeLessThan(0.05);
     expect(Math.abs(actual.binary_cross_entropy - ref.output!.binary_cross_entropy)).toBeLessThan(0.01);
     expect(Math.abs(actual.binary_cross_entropy_with_logits - ref.output!.binary_cross_entropy_with_logits)).toBeLessThan(0.01);
     expect(Math.abs(actual.l1_loss - ref.output!.l1_loss)).toBeLessThan(0.01);

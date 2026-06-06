@@ -442,7 +442,7 @@ def neg(x: Tensor) -> Tensor:
     return x.neg()
 
 
-def clamp(x: Tensor, min: float, max: float) -> Tensor:
+def clamp(x: Tensor, min: float | None = None, max: float | None = None) -> Tensor:
     return x.clamp(min=min, max=max)
 
 

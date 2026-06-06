@@ -25,5 +25,9 @@ out = {
 "sign": torch.sign(x).tolist(),
 "softplus": F.softplus(x).tolist(),
 "mish": F.mish(x).tolist(),
+"hardswish": F.hardswish(x).tolist(),
+"hardsigmoid": F.hardsigmoid(x).tolist(),
+"softsign": F.softsign(x).tolist(),
+"tanhshrink": F.tanhshrink(x).tolist(),
 }
 print(json.dumps(out, indent=2))

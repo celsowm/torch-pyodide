@@ -331,21 +331,29 @@ export class ReductionOps {
     const resolvedDim = dim < 0 ? dim + meta.shape.length : dim;
     const length = product(meta.shape);
 
+    let outer = 1;
+    for (let i = 0; i < resolvedDim; i++) outer *= meta.shape[i]!;
+    const axisSize = meta.shape[resolvedDim]!;
+    let inner = 1;
+    for (let i = resolvedDim + 1; i < meta.shape.length; i++) inner *= meta.shape[i]!;
+    const batchSize = outer * inner;
+
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
     const encoder = this.deviceMgr.device!.createCommandEncoder();
     encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, meta.bytes);
     this.deviceMgr.device!.queue.submit([encoder.finish()]);
 
-    const params = new Int32Array([resolvedDim, meta.shape.length, length, 0,
-      ...meta.shape.slice(0, 4).map(s => Math.max(1, s)),
-    ]);
+    // Shader expects dims = (batch_size, num_classes); log_softmax.wgsl
+    // uses var<uniform> dims: vec2<u32>.
+    const params = new Uint32Array([batchSize, axisSize, 0, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: Math.max(16, Math.ceil(params.byteLength / 16) * 16),
+      size: Math.max(16, params.byteLength),
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = getOrCreatePipeline(LOG_SOFTMAX_SHADER, "log_softmax");
-      dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
+    // Shader uses @workgroup_size(1), so dispatch one workgroup per batch.
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], [batchSize, 1, 1]);
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
@@ -799,6 +807,7 @@ export class ReductionOps {
     stepSize: number,
     beta1PowT: number,
     beta2PowT: number,
+    stepCount: number,
   ): Promise<void> {
     await this.deviceMgr.ensureReady();
     const param = this.deviceMgr.getTensorMeta(paramId);
@@ -809,7 +818,7 @@ export class ReductionOps {
     if (grad.length !== n || expAvg.length !== n || expAvgSq.length !== n) {
       throw new Error("radamStep: tensor lengths must match");
     }
-    const dims = new Uint32Array([n, 0, 0, 0]);
+    const dims = new Uint32Array([n, stepCount >>> 0, 0, 0]);
     const hp = new Float32Array([lr, beta1, beta2, eps]);
     const extra = new Float32Array([weightDecay, stepSize, beta1PowT, beta2PowT]);
     const dimsBuffer = this.deviceMgr.device!.createBuffer({ size: dims.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });

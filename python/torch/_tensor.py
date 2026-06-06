@@ -563,9 +563,13 @@ class Tensor:
         from .tensor_ops import neg_from_tensor
         return neg_from_tensor(self)
 
-    def clamp(self, min: float, max: float) -> "Tensor":
+    def clamp(self, min: float | None = None, max: float | None = None) -> "Tensor":
         from ._tensor_runtime_bridge import clamp_from_tensor
-        return clamp_from_tensor(self, min, max)
+        if min is None and max is None:
+            raise TypeError("clamp() requires at least one of 'min' or 'max'")
+        lo = -float("inf") if min is None else float(min)
+        hi = float("inf") if max is None else float(max)
+        return clamp_from_tensor(self, lo, hi)
 
     def argmax(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
         from ._tensor_runtime_bridge import argmax_from_tensor
@@ -926,6 +930,8 @@ class Tensor:
         self._id = other._id
         self._shape = list(other._shape)
         self._dtype = other._dtype
+        if hasattr(self, "_data"):
+            self._data = other
 
     def __getitem__(self, key: object) -> object:
         from ._tensor_indexing import getitem_from_tensor
