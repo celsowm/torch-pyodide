@@ -1052,6 +1052,7 @@ from .tensor_nn_ops import (
     cross_entropy_from_tensor,
     batch_norm_inference_from_tensor,
     layer_norm_from_tensor,
+    group_norm_from_tensor,
 )
 
 from .tensor_backward_ops import (

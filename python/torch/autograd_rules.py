@@ -1102,6 +1102,93 @@ def _grad_layer_norm(
     return grad_x, grad_weight, grad_bias
 
 
+def _grad_group_norm(
+    grad_output: Tensor,
+    x: Tensor,
+    weight: Tensor | None,
+    bias: Tensor | None,
+    x_hat: Tensor,
+    inv_std: Tensor,
+    num_groups: int,
+) -> tuple[Tensor | None, Tensor | None, Tensor | None]:
+    """Backward pass for group_norm.
+
+    Given:
+    x: input, shape (N, C, *spatial) (matches grad_output).
+    weight: (C,) or None.
+    bias: (C,) or None.
+    x_hat: (x - mean) * inv_std, shape (N, G, C/G, *spatial) — pre-reshape.
+    inv_std: 1 / sqrt(var + eps), shape (N, G, 1, 1, ...) — keepdim-True over
+    the (C/G, *spatial) dims.
+    num_groups: G (number of groups).
+
+    M = (C/G) * product(spatial) is the number of elements per (N, G) group.
+
+    Returns: (grad_x, grad_weight, grad_bias) — None where input doesn't require grad.
+    """
+    from .tensor_ops import sum_dim_from_tensor
+    from .grad_mode import no_grad
+
+    G = int(num_groups)
+    spatial = x._shape[2:]
+    C = x._shape[1]
+    N = x._shape[0]
+    channels_per_group = C // G
+    M = int(channels_per_group)
+    for s in spatial:
+        M *= int(s)
+    M_float = float(M)
+
+    grad_x = grad_weight = grad_bias = None
+
+    with no_grad():
+        rank = len(x._shape)
+        if weight is not None:
+            weight_bshape = [1] * rank
+            weight_bshape[1] = C
+            weight_b = weight.reshape(weight_bshape)
+            grad_x_hat = grad_output.mul(weight_b)
+        else:
+            weight_b = None
+            grad_x_hat = grad_output
+
+        # Flatten to 2-D (N*G, M) for per-group reductions — avoids >4D broadcast.
+        grad_x_hat_2d = grad_x_hat.reshape((N * G, M))
+        x_hat_2d = x_hat.reshape((N * G, M))
+        inv_std_scalar = inv_std.reshape((N * G, 1))
+
+        if x._requires_grad:
+            # dl/dx = (1/M) * inv_std * (M*dl/dx_hat - sum(dl/dx_hat) - x_hat*sum(dl/dx_hat*x_hat))
+            sum_grad_xhat = grad_x_hat_2d.sum(dim=1, keepdim=True)
+            sum_grad_xhat_xhat = grad_x_hat_2d.mul(x_hat_2d).sum(dim=1, keepdim=True)
+            term1 = grad_x_hat_2d.mul(M_float)
+            grad_x_2d = term1.sub(sum_grad_xhat).sub(x_hat_2d.mul(sum_grad_xhat_xhat))
+            grad_x_2d = grad_x_2d.mul(inv_std_scalar).mul(1.0 / M_float)
+            grad_x = grad_x_2d.reshape(x._shape)
+            if grad_x._dtype != x._dtype:
+                grad_x = grad_x.to(x._dtype)
+
+        if weight is not None and weight._requires_grad:
+            grad_weight = grad_x_hat.mul(x_hat.reshape(x._shape))
+            rank = len(grad_weight._shape)
+            grad_weight = sum_dim_from_tensor(grad_weight, 0, keepdim=False)
+            for d in range(rank - 2):
+                grad_weight = sum_dim_from_tensor(grad_weight, 1, keepdim=False)
+            if grad_weight._dtype != weight._dtype:
+                grad_weight = grad_weight.to(weight._dtype)
+
+        if bias is not None and bias._requires_grad:
+            grad_bias = grad_x_hat
+            rank = len(grad_bias._shape)
+            grad_bias = sum_dim_from_tensor(grad_bias, 0, keepdim=False)
+            for d in range(rank - 2):
+                grad_bias = sum_dim_from_tensor(grad_bias, 1, keepdim=False)
+            if grad_bias._dtype != bias._dtype:
+                grad_bias = grad_bias.to(bias._dtype)
+
+    return grad_x, grad_weight, grad_bias
+
+
 def _grad_dropout(
     grad_output: Tensor,
     x: Tensor,

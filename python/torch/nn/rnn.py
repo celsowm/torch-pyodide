@@ -4,7 +4,7 @@ import math
 
 import torch
 from torch import Tensor
-from torch.nn.modules import Module
+from torch.nn.modules import Module, Parameter
 from torch.tensor_factories_ops import tensor_from_data
 
 
@@ -26,29 +26,29 @@ class RNNBase(Module):
         self._gate_size: int
         self._set_gate_size()
 
-        self.weight_ih_l: list[Tensor] = []
-        self.weight_hh_l: list[Tensor] = []
-        self.bias_ih_l: list[Tensor] = []
-        self.bias_hh_l: list[Tensor] = []
-
         for layer in range(num_layers):
             for direction in range(self.num_directions):
                 layer_input_size = input_size if layer == 0 else hidden_size * self.num_directions
                 gs = self._gate_size
-                w_ih = torch.randn((gs, layer_input_size)) * 0.01
-                w_hh = torch.randn((gs, hidden_size)) * 0.01
-                b_ih = torch.zeros((gs,)) if bias else None
-                b_hh = torch.zeros((gs,)) if bias else None
-                self.weight_ih_l.append(w_ih)
-                self.weight_hh_l.append(w_hh)
+                suffix = "_reverse" if direction == 1 else ""
+                w_ih = Parameter(torch.randn((gs, layer_input_size)) * 0.01)
+                w_hh = Parameter(torch.randn((gs, hidden_size)) * 0.01)
+                setattr(self, f"weight_ih_l{layer}{suffix}", w_ih)
+                setattr(self, f"weight_hh_l{layer}{suffix}", w_hh)
                 if bias:
-                    self.bias_ih_l.append(b_ih)
-                    self.bias_hh_l.append(b_hh)
+                    b_ih = Parameter(torch.zeros((gs,)))
+                    b_hh = Parameter(torch.zeros((gs,)))
+                    setattr(self, f"bias_ih_l{layer}{suffix}", b_ih)
+                    setattr(self, f"bias_hh_l{layer}{suffix}", b_hh)
 
     def _set_gate_size(self) -> None:
         self._gate_size = 4 * self.hidden_size if self.mode in ("LSTM",) else self.hidden_size
         if self.mode == "GRU":
             self._gate_size = 3 * self.hidden_size
+
+    def _param(self, base: str, layer: int, direction: int = 0) -> Tensor:
+        suffix = "_reverse" if direction == 1 else ""
+        return getattr(self, f"{base}_l{layer}{suffix}")
 
     def _lstm_step(self, x: Tensor, h: Tensor, c: Tensor,
                    w_ih: Tensor, w_hh: Tensor, b_ih: Tensor, b_hh: Tensor) -> tuple[Tensor, Tensor]:
@@ -88,56 +88,53 @@ class LSTM(RNNBase):
         super().__init__("LSTM", *args, **kwargs)
 
     def forward(self, x: Tensor, hx: tuple[Tensor, Tensor] | None = None
-                ) -> tuple[Tensor, tuple[Tensor, Tensor]]:
+               ) -> tuple[Tensor, tuple[Tensor, Tensor]]:
         if self.batch_first:
             x = x.transpose(0, 1)
         seq_len, batch_size, _ = x.shape
 
+        num_states = self.num_layers * self.num_directions
         if hx is None:
-            h = torch.zeros((self.num_layers * self.num_directions, batch_size, self.hidden_size))
-            c = torch.zeros((self.num_layers * self.num_directions, batch_size, self.hidden_size))
+            h_list = [torch.zeros((batch_size, self.hidden_size)) for _ in range(num_states)]
+            c_list = [torch.zeros((batch_size, self.hidden_size)) for _ in range(num_states)]
         else:
-            h, c = hx
+            h0, c0 = hx
+            h_list = [h0[i] for i in range(num_states)]
+            c_list = [c0[i] for i in range(num_states)]
 
         outputs: list[Tensor] = []
         for t in range(seq_len):
             xt = x[t]
             for layer in range(self.num_layers):
-                idx_f = layer * self.num_directions
                 h_f, c_f = self._lstm_step(
-                    xt, h[idx_f], c[idx_f],
-                    self.weight_ih_l[idx_f], self.weight_hh_l[idx_f],
-                    self.bias_ih_l[idx_f] if self.bias else torch.zeros((4 * self.hidden_size,)),
-                    self.bias_hh_l[idx_f] if self.bias else torch.zeros((4 * self.hidden_size,)),
+                    xt, h_list[layer], c_list[layer],
+                    self._param("weight_ih", layer),
+                    self._param("weight_hh", layer),
+                    self._param("bias_ih", layer) if self.bias else torch.zeros((4 * self.hidden_size,)),
+                    self._param("bias_hh", layer) if self.bias else torch.zeros((4 * self.hidden_size,)),
                 )
                 if self.bidirectional:
-                    idx_b = idx_f + 1
                     xt_rev = x[seq_len - 1 - t]
                     h_b, c_b = self._lstm_step(
-                        xt_rev, h[idx_b], c[idx_b],
-                        self.weight_ih_l[idx_b], self.weight_hh_l[idx_b],
-                        self.bias_ih_l[idx_b] if self.bias else torch.zeros((4 * self.hidden_size,)),
-                        self.bias_hh_l[idx_b] if self.bias else torch.zeros((4 * self.hidden_size,)),
+                        xt_rev, h_list[layer + self.num_layers], c_list[layer + self.num_layers],
+                        self._param("weight_ih", layer, 1),
+                        self._param("weight_hh", layer, 1),
+                        self._param("bias_ih", layer, 1) if self.bias else torch.zeros((4 * self.hidden_size,)),
+                        self._param("bias_hh", layer, 1) if self.bias else torch.zeros((4 * self.hidden_size,)),
                     )
-                    h[idx_f] = h_f
-                    h[idx_b] = h_b
-                    c[idx_f] = c_f
-                    c[idx_b] = c_b
+                    h_list[layer] = h_f
+                    h_list[layer + self.num_layers] = h_b
+                    c_list[layer] = c_f
+                    c_list[layer + self.num_layers] = c_b
                     xt = torch.cat([h_f, h_b], dim=-1)
                 else:
-                    h[idx_f] = h_f
-                    c[idx_f] = c_f
+                    h_list[layer] = h_f
+                    c_list[layer] = c_f
                     xt = h_f
             outputs.append(xt)
 
-        if self.num_directions == 2:
-            for layer in range(1, self.num_layers):
-                idx_f = layer * self.num_directions
-                idx_b = idx_f + 1
-                combined = torch.cat([h[idx_f], h[idx_b]], dim=-1) if self.num_directions == 2 else h[idx_f]
-                h[idx_f] = combined[:, :self.hidden_size]
-                h[idx_b] = combined[:, self.hidden_size:]
-
+        h = torch.stack(h_list, dim=0)
+        c = torch.stack(c_list, dim=0)
         output = torch.stack(outputs, dim=0)
         if self.batch_first:
             output = output.transpose(0, 1)
@@ -154,43 +151,44 @@ class GRU(RNNBase):
             x = x.transpose(0, 1)
         seq_len, batch_size, _ = x.shape
 
+        num_states = self.num_layers * self.num_directions
         if hx is None:
-            h = torch.zeros((self.num_layers * self.num_directions, batch_size, self.hidden_size))
+            h_list = [torch.zeros((batch_size, self.hidden_size)) for _ in range(num_states)]
         else:
-            h = hx
+            h_list = [hx[i] for i in range(num_states)]
 
         outputs: list[Tensor] = []
         for t in range(seq_len):
             xt = x[t]
             for layer in range(self.num_layers):
-                idx_f = layer * self.num_directions
                 h_f = self._gru_step(
-                    xt, h[idx_f],
-                    self.weight_ih_l[idx_f], self.weight_hh_l[idx_f],
-                    self.bias_ih_l[idx_f] if self.bias else torch.zeros((3 * self.hidden_size,)),
-                    self.bias_hh_l[idx_f] if self.bias else torch.zeros((3 * self.hidden_size,)),
+                    xt, h_list[layer],
+                    self._param("weight_ih", layer),
+                    self._param("weight_hh", layer),
+                    self._param("bias_ih", layer) if self.bias else torch.zeros((3 * self.hidden_size,)),
+                    self._param("bias_hh", layer) if self.bias else torch.zeros((3 * self.hidden_size,)),
                 )
                 if self.bidirectional:
-                    idx_b = idx_f + 1
                     xt_rev = x[seq_len - 1 - t]
                     h_b = self._gru_step(
-                        xt_rev, h[idx_b],
-                        self.weight_ih_l[idx_b], self.weight_hh_l[idx_b],
-                        self.bias_ih_l[idx_b] if self.bias else torch.zeros((3 * self.hidden_size,)),
-                        self.bias_hh_l[idx_b] if self.bias else torch.zeros((3 * self.hidden_size,)),
+                        xt_rev, h_list[layer + self.num_layers],
+                        self._param("weight_ih", layer, 1),
+                        self._param("weight_hh", layer, 1),
+                        self._param("bias_ih", layer, 1) if self.bias else torch.zeros((3 * self.hidden_size,)),
+                        self._param("bias_hh", layer, 1) if self.bias else torch.zeros((3 * self.hidden_size,)),
                     )
-                    h[idx_f] = h_f
-                    h[idx_b] = h_b
+                    h_list[layer] = h_f
+                    h_list[layer + self.num_layers] = h_b
                     xt = torch.cat([h_f, h_b], dim=-1)
                 else:
-                    h[idx_f] = h_f
+                    h_list[layer] = h_f
                     xt = h_f
             outputs.append(xt)
 
+        h = torch.stack(h_list, dim=0)
         output = torch.stack(outputs, dim=0)
         if self.batch_first:
             output = output.transpose(0, 1)
-        h = h.reshape(self.num_layers * self.num_directions, batch_size, self.hidden_size)
         return output, h
 
 
@@ -205,10 +203,11 @@ class RNN(RNNBase):
             x = x.transpose(0, 1)
         seq_len, batch_size, _ = x.shape
 
+        num_states = self.num_layers * self.num_directions
         if hx is None:
-            h = torch.zeros((self.num_layers * self.num_directions, batch_size, self.hidden_size))
+            h_list = [torch.zeros((batch_size, self.hidden_size)) for _ in range(num_states)]
         else:
-            h = hx
+            h_list = [hx[i] for i in range(num_states)]
 
         step_fn = self._rnn_tanh_step if self.nonlinearity == "tanh" else self._rnn_relu_step
 
@@ -216,26 +215,27 @@ class RNN(RNNBase):
         for t in range(seq_len):
             xt = x[t]
             for layer in range(self.num_layers):
-                idx_f = layer * self.num_directions
-                h_f = step_fn(xt, h[idx_f],
-                              self.weight_ih_l[idx_f], self.weight_hh_l[idx_f],
-                              self.bias_ih_l[idx_f] if self.bias else torch.zeros((self.hidden_size,)),
-                              self.bias_hh_l[idx_f] if self.bias else torch.zeros((self.hidden_size,)))
+                h_f = step_fn(xt, h_list[layer],
+                              self._param("weight_ih", layer),
+                              self._param("weight_hh", layer),
+                              self._param("bias_ih", layer) if self.bias else torch.zeros((self.hidden_size,)),
+                              self._param("bias_hh", layer) if self.bias else torch.zeros((self.hidden_size,)))
                 if self.bidirectional:
-                    idx_b = idx_f + 1
                     xt_rev = x[seq_len - 1 - t]
-                    h_b = step_fn(xt_rev, h[idx_b],
-                                  self.weight_ih_l[idx_b], self.weight_hh_l[idx_b],
-                                  self.bias_ih_l[idx_b] if self.bias else torch.zeros((self.hidden_size,)),
-                                  self.bias_hh_l[idx_b] if self.bias else torch.zeros((self.hidden_size,)))
-                    h[idx_f] = h_f
-                    h[idx_b] = h_b
+                    h_b = step_fn(xt_rev, h_list[layer + self.num_layers],
+                                  self._param("weight_ih", layer, 1),
+                                  self._param("weight_hh", layer, 1),
+                                  self._param("bias_ih", layer, 1) if self.bias else torch.zeros((self.hidden_size,)),
+                                  self._param("bias_hh", layer, 1) if self.bias else torch.zeros((self.hidden_size,)))
+                    h_list[layer] = h_f
+                    h_list[layer + self.num_layers] = h_b
                     xt = torch.cat([h_f, h_b], dim=-1)
                 else:
-                    h[idx_f] = h_f
+                    h_list[layer] = h_f
                     xt = h_f
             outputs.append(xt)
 
+        h = torch.stack(h_list, dim=0)
         output = torch.stack(outputs, dim=0)
         if self.batch_first:
             output = output.transpose(0, 1)

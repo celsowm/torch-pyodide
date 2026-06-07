@@ -170,6 +170,16 @@ def layer_norm(x: Tensor, normalized_shape: int | Sequence[int], weight: Tensor 
     return layer_norm_from_tensor(x, normalized_shape, weight, bias, eps)
 
 
+def group_norm(x: Tensor, num_groups: int, weight: Tensor | None = None, bias: Tensor | None = None, eps: float = 1e-5) -> Tensor:
+    """Apply Group Normalization (Wu & He, 2018).
+
+    Splits the channel dim of `x` (shape `(N, C, *)`) into `num_groups`
+    groups, normalizes within each group, then applies a per-channel affine.
+    """
+    from torch._tensor import group_norm_from_tensor
+    return group_norm_from_tensor(x, int(num_groups), weight, bias, eps)
+
+
 # ── Padding ───────────────────────────────────────────────────────
 
 def pad(x: Tensor, pad: Sequence[int], mode: str = "constant", value: float = 0.0) -> Tensor:

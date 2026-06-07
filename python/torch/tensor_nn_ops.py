@@ -418,3 +418,126 @@ def layer_norm_from_tensor(
     result._node = _Node(result, grad_fn, parents)
     return result
 
+
+def group_norm_from_tensor(
+    input: "Tensor",
+    num_groups: int,
+    weight: "Tensor | None" = None,
+    bias: "Tensor | None" = None,
+    eps: float = 1e-5,
+) -> "Tensor":
+    """Group normalization forward pass (autograd-aware).
+
+    Splits the channel dim of ``input`` (shape ``(N, C, *)``) into
+    ``num_groups`` groups, normalizes over ``(C/G, *)`` for each ``(N, G)``,
+    then applies a per-channel affine:
+    ``y = (x - mean) / sqrt(var + eps) * weight + bias``.
+
+    The implementation flattens per-group spatial dims into a 2-D layout
+    ``(N*G, C//G * prod(spatial))`` so that all reductions and broadcasts
+    stay within 4 dimensions (the current WGSL broadcast limit).
+    """
+    from ._tensor import Tensor
+    from .autograd import _Node, is_grad_enabled
+    from .autograd_rules import _grad_group_norm
+    from .grad_mode import no_grad
+
+    if input._shape[1] % num_groups != 0:
+        raise RuntimeError(
+            f"group_norm: num_channels ({input._shape[1]}) must be divisible by "
+            f"num_groups ({num_groups})"
+        )
+
+    rank = len(input._shape)
+    C = input._shape[1]
+    N = input._shape[0]
+    G = int(num_groups)
+    channels_per_group = C // G
+    spatial = input._shape[2:]
+    M = channels_per_group
+    for s in spatial:
+        M *= s
+
+    weight_b = None
+    bias_b = None
+    if weight is not None:
+        bshape = [1] * rank
+        bshape[1] = C
+        weight_b = weight.reshape(bshape)
+    if bias is not None:
+        bshape = [1] * rank
+        bshape[1] = C
+        bias_b = bias.reshape(bshape)
+
+    any_requires_grad = (
+        input._requires_grad
+        or (weight is not None and weight._requires_grad)
+        or (bias is not None and bias._requires_grad)
+    )
+
+    def _compute_norm(x_2d: "Tensor", eps_f: float) -> "tuple[Tensor, Tensor, Tensor]":
+        mean = x_2d.mean(dim=1, keepdim=True)
+        x_centered = x_2d.sub(mean)
+        var = x_centered.pow(2).mean(dim=1, keepdim=True)
+        inv_std = (var + float(eps_f)).rsqrt()
+        x_hat = x_centered.mul(inv_std)
+        return x_hat, mean, inv_std
+
+    if not (is_grad_enabled() and any_requires_grad):
+        with no_grad():
+            x_2d = input.reshape((N * G, M))
+            x_hat_2d, _, _ = _compute_norm(x_2d, eps)
+            x_hat = x_hat_2d.reshape(input._shape)
+            if weight_b is not None:
+                output = x_hat.mul(weight_b)
+            else:
+                output = x_hat
+            if bias_b is not None:
+                output = output.add(bias_b)
+            output._requires_grad = False
+            return output
+
+    # Autograd path.
+    with no_grad():
+        x_2d = input.reshape((N * G, M))
+        x_hat_2d, mean_2d, inv_std_2d = _compute_norm(x_2d, eps)
+        x_hat_flat = x_hat_2d.reshape(input._shape)
+        if weight_b is not None:
+            output = x_hat_flat.mul(weight_b)
+        else:
+            output = x_hat_flat
+        if bias_b is not None:
+            output = output.add(bias_b)
+
+        # Save x_hat in (N, G, C//G, *spatial) shape for backward.
+        x_hat_ng = x_hat_2d.reshape((N, G, channels_per_group) + tuple(spatial))
+        inv_std_ng = inv_std_2d.reshape((N, G, 1) + (1,) * len(spatial))
+
+    result = output
+    result._requires_grad = True
+    saved_x = input
+    saved_weight = weight
+    saved_bias = bias
+    saved_x_hat = x_hat_ng
+    saved_inv_std = inv_std_ng
+    saved_num_groups = int(num_groups)
+
+    def grad_fn(grad_output: "Tensor"):
+        return _grad_group_norm(
+            grad_output,
+            saved_x,
+            saved_weight,
+            saved_bias,
+            saved_x_hat,
+            saved_inv_std,
+            saved_num_groups,
+        )
+
+    parents = [input]
+    if weight is not None:
+        parents.append(weight)
+    if bias is not None:
+        parents.append(bias)
+    result._node = _Node(result, grad_fn, parents)
+    return result
+

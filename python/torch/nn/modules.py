@@ -612,6 +612,60 @@ class LayerNorm(Module):
         return layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
 
 
+class GroupNorm(Module):
+    def __init__(self, num_groups: int, num_channels: int, eps: float = 1e-5, affine: bool = True):
+        super().__init__()
+        if num_channels % num_groups != 0:
+            raise ValueError(
+                f"GroupNorm: num_channels ({num_channels}) must be divisible by "
+                f"num_groups ({num_groups})"
+            )
+        self.num_groups = num_groups
+        self.num_channels = num_channels
+        self.eps = eps
+        self.affine = affine
+        if affine:
+            self.weight = torch.ones((num_channels,))
+            self.bias = torch.zeros((num_channels,))
+        else:
+            self.weight = None
+            self.bias = None
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import group_norm
+        return group_norm(x, self.num_groups, self.weight, self.bias, self.eps)
+
+
+class InstanceNorm1d(GroupNorm):
+    """Instance normalization for 2D/3D inputs (N, C, L) — groups=channels."""
+
+    def __init__(self, num_features: int, eps: float = 1e-5, affine: bool = False,
+                 track_running_stats: bool = False):
+        # InstanceNorm with affine=False is the most common default; with affine=True
+        # we still expose weight/bias of shape (C,).
+        super().__init__(num_groups=num_features, num_channels=num_features, eps=eps, affine=affine)
+        self.num_features = num_features
+        self.track_running_stats = track_running_stats
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import group_norm
+        return group_norm(x, self.num_groups, self.weight, self.bias, self.eps)
+
+
+class InstanceNorm2d(GroupNorm):
+    """Instance normalization for 4D inputs (N, C, H, W) — groups=channels."""
+
+    def __init__(self, num_features: int, eps: float = 1e-5, affine: bool = False,
+                 track_running_stats: bool = False):
+        super().__init__(num_groups=num_features, num_channels=num_features, eps=eps, affine=affine)
+        self.num_features = num_features
+        self.track_running_stats = track_running_stats
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import group_norm
+        return group_norm(x, self.num_groups, self.weight, self.bias, self.eps)
+
+
 # ── Activations ───────────────────────────────────────────────────
 
 class ReLU(Module):
@@ -758,11 +812,21 @@ class Conv1d(Module):
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
-        self.weight = torch.randn((out_channels, in_channels, kernel_size)) * 0.01
+        self.weight = torch.empty((out_channels, in_channels, kernel_size))
         if bias:
-            self.bias = torch.zeros((out_channels,))
+            self.bias = torch.empty((out_channels,))
         else:
             self.bias = None
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        import math
+        import torch.nn.init as _init
+        _init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = _init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            _init.uniform_(self.bias, -bound, bound)
 
     def forward(self, x: Tensor) -> Tensor:
         # Convert 1D conv to 2D conv: add a dummy H dimension (H=1)
@@ -784,11 +848,21 @@ class Conv2d(Module):
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
-        self.weight = torch.randn((out_channels, in_channels, kernel_size[0], kernel_size[1])) * 0.01
+        self.weight = torch.empty((out_channels, in_channels, kernel_size[0], kernel_size[1]))
         if bias:
-            self.bias = torch.zeros((out_channels,))
+            self.bias = torch.empty((out_channels,))
         else:
             self.bias = None
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        import math
+        import torch.nn.init as _init
+        _init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = _init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            _init.uniform_(self.bias, -bound, bound)
 
     def forward(self, x: Tensor) -> Tensor:
         from .functional import conv2d
@@ -805,11 +879,21 @@ class ConvTranspose2d(Module):
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
-        self.weight = torch.randn((in_channels, out_channels, kernel_size[0], kernel_size[1])) * 0.01
+        self.weight = torch.empty((in_channels, out_channels, kernel_size[0], kernel_size[1]))
         if bias:
-            self.bias = torch.zeros((out_channels,))
+            self.bias = torch.empty((out_channels,))
         else:
             self.bias = None
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        import math
+        import torch.nn.init as _init
+        _init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = _init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            _init.uniform_(self.bias, -bound, bound)
 
     def forward(self, x: Tensor) -> Tensor:
         from .functional import conv2d
@@ -824,7 +908,15 @@ class Embedding(Module):
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
         self.padding_idx = padding_idx
-        self.weight = torch.randn((num_embeddings, embedding_dim)) * 0.01
+        self.weight = torch.empty((num_embeddings, embedding_dim))
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        import torch.nn.init as _init
+        _init.normal_(self.weight, mean=0.0, std=1.0)
+        if self.padding_idx is not None and self.padding_idx < self.num_embeddings:
+            with torch.no_grad():
+                self.weight[self.padding_idx].zero_()
 
     def forward(self, x: Tensor) -> Tensor:
         # index_select based lookup

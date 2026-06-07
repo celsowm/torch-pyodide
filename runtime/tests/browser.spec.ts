@@ -1417,4 +1417,77 @@ test.describe.serial("playground examples @webgpu", () => {
 
     expect(consoleFailures).toEqual([]);
   });
+
+  test("LSTM char-level language model trains and loss decreases", async () => {
+    // Verifies the Fase 12.8 LSTM char-level LM example:
+    //  1. forward pass returns correct (B, T, V) shape
+    //  2. loss decreases after 60 AdamW steps
+    //  3. state_dict has all the expected LSTM + Embedding + Linear keys
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_lstm_char_lm_training");
+    await expect(page.locator("#example-select")).toHaveValue("nn_lstm_char_lm_training");
+    const { output } = await runSelectedExample(page, "nn_lstm_char_lm_training", 120000);
+    const actual = parseJsonOutput<{
+      vocab: number;
+      T: number;
+      loss_before: number;
+      loss_after: number;
+      loss_decreased: boolean;
+      hidden_size: number;
+      num_layers: number;
+      state_dict_keys: number;
+    }>(output);
+
+    expect(actual.vocab).toBeGreaterThan(0);
+    expect(actual.T).toBeGreaterThan(0);
+    expect(Number.isFinite(actual.loss_before)).toBe(true);
+    expect(Number.isFinite(actual.loss_after)).toBe(true);
+    expect(actual.loss_decreased).toBe(true);
+    expect(actual.hidden_size).toBe(32);
+    expect(actual.num_layers).toBe(1);
+    // Expected keys: emb.weight, lstm.weight_ih_l0, lstm.weight_hh_l0,
+    //   lstm.bias_ih_l0, lstm.bias_hh_l0, head.weight, head.bias
+    expect(actual.state_dict_keys).toBe(7);
+
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("GroupNorm + InstanceNorm: forward + autograd + state_dict", async () => {
+      // Verifies the Fase 12.8 GroupNorm / InstanceNorm modules via the
+      // dedicated example file `nn_groupnorm_instancenorm.py`.
+      consoleFailures.length = 0;
+      await page.locator("#example-select").selectOption("nn_groupnorm_instancenorm");
+      await expect(page.locator("#example-select")).toHaveValue("nn_groupnorm_instancenorm");
+      const { output } = await runSelectedExample(page, "nn_groupnorm_instancenorm", 60000);
+      const actual = parseJsonOutput<{
+      forward_shape: number[];
+      grad_shape: number[];
+      grad_nonzero: boolean;
+      in1_shape: number[];
+      in2_shape: number[];
+      gn_state_dict_keys: string[];
+      in1_state_dict_keys: string[];
+      in2_state_dict_keys: string[];
+      max_per_group_mean: number;
+      y_diff_vs_manual: number;
+      per_group_means: number[];
+      per_group_vars: number[];
+    }>(output);
+
+      expect(actual.forward_shape).toEqual([2, 6, 4, 4]);
+    console.log("max_per_group_mean:", actual.max_per_group_mean);
+    console.log("y_diff_vs_manual:", actual.y_diff_vs_manual);
+    console.log("per_group_means:", actual.per_group_means);
+    console.log("per_group_vars:", actual.per_group_vars);
+    expect(actual.max_per_group_mean).toBeLessThan(0.05);
+    expect(actual.grad_shape).toEqual([2, 6, 4, 4]);
+    expect(actual.grad_nonzero).toBe(true);
+    expect(actual.in1_shape).toEqual([2, 6, 10]);
+    expect(actual.in2_shape).toEqual([2, 8, 5, 5]);
+    expect(actual.gn_state_dict_keys).toEqual(["bias", "weight"]);
+    expect(actual.in1_state_dict_keys).toEqual(["bias", "weight"]);
+    expect(actual.in2_state_dict_keys).toEqual(["bias", "weight"]);
+
+    expect(consoleFailures).toEqual([]);
+  });
 });
