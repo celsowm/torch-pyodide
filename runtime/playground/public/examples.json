@@ -41,6 +41,7 @@
     { "id": "nn_resnet8_schedulers_lbfgs", "label": "ResNet8 + HuberLoss + CosineAnnealing + LBFGS", "file": "examples/nn_resnet8_schedulers_lbfgs.py" },
     { "id": "nn_lstm_char_lm_training", "label": "LSTM char-level language model: training + loss decrease", "file": "examples/nn_lstm_char_lm_training.py" },
     { "id": "nn_groupnorm_instancenorm", "label": "GroupNorm + InstanceNorm: forward + autograd + state_dict", "file": "examples/nn_groupnorm_instancenorm.py" },
+  { "id": "nn_embedding_gpu_training", "label": "Embedding GPU: forward + backward + training + padding_idx", "file": "examples/nn_embedding_gpu_training.py" },
     { "id": "autograd_basic", "label": "Autograd: Backprop", "file": "examples/autograd_basic.py" },
     { "id": "autograd_conv2d", "label": "Autograd: Conv2d Backward", "file": "examples/autograd_conv2d_backward.py" },
     { "id": "autograd_nll", "label": "Autograd: NLL Loss Backward", "file": "examples/autograd_nll_loss.py" },

@@ -605,4 +605,6 @@ def avg_pool1d(x: Tensor, kernel_size: int, stride: int | None = None, padding: 
     return result.squeeze(2)
 
 
-
+def embedding(input: Tensor, weight: Tensor, padding_idx: int = -1) -> Tensor:
+    from torch.tensor_nn_ops import embedding_from_tensor
+    return embedding_from_tensor(weight, input, padding_idx)

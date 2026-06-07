@@ -1488,6 +1488,38 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(actual.in1_state_dict_keys).toEqual(["bias", "weight"]);
     expect(actual.in2_state_dict_keys).toEqual(["bias", "weight"]);
 
+  expect(consoleFailures).toEqual([]);
+  });
+
+  test("Embedding GPU: forward + backward + training + padding_idx", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_embedding_gpu_training");
+    await expect(page.locator("#example-select")).toHaveValue("nn_embedding_gpu_training");
+    const { output } = await runSelectedExample(page, "nn_embedding_gpu_training", 60000);
+    const actual = parseJsonOutput<{
+      embed_shape: number[];
+      forward_shape: number[];
+      pooled_shape: number[];
+      logits_shape: number[];
+      loss_start: number;
+      loss_end: number;
+      loss_decreased: boolean;
+      grad_norm: number;
+      padding_idx_zero: boolean;
+      status: string;
+    }>(output);
+
+    expect(actual.embed_shape).toEqual([20, 8]);
+    expect(actual.forward_shape).toEqual([4, 6, 8]);
+    expect(actual.pooled_shape).toEqual([4, 8]);
+    expect(actual.logits_shape).toEqual([4, 5]);
+    expect(Number.isFinite(actual.loss_start)).toBe(true);
+    expect(Number.isFinite(actual.loss_end)).toBe(true);
+    expect(actual.loss_decreased).toBe(true);
+    expect(actual.grad_norm).toBeGreaterThan(0);
+    expect(actual.padding_idx_zero).toBe(true);
+    expect(actual.status).toBe("OK");
+
     expect(consoleFailures).toEqual([]);
   });
 });

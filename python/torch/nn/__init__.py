@@ -51,6 +51,7 @@ from .functional import (
     one_hot,
     max_pool1d,
     avg_pool1d,
+    embedding,
 )
 from .modules import (
     Module,
@@ -147,6 +148,7 @@ __all__ = [
     "one_hot",
     "max_pool1d",
     "avg_pool1d",
+    "embedding",
     "Module",
     "Linear",
     "Bilinear",

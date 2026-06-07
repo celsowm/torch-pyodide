@@ -619,6 +619,9 @@ class Tensor:
         from .tensor_ops import expand_from_tensor
         return expand_from_tensor(self, _normalize_shape_from_args(shape))
 
+    def expand_as(self, other: "Tensor") -> "Tensor":
+        return self.expand(*other._shape)
+
     def select(self, dim: int, index: int) -> "Tensor":
         from .tensor_ops import select_from_tensor
         return select_from_tensor(self, dim, index)

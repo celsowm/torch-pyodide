@@ -12,6 +12,7 @@ import { LinalgOps } from "./ops/linalgOps.js";
 import { ConvOps } from "./ops/convOps.js";
 import { PoolingOps } from "./ops/poolingOps.js";
 import { NormalizationOps } from "./ops/normalizationOps.js";
+import { EmbeddingOps } from "./ops/embeddingOps.js";
 
 export class TorchPyodideRuntime {
   private deviceMgr = new DeviceManager();
@@ -26,6 +27,7 @@ export class TorchPyodideRuntime {
   private convOps: ConvOps;
   private poolingOps: PoolingOps;
   private normalizationOps: NormalizationOps;
+  private embeddingOps: EmbeddingOps;
 
   constructor() {
     setDeviceManager(this.deviceMgr);
@@ -41,6 +43,7 @@ export class TorchPyodideRuntime {
     this.convOps = new ConvOps(dm);
     this.poolingOps = new PoolingOps(dm);
     this.normalizationOps = new NormalizationOps(dm);
+    this.embeddingOps = new EmbeddingOps(dm);
   }
 
   async init(gpuProvider?: GPU | null): Promise<void> {
@@ -1097,6 +1100,16 @@ export class TorchPyodideRuntime {
     eps: number,
   ): Promise<TensorHandle> {
     return this.normalizationOps.layerNorm(inputId, normalizedShape, gammaId, betaId, eps);
+  }
+
+  async embedding(
+    weightId: number,
+    indicesId: number,
+    numEmbeddings: number,
+    embeddingDim: number,
+    paddingIdx: number,
+  ): Promise<TensorHandle> {
+    return this.embeddingOps.embedding(weightId, indicesId, numEmbeddings, embeddingDim, paddingIdx);
   }
 
   async cholesky(tensorId: number): Promise<TensorHandle> {

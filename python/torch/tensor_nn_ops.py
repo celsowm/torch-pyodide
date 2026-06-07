@@ -250,8 +250,42 @@ def batch_norm_from_tensor(
             parents.append(weight)
         if bias is not None:
             parents.append(bias)
-        result._node = _Node(result, grad_fn, parents)
+    result._node = _Node(result, grad_fn, parents)
+    return result
+
+
+def embedding_from_tensor(
+    weight: "Tensor",
+    indices: "Tensor",
+    padding_idx: int = -1,
+) -> "Tensor":
+    from ._tensor import Tensor
+    from .autograd import _Node, is_grad_enabled
+    from .autograd_rules import _grad_embedding
+
+    runtime = _get_runtime()
+    num_embeddings = weight._shape[0]
+    embedding_dim = weight._shape[1]
+    meta = _run_js_awaitable(runtime.embedding(
+        weight._id, indices._id,
+        int(num_embeddings), int(embedding_dim),
+        int(padding_idx),
+    ))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+
+    if is_grad_enabled() and weight._requires_grad:
+        result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
+        saved_num_embeddings = int(num_embeddings)
+        saved_embedding_dim = int(embedding_dim)
+        saved_padding_idx = int(padding_idx)
+
+        def _emb_grad_fn(g, w=weight, idx=indices, ne=saved_num_embeddings,
+                         ed=saved_embedding_dim, pi=saved_padding_idx):
+            return (_grad_embedding(g, w, idx, ne, ed, pi),)
+
+        result._node = _Node(result, _emb_grad_fn, [weight])
         return result
+    return Tensor(tensor_id, out_shape, out_dtype)
     return output
 
 

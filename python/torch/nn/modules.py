@@ -916,17 +916,18 @@ class Embedding(Module):
         _init.normal_(self.weight, mean=0.0, std=1.0)
         if self.padding_idx is not None and self.padding_idx < self.num_embeddings:
             with torch.no_grad():
-                self.weight[self.padding_idx].zero_()
+                row_ids = torch.arange(self.num_embeddings, dtype=torch.long).unsqueeze(1).expand_as(self.weight)
+                pad_mask = (row_ids == self.padding_idx)
+                self.weight._set(self.weight.masked_fill(pad_mask, 0.0))
 
     def forward(self, x: Tensor) -> Tensor:
-        # index_select based lookup
-        result = torch.index_select(self.weight, 0, x)
-        result = result.reshape(list(x.shape) + [self.embedding_dim])
+        from torch.tensor_nn_ops import embedding_from_tensor
         if self.padding_idx is not None:
-            mask = x == self.padding_idx
-            if isinstance(mask, Tensor):
-                result = result.masked_fill(mask.unsqueeze(-1).expand(*result.shape), 0.0)
-        return result
+            with torch.no_grad():
+                row_ids = torch.arange(self.num_embeddings, dtype=torch.long).unsqueeze(1).expand_as(self.weight)
+                pad_mask = (row_ids == self.padding_idx)
+                self.weight._set(self.weight.masked_fill(pad_mask, 0.0))
+        return embedding_from_tensor(self.weight, x, self.padding_idx if self.padding_idx is not None else -1)
 
 
 # ── Pooling ───────────────────────────────────────────────────────

@@ -763,6 +763,36 @@ def _grad_gather(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Ten
     return tensor_from_data(flat_list, in_shape, input_tensor.dtype)
 
 
+def _grad_embedding(
+    grad_output: Tensor,
+    weight: Tensor,
+    indices: Tensor,
+    num_embeddings: int,
+    embedding_dim: int,
+    padding_idx: int,
+) -> Tensor | None:
+    if not weight._requires_grad:
+        return None
+    from .tensor_factories_ops import tensor_from_data
+    from .tensor_shape_utils import _flatten
+
+    n = num_embeddings * embedding_dim
+    flat_list = [0.0] * n
+    idx_vals = _flatten(indices.tolist())
+    grad_flat = _flatten(grad_output.tolist())
+
+    for i, token_id in enumerate(idx_vals):
+        token_id = int(token_id)
+        if token_id < 0 or token_id >= num_embeddings:
+            continue
+        if padding_idx >= 0 and token_id == padding_idx:
+            continue
+        for j in range(embedding_dim):
+            flat_list[token_id * embedding_dim + j] += grad_flat[i * embedding_dim + j]
+
+    return tensor_from_data(flat_list, [num_embeddings, embedding_dim], weight.dtype)
+
+
 def _grad_topk(grad_output: Tensor, input_tensor: Tensor, dim: int, k: int, descending: bool, saved_indices: Tensor | None = None) -> Tensor | None:
     """d/dinput topk(input) = scatter grad_output back to full shape at topk indices."""
     if not input_tensor._requires_grad:

@@ -397,8 +397,8 @@ def test_embedding_reset_parameters_normal_init():
     assert "def reset_parameters" in block, "Embedding must define reset_parameters"
     assert "_init.normal_(self.weight, mean=0.0, std=1.0)" in block, \
         "Embedding reset_parameters must use normal_(mean=0, std=1)"
-    assert "self.padding_idx" in block and "zero_" in block, \
-        "Embedding reset_parameters must zero the padding_idx row"
+    assert "self.padding_idx" in block and "masked_fill" in block, \
+        "Embedding reset_parameters must zero the padding_idx row via masked_fill"
 
 
 def test_embedding_padding_idx_zeroed():

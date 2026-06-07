@@ -524,6 +524,11 @@ def index_select(input: Tensor, dim: int, index: Tensor) -> Tensor:
     return index_select_from_tensor(input, dim=dim, index=index)
 
 
+def embedding(input: Tensor, weight: Tensor, padding_idx: int = -1) -> Tensor:
+    from .tensor_nn_ops import embedding_from_tensor
+    return embedding_from_tensor(weight, input, padding_idx)
+
+
 def sigmoid(x: Tensor) -> Tensor:
     return x.sigmoid()
 
