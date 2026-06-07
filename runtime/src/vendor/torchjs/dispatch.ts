@@ -6,17 +6,26 @@
 import { getDevice } from './device.js';
 import { WebGPUComputePipeline, WebGPUBuffer } from './types.js';
 
+// GPUShaderStage is a global in the browser; declare it for TS clarity.
+declare const GPUShaderStage: { COMPUTE: number; VERTEX: number; FRAGMENT: number };
+
 // Pipeline cache to avoid recompilation
 const pipelineCache = new Map<string, WebGPUComputePipeline>();
 
 /**
  * Get or create a compute pipeline for the given shader.
+ * If `bindGroupLayouts` is provided, the pipeline uses an explicit layout
+ * (bypasses WGSL auto-inference of binding layout — useful when the WGSL
+ * parser is non-deterministic or drops bindings).
  */
-export function getOrCreatePipeline(
+export async function getOrCreatePipeline(
   shaderCode: string,
-  entryPoint: string = 'main'
-): WebGPUComputePipeline {
-  const cacheKey = `${shaderCode}:${entryPoint}`;
+  entryPoint: string = 'main',
+  bindGroupLayouts?: GPUBindGroupLayout[]
+): Promise<WebGPUComputePipeline> {
+  const cacheKey = bindGroupLayouts
+    ? `${shaderCode}:${entryPoint}:explicit:${bindGroupLayouts.length}`
+    : `${shaderCode}:${entryPoint}`;
 
   let pipeline = pipelineCache.get(cacheKey);
   if (pipeline) {
@@ -25,23 +34,31 @@ export function getOrCreatePipeline(
 
   const device = getDevice();
 
+  const target = globalThis as typeof globalThis & { __WGSL_WARN__?: boolean };
+  if (target.__WGSL_WARN__) {
+    console.log(`[dispatch] creating new pipeline, key length=${cacheKey.length}, shader length=${shaderCode.length}, explicit=${!!bindGroupLayouts}`);
+  }
+
   const shaderModule = device.createShaderModule({
     code: shaderCode,
   });
 
-  // Check for shader compilation errors (async but we log immediately)
-  // Note: getCompilationInfo is not available in wgpu-native
+  // AWAIT compilation to avoid race conditions where the pipeline is
+  // created before the WGSL parser finishes analyzing the bindings.
   if (typeof shaderModule.getCompilationInfo === 'function') {
-    shaderModule.getCompilationInfo().then((info: GPUCompilationInfo) => {
-      for (const msg of info.messages) {
-        const level = msg.type === 'error' ? 'error' : msg.type === 'warning' ? 'warn' : 'log';
-        console[level](`[WGSL ${entryPoint}] ${msg.type}: ${msg.message} (line ${msg.lineNum}:${msg.linePos})`);
-      }
-    });
+    const info = await shaderModule.getCompilationInfo();
+    for (const msg of info.messages) {
+      const level = msg.type === 'error' ? 'error' : msg.type === 'warning' ? 'warn' : 'log';
+      console[level](`[WGSL ${entryPoint}] ${msg.type}: ${msg.message} (line ${msg.lineNum}:${msg.linePos})`);
+    }
   }
 
+  const layout = bindGroupLayouts
+    ? device.createPipelineLayout({ bindGroupLayouts })
+    : 'auto';
+
   pipeline = device.createComputePipeline({
-    layout: 'auto',
+    layout,
     compute: {
       module: shaderModule,
       entryPoint,
@@ -50,6 +67,33 @@ export function getOrCreatePipeline(
 
   pipelineCache.set(cacheKey, pipeline);
   return pipeline;
+}
+
+/**
+ * Build a storage buffer entry in a bind group layout.
+ */
+export function makeStorageReadLayoutEntry(binding: number, minBindingSize?: number): GPUBindGroupLayoutEntry {
+  return {
+    binding,
+    visibility: GPUShaderStage.COMPUTE,
+    buffer: { type: 'read-only-storage', minBindingSize },
+  };
+}
+
+export function makeStorageReadWriteLayoutEntry(binding: number, minBindingSize?: number): GPUBindGroupLayoutEntry {
+  return {
+    binding,
+    visibility: GPUShaderStage.COMPUTE,
+    buffer: { type: 'storage', minBindingSize },
+  };
+}
+
+export function makeUniformLayoutEntry(binding: number, minBindingSize?: number): GPUBindGroupLayoutEntry {
+  return {
+    binding,
+    visibility: GPUShaderStage.COMPUTE,
+    buffer: { type: 'uniform', minBindingSize },
+  };
 }
 
 /**

@@ -30,6 +30,7 @@ import nnMultiheadAttentionPy from "../../python/torch/nn/multihead_attention.py
 import nnUtilsInitPy from "../../python/torch/nn/utils/__init__.py?raw";
 import jitInitPy from "../../python/torch/jit/__init__.py?raw";
 import optimInitPy from "../../python/torch/optim/__init__.py?raw";
+import optimLrSchedulerPy from "../../python/torch/optim/lr_scheduler.py?raw";
 import utilsInitPy from "../../python/torch/utils/__init__.py?raw";
 import utilsDataInitPy from "../../python/torch/utils/data/__init__.py?raw";
 import linalgInitPy from "../../python/torch/linalg/__init__.py?raw";
@@ -115,6 +116,7 @@ for name in list(sys.modules):
   pyodide.FS.writeFile("/home/pyodide/torch/jit/__init__.py", jitInitPy);
   pyodide.FS.mkdirTree("/home/pyodide/torch/optim");
   pyodide.FS.writeFile("/home/pyodide/torch/optim/__init__.py", optimInitPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/optim/lr_scheduler.py", optimLrSchedulerPy);
   pyodide.FS.mkdirTree("/home/pyodide/torch/utils");
   pyodide.FS.writeFile("/home/pyodide/torch/utils/__init__.py", utilsInitPy);
   pyodide.FS.mkdirTree("/home/pyodide/torch/utils/data");

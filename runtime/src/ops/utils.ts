@@ -163,6 +163,9 @@ export {
   dispatchCompute,
   calculateWorkgroups,
   syncDevice,
+  makeStorageReadLayoutEntry,
+  makeStorageReadWriteLayoutEntry,
+  makeUniformLayoutEntry,
 } from "../vendor/torchjs/index.js";
 
 let _deviceMgr: DeviceManager | null = null;

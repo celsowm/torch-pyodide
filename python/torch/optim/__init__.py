@@ -864,3 +864,9 @@ class RAdam(Optimizer):
                         p._set(new_p)
         _end_runtime_frame(runtime, frame_started, run_js)
         return loss
+
+
+# Re-export lr_scheduler so `from torch.optim import lr_scheduler` and
+# `from torch.optim.lr_scheduler import StepLR` both work.
+from . import lr_scheduler  # noqa: E402,F401
+from .lr_scheduler import StepLR, MultiStepLR, ExponentialLR  # noqa: E402,F401

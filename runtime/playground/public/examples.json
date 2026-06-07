@@ -72,6 +72,7 @@
     { "id": "optim_radam", "label": "optim RAdam: linear regression", "file": "examples/optim_radam.py" },
     { "id": "optimizer_state_dict", "label": "optim state_dict save/load roundtrip", "file": "examples/optimizer_state_dict.py" },
     { "id": "save_load_interop", "label": "torch.save / torch.load cross-runtime interop", "file": "examples/save_load_interop.py" },
-    { "id": "real_model_pretrained_tiny_cnn", "label": "Real pretrained model: load + infer a real-PyTorch state_dict", "file": "examples/real_model_pretrained_tiny_cnn.py" }
+    { "id": "real_model_pretrained_tiny_cnn", "label": "Real pretrained model: load + infer a real-PyTorch state_dict", "file": "examples/real_model_pretrained_tiny_cnn.py" },
+    { "id": "real_model_pretrained_vgg", "label": "Real pretrained model: MiniVGG with BatchNorm2d + Dropout", "file": "examples/real_model_pretrained_vgg.py" }
   ]
 }

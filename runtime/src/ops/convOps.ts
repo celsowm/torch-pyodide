@@ -53,7 +53,7 @@ export class ConvOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
-    const pipeline = getOrCreatePipeline(CONV_SHADER, "conv2d");
+    const pipeline = await getOrCreatePipeline(CONV_SHADER, "conv2d");
     dispatchCompute(pipeline, [input.buffer, w.buffer, biasBuf, out, paramBuffer], calculateWorkgroups(total));
     await syncDevice();
     paramBuffer.destroy();
@@ -95,7 +95,7 @@ export class ConvOps {
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
     // conv2d_input_backward uses bindings: 0=grad_output, 1=weight, 2=grad_input, 3=params
-    const pipeline = getOrCreatePipeline(CONV_BACKWARD_SHADER, "conv2d_input_backward");
+    const pipeline = await getOrCreatePipeline(CONV_BACKWARD_SHADER, "conv2d_input_backward");
     dispatchCompute(pipeline, [
       { binding: 0, resource: { buffer: gradOutput.buffer, offset: 0, size: gradOutput.buffer.size } },
       { binding: 1, resource: { buffer: weight.buffer, offset: 0, size: weight.buffer.size } },
@@ -142,7 +142,7 @@ export class ConvOps {
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
     // conv2d_weight_backward uses bindings: 0=grad_output, 3=params, 4=grad_weight, 5=input
-    const pipeline = getOrCreatePipeline(CONV_BACKWARD_SHADER, "conv2d_weight_backward");
+    const pipeline = await getOrCreatePipeline(CONV_BACKWARD_SHADER, "conv2d_weight_backward");
     dispatchCompute(pipeline, [
       { binding: 0, resource: { buffer: gradOutput.buffer, offset: 0, size: gradOutput.buffer.size } },
       { binding: 3, resource: { buffer: paramBuffer, offset: 0, size: paramBuffer.size } },
@@ -186,7 +186,7 @@ export class ConvOps {
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
     // conv2d_bias_backward uses bindings: 0=grad_output, 3=params, 4=grad_bias
-    const pipeline = getOrCreatePipeline(CONV_BACKWARD_SHADER, "conv2d_bias_backward");
+    const pipeline = await getOrCreatePipeline(CONV_BACKWARD_SHADER, "conv2d_bias_backward");
     dispatchCompute(pipeline, [
       { binding: 0, resource: { buffer: gradOutput.buffer, offset: 0, size: gradOutput.buffer.size } },
       { binding: 3, resource: { buffer: paramBuffer, offset: 0, size: paramBuffer.size } },

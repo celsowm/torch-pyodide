@@ -149,7 +149,7 @@ export class UnaryOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(LEAKY_RELU_SHADER, "leaky_relu");
+    const pipeline = await getOrCreatePipeline(LEAKY_RELU_SHADER, "leaky_relu");
     const bindGroup = this.deviceMgr.device!.createBindGroup({
       layout: pipeline.getBindGroupLayout(0),
       entries: [
@@ -360,7 +360,7 @@ export class UnaryOps {
     }
     const length = product(meta.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const pipeline = getOrCreatePipeline(UNARY_SHADER, ENTRYPOINT_MAP[entrypoint] || entrypoint);
+    const pipeline = await getOrCreatePipeline(UNARY_SHADER, ENTRYPOINT_MAP[entrypoint] || entrypoint);
     dispatchCompute(pipeline, [meta.buffer, out], calculateWorkgroups(length));
     await syncDevice();
     const outDtype = this.BOOL_OPS.has(entrypoint) ? "bool" : meta.dtype;

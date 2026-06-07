@@ -60,7 +60,7 @@ export class CompareOps {
     }
     const length = product(a.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const pipeline = getOrCreatePipeline(COMPARE_SHADER, op);
+    const pipeline = await getOrCreatePipeline(COMPARE_SHADER, op);
     dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(length));
     await syncDevice();
     const outDtype = (op === "maximum_op" || op === "minimum_op") ? a.dtype : "bool";

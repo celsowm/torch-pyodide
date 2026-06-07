@@ -90,7 +90,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(CUMSUM_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(CUMSUM_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(1));
     await syncDevice();
     paramBuffer.destroy();
@@ -108,7 +108,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(CUMPROD_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(CUMPROD_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(1));
     await syncDevice();
     paramBuffer.destroy();
@@ -127,7 +127,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(ARGMAX_SHADER, "argmax");
+    const pipeline = await getOrCreatePipeline(ARGMAX_SHADER, "argmax");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(batchElements));
     await syncDevice();
     paramBuffer.destroy();
@@ -148,7 +148,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(ARGMIN_SHADER, "argmin");
+    const pipeline = await getOrCreatePipeline(ARGMIN_SHADER, "argmin");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(batchElements));
     await syncDevice();
     paramBuffer.destroy();
@@ -178,18 +178,18 @@ export class ReductionOps {
       let pipeline;
       switch (mode) {
         case "prod":
-          pipeline = getOrCreatePipeline(REDUCE_PROD_SHADER, "main");
+          pipeline = await getOrCreatePipeline(REDUCE_PROD_SHADER, "main");
           break;
         case "max":
-          pipeline = getOrCreatePipeline(REDUCE_MAX_SHADER, "main");
+          pipeline = await getOrCreatePipeline(REDUCE_MAX_SHADER, "main");
           break;
         case "min":
-          pipeline = getOrCreatePipeline(REDUCE_MIN_SHADER, "main");
+          pipeline = await getOrCreatePipeline(REDUCE_MIN_SHADER, "main");
           break;
         case "sum":
         case "mean":
         default:
-          pipeline = getOrCreatePipeline(REDUCE_SUM_SHADER, "main");
+          pipeline = await getOrCreatePipeline(REDUCE_SUM_SHADER, "main");
           break;
       }
       dispatchCompute(pipeline, [src, out, paramBuffer], calculateWorkgroups(groups));
@@ -238,7 +238,7 @@ export class ReductionOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
-    const pipeline = getOrCreatePipeline(REDUCE_DIM_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(REDUCE_DIM_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
@@ -262,7 +262,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(NLL_LOSS_SHADER, "nll_loss");
+    const pipeline = await getOrCreatePipeline(NLL_LOSS_SHADER, "nll_loss");
     dispatchCompute(pipeline, [input.buffer, targets.buffer, out, paramBuffer], calculateWorkgroups(batchSize));
     await syncDevice();
     paramBuffer.destroy();
@@ -289,7 +289,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramsBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(NLL_LOSS_REDUCED_SHADER, "nll_loss_reduced");
+    const pipeline = await getOrCreatePipeline(NLL_LOSS_REDUCED_SHADER, "nll_loss_reduced");
     dispatchCompute(pipeline, [input.buffer, targets.buffer, out, paramsBuffer], [1]);
     await syncDevice();
     paramsBuffer.destroy();
@@ -319,7 +319,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
-    const pipeline = getOrCreatePipeline(SOFTMAX_SHADER, "softmax");
+    const pipeline = await getOrCreatePipeline(SOFTMAX_SHADER, "softmax");
     dispatchCompute(pipeline, [meta.buffer, out, dimsBuffer], calculateWorkgroups(rows));
     await syncDevice();
     dimsBuffer.destroy();
@@ -351,7 +351,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(LOG_SOFTMAX_SHADER, "log_softmax");
+    const pipeline = await getOrCreatePipeline(LOG_SOFTMAX_SHADER, "log_softmax");
     // Shader uses @workgroup_size(1), so dispatch one workgroup per batch.
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], [batchSize, 1, 1]);
     await syncDevice();
@@ -378,7 +378,7 @@ export class ReductionOps {
     });
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
 
-    const pipeline = getOrCreatePipeline(LOG_SOFTMAX_BACKWARD_SHADER, "log_softmax_backward");
+    const pipeline = await getOrCreatePipeline(LOG_SOFTMAX_BACKWARD_SHADER, "log_softmax_backward");
     dispatchCompute(pipeline, [gradOutput.buffer, this.deviceMgr.getTensorMeta(softmaxId).buffer, gradInput, dimsBuffer], calculateWorkgroups(total));
     await syncDevice();
     dimsBuffer.destroy();
@@ -403,7 +403,7 @@ export class ReductionOps {
     });
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
 
-    const pipeline = getOrCreatePipeline(SOFTMAX_BACKWARD_SHADER, "softmax_backward");
+    const pipeline = await getOrCreatePipeline(SOFTMAX_BACKWARD_SHADER, "softmax_backward");
     dispatchCompute(
       pipeline,
       [gradOutput.buffer, this.deviceMgr.getTensorMeta(softmaxId).buffer, gradInput, dimsBuffer],
@@ -433,7 +433,7 @@ export class ReductionOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
-    const pipeline = getOrCreatePipeline(NLL_LOSS_BACKWARD_SHADER, "nll_loss_backward");
+    const pipeline = await getOrCreatePipeline(NLL_LOSS_BACKWARD_SHADER, "nll_loss_backward");
     dispatchCompute(pipeline, [targets.buffer, gradInput, paramBuffer], calculateWorkgroups(total));
     await syncDevice();
     paramBuffer.destroy();
@@ -453,7 +453,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
-    const pipeline = getOrCreatePipeline(CROSS_ENTROPY_SHADER, "cross_entropy");
+    const pipeline = await getOrCreatePipeline(CROSS_ENTROPY_SHADER, "cross_entropy");
     dispatchCompute(pipeline, [input.buffer, targets.buffer, out, dimsBuffer], calculateWorkgroups(batchSize));
     await syncDevice();
     dimsBuffer.destroy();
@@ -490,7 +490,7 @@ export class ReductionOps {
     });
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
     this.deviceMgr.writeBuffer(scalesBuffer, 0, scales);
-    const pipeline = getOrCreatePipeline(CROSS_ENTROPY_BACKWARD_SHADER, "cross_entropy_backward");
+    const pipeline = await getOrCreatePipeline(CROSS_ENTROPY_BACKWARD_SHADER, "cross_entropy_backward");
     dispatchCompute(
       pipeline,
       [gradOutput.buffer, input.buffer, targets.buffer, out, dimsBuffer, scalesBuffer],
@@ -536,7 +536,7 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
     this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
 
-    const pipeline = getOrCreatePipeline(ADAM_STEP_SHADER, "adam_step");
+    const pipeline = await getOrCreatePipeline(ADAM_STEP_SHADER, "adam_step");
     dispatchCompute(
       pipeline,
       [param.buffer, grad.buffer, expAvg.buffer, expAvgSq.buffer, dimsBuffer, hpBuffer, extraBuffer],
@@ -582,7 +582,7 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
     this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
 
-    const pipeline = getOrCreatePipeline(ADAMW_STEP_SHADER, "adamw_step");
+    const pipeline = await getOrCreatePipeline(ADAMW_STEP_SHADER, "adamw_step");
     dispatchCompute(
       pipeline,
       [param.buffer, grad.buffer, expAvg.buffer, expAvgSq.buffer, dimsBuffer, hpBuffer, extraBuffer],
@@ -617,7 +617,7 @@ export class ReductionOps {
     const hpBuffer = this.deviceMgr.device!.createBuffer({ size: hp.byteLength, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST });
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
     this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
-    const pipeline = getOrCreatePipeline(SGD_STEP_SHADER, "sgd_step");
+    const pipeline = await getOrCreatePipeline(SGD_STEP_SHADER, "sgd_step");
     dispatchCompute(pipeline, [param.buffer, grad.buffer, momentumBuf.buffer, dimsBuffer, hpBuffer], calculateWorkgroups(n));
     await syncDevice();
     dimsBuffer.destroy();
@@ -651,7 +651,7 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
     this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
     this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
-    const pipeline = getOrCreatePipeline(RMSPROP_STEP_SHADER, "rmsprop_step");
+    const pipeline = await getOrCreatePipeline(RMSPROP_STEP_SHADER, "rmsprop_step");
     dispatchCompute(pipeline, [param.buffer, grad.buffer, squareAvg.buffer, momentumBuf.buffer, dimsBuffer, hpBuffer, extraBuffer], calculateWorkgroups(n));
     await syncDevice();
     dimsBuffer.destroy();
@@ -684,7 +684,7 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
     this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
     this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
-    const pipeline = getOrCreatePipeline(EXTENDED_STEP_SHADER, "adagrad_step");
+    const pipeline = await getOrCreatePipeline(EXTENDED_STEP_SHADER, "adagrad_step");
     // Adagrad's entrypoint only references bindings 0, 1, 2, 4, 5, 6
     // (state1 @binding(3) is declared but unused in the function body,
     // so the auto-generated bind group layout omits it). We pass an
@@ -739,7 +739,7 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
     this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
     this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
-    const pipeline = getOrCreatePipeline(EXTENDED_STEP_SHADER, "adamax_step");
+    const pipeline = await getOrCreatePipeline(EXTENDED_STEP_SHADER, "adamax_step");
     dispatchCompute(
       pipeline,
       [param.buffer, grad.buffer, expAvg.buffer, expInf.buffer, dimsBuffer, hpBuffer, extraBuffer],
@@ -782,7 +782,7 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
     this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
     this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
-    const pipeline = getOrCreatePipeline(EXTENDED_STEP_SHADER, "nadam_step");
+    const pipeline = await getOrCreatePipeline(EXTENDED_STEP_SHADER, "nadam_step");
     dispatchCompute(
       pipeline,
       [param.buffer, grad.buffer, expAvg.buffer, expAvgSq.buffer, dimsBuffer, hpBuffer, extraBuffer],
@@ -827,7 +827,7 @@ export class ReductionOps {
     this.deviceMgr.writeBuffer(dimsBuffer, 0, dims);
     this.deviceMgr.writeBuffer(hpBuffer, 0, hp);
     this.deviceMgr.writeBuffer(extraBuffer, 0, extra);
-    const pipeline = getOrCreatePipeline(EXTENDED_STEP_SHADER, "radam_step");
+    const pipeline = await getOrCreatePipeline(EXTENDED_STEP_SHADER, "radam_step");
     dispatchCompute(
       pipeline,
       [param.buffer, grad.buffer, expAvg.buffer, expAvgSq.buffer, dimsBuffer, hpBuffer, extraBuffer],
@@ -851,7 +851,7 @@ export class ReductionOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramsBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(MAXMIN_BACKWARD_SHADER, "maxmin_backward");
+    const pipeline = await getOrCreatePipeline(MAXMIN_BACKWARD_SHADER, "maxmin_backward");
     dispatchCompute(pipeline, [input.buffer, gradOutput.buffer, out, paramsBuffer], [1]);
     await syncDevice();
     paramsBuffer.destroy();
@@ -867,7 +867,7 @@ export class ReductionOps {
       const bLength = product(b.shape);
       const outLength = Math.max(aLength, bLength);
       const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-      const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, op);
+      const pipeline = await getOrCreatePipeline(ELEMENTWISE_SHADER, op);
       dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(outLength));
       await syncDevice();
       return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, outLength);
@@ -879,7 +879,7 @@ export class ReductionOps {
         size: 16, usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
       });
       this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-      const pipeline = getOrCreatePipeline(UNARY_SHADER, op);
+      const pipeline = await getOrCreatePipeline(UNARY_SHADER, op);
       dispatchCompute(pipeline, [a.buffer, out], calculateWorkgroups(aLength));
       await syncDevice();
       paramBuffer.destroy();

@@ -133,7 +133,7 @@ export class ShapeOps {
       dims.length, outLength, 0, 0,
     ]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
-    const pipeline = getOrCreatePipeline(PERMUTE_ND_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(PERMUTE_ND_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, perm, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     perm.destroy();
@@ -157,7 +157,7 @@ export class ShapeOps {
       d, index, rank, outLength, 0,
     ]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
-    const pipeline = getOrCreatePipeline(SELECT_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(SELECT_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
@@ -191,7 +191,7 @@ export class ShapeOps {
       rank, outLength, 0, 0,
     ]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 80);
-    const pipeline = getOrCreatePipeline(SLICE_SHADER, "slice");
+    const pipeline = await getOrCreatePipeline(SLICE_SHADER, "slice");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
@@ -229,7 +229,7 @@ export class ShapeOps {
     ]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 80);
 
-    const pipeline = getOrCreatePipeline(SLICE_BACKWARD_SHADER, "slice_backward");
+    const pipeline = await getOrCreatePipeline(SLICE_BACKWARD_SHADER, "slice_backward");
     dispatchCompute(pipeline, [gradOutput.buffer, gradInput, paramBuffer], calculateWorkgroups(product(slicedShape)));
     await syncDevice();
     paramBuffer.destroy();
@@ -257,7 +257,7 @@ export class ShapeOps {
       d, rank, 0, 0,
     ]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
-    const pipeline = getOrCreatePipeline(CAT_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(CAT_SHADER, "main");
     dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
@@ -283,7 +283,7 @@ export class ShapeOps {
       d, rank, 0, 0,
     ]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 48);
-    const pipeline = getOrCreatePipeline(STACK_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(STACK_SHADER, "main");
     dispatchCompute(pipeline, [a.buffer, b.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
@@ -309,7 +309,7 @@ export class ShapeOps {
       shape.length, outLength, 0, 0,
     ]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, paramsData, 48);
-    const pipeline = getOrCreatePipeline(EXPAND_BROADCAST_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(EXPAND_BROADCAST_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
@@ -329,7 +329,7 @@ export class ShapeOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(TRIL_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(TRIL_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
@@ -349,7 +349,7 @@ export class ShapeOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(TRIU_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(TRIU_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
@@ -387,7 +387,7 @@ export class ShapeOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     
-    const pipeline = getOrCreatePipeline(FLIP_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(FLIP_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
@@ -417,7 +417,7 @@ export class ShapeOps {
       meta.shape.length, outLength, 0, 0,
     ]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 96);
-    const pipeline = getOrCreatePipeline(REPEAT_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(REPEAT_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
@@ -435,7 +435,7 @@ export class ShapeOps {
     outShape[d] = indices.length;
     const outLength = product(outShape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const pipeline = getOrCreatePipeline(INDEX_SELECT_SHADER, rank === 1 ? "index_select_1d" : "index_select_2d");
+    const pipeline = await getOrCreatePipeline(INDEX_SELECT_SHADER, rank === 1 ? "index_select_1d" : "index_select_2d");
     if (rank === 1) {
       const params = new Uint32Array([0, 0, 0, indices.length]);
       const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
@@ -479,7 +479,7 @@ export class ShapeOps {
       outShapes[0], outShapes[1], outShapes[2], outShapes[3],
     ]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 64);
-    const pipeline = getOrCreatePipeline(GATHER_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(GATHER_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, indices.buffer, out, paramBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramBuffer.destroy();
@@ -491,7 +491,7 @@ export class ShapeOps {
     const out = createStorageBuffer(this.deviceMgr.device!, meta.bytes);
     const params = new Uint32Array([rows, cols, 0, 0]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
-    const pipeline = getOrCreatePipeline(TRANSPOSE_SHADER, "transpose_2d");
+    const pipeline = await getOrCreatePipeline(TRANSPOSE_SHADER, "transpose_2d");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(rows * cols));
     await syncDevice();
     paramBuffer.destroy();
@@ -514,7 +514,7 @@ export class ShapeOps {
 
     const params = new Uint32Array([segSize, numSegments, segStride, outerStride]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
-    const pipeline = getOrCreatePipeline(SORT_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(SORT_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, values, indices, paramBuffer], [numSegments, 1, 1]);
     await syncDevice();
     paramBuffer.destroy();
@@ -546,7 +546,7 @@ export class ShapeOps {
 
     const params = new Uint32Array([segSize, numSegments, segStride, outerStride]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
-    const pipeline = getOrCreatePipeline(SORT_BACKWARD_SHADER, "sort_backward");
+    const pipeline = await getOrCreatePipeline(SORT_BACKWARD_SHADER, "sort_backward");
     dispatchCompute(pipeline, [gradOutput.buffer, indices.buffer, gradInput, paramBuffer], [numSegments, 1, 1]);
     await syncDevice();
     paramBuffer.destroy();
@@ -581,7 +581,7 @@ export class ShapeOps {
 
     const params = new Uint32Array([k, numSegments, segStride, outerStrideIn, outerStrideOut]);
     const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 32);
-    const pipeline = getOrCreatePipeline(TOPK_BACKWARD_SHADER, "topk_backward");
+    const pipeline = await getOrCreatePipeline(TOPK_BACKWARD_SHADER, "topk_backward");
     dispatchCompute(pipeline, [gradOutput.buffer, indices.buffer, gradInput, paramBuffer], [numSegments, 1, 1]);
     await syncDevice();
     paramBuffer.destroy();

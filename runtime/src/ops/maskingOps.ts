@@ -52,7 +52,7 @@ export class MaskingOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(MASKED_FILL_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(MASKED_FILL_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, mask.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();

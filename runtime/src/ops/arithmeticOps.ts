@@ -151,7 +151,7 @@ export class ArithmeticOps {
       ? await this.broadcastOps.broadcastTensor(c, outShape)
       : c;
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const pipeline = getOrCreatePipeline(TERNARY_SHADER, "lerp_op");
+    const pipeline = await getOrCreatePipeline(TERNARY_SHADER, "lerp_op");
     dispatchCompute(pipeline, [aExpanded.buffer, bExpanded.buffer, cExpanded.buffer, out], calculateWorkgroups(length));
     await syncDevice();
     return this.deviceMgr.registerTensorAsHandle(out, outShape, a.dtype, length);
@@ -197,7 +197,7 @@ export class ArithmeticOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, "mul");
+    const pipeline = await getOrCreatePipeline(ELEMENTWISE_SHADER, "mul");
     dispatchCompute(pipeline, [a.buffer, paramBuffer, out], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
@@ -214,7 +214,7 @@ export class ArithmeticOps {
     }
     const length = product(c.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const pipeline = getOrCreatePipeline(WHERE_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(WHERE_SHADER, "main");
     dispatchCompute(pipeline, [c.buffer, x.buffer, y.buffer, out], calculateWorkgroups(length));
     await syncDevice();
     return this.deviceMgr.registerTensorAsHandle(out, x.shape, x.dtype, length);
@@ -231,7 +231,7 @@ export class ArithmeticOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(CLAMP_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(CLAMP_SHADER, "main");
     dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();
@@ -255,7 +255,7 @@ export class ArithmeticOps {
     }
     const length = product(a.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, "heaviside");
+    const pipeline = await getOrCreatePipeline(ELEMENTWISE_SHADER, "heaviside");
     dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(length));
     await syncDevice();
     return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, length);
@@ -320,7 +320,7 @@ export class ArithmeticOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(MATMUL_SHADER, "matmul_2d");
+    const pipeline = await getOrCreatePipeline(MATMUL_SHADER, "matmul_2d");
     dispatchCompute(pipeline, [aBuf, bBuf, out, paramBuffer], calculateWorkgroups(m * n));
     await syncDevice();
     paramBuffer.destroy();
@@ -336,7 +336,7 @@ export class ArithmeticOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(MATMUL_SHADER, "matmul_3d");
+    const pipeline = await getOrCreatePipeline(MATMUL_SHADER, "matmul_3d");
     dispatchCompute(pipeline, [aBuf, bBuf, out, paramBuffer], calculateWorkgroups(batch * m * n));
     await syncDevice();
     paramBuffer.destroy();
@@ -352,7 +352,7 @@ export class ArithmeticOps {
     }
     const length = product(a.shape);
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, op);
+    const pipeline = await getOrCreatePipeline(ELEMENTWISE_SHADER, op);
     dispatchCompute(pipeline, [a.buffer, b.buffer, out], calculateWorkgroups(length));
     await syncDevice();
     return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, length);

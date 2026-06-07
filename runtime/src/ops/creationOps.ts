@@ -93,7 +93,7 @@ export class CreationOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramsBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(RANDOM_SHADER, entrypoint);
+    const pipeline = await getOrCreatePipeline(RANDOM_SHADER, entrypoint);
     dispatchCompute(pipeline, [out, paramsBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramsBuffer.destroy();
@@ -161,7 +161,7 @@ export class CreationOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
-    const pipeline = getOrCreatePipeline(FILL_SHADER, "fill");
+    const pipeline = await getOrCreatePipeline(FILL_SHADER, "fill");
     dispatchCompute(pipeline, [out, paramBuffer], calculateWorkgroups(length));
     await syncDevice();
     paramBuffer.destroy();

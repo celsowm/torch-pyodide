@@ -28,7 +28,7 @@ export class LinalgOps {
     encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, byteSize);
     this.deviceMgr.device!.queue.submit([encoder.finish()]);
 
-    const pipeline = getOrCreatePipeline(CHOLESKY_SHADER, "cholesky_small");
+    const pipeline = await getOrCreatePipeline(CHOLESKY_SHADER, "cholesky_small");
     const params = new Uint32Array([n, batch, 0]);
     const paramBuffer = this.deviceMgr.device!.createBuffer({
       size: params.byteLength,
@@ -116,7 +116,7 @@ export class LinalgOps {
     this.deviceMgr.device!.queue.submit([encoder.finish()]);
 
     const entrypoint = upper ? "backward_sub_step" : "forward_sub_step";
-    const pipeline = getOrCreatePipeline(TRIANGULAR_SOLVE_SHADER, entrypoint);
+    const pipeline = await getOrCreatePipeline(TRIANGULAR_SOLVE_SHADER, entrypoint);
 
     for (let k = 0; k < n; k++) {
       const params = new Uint32Array([n, m, batch, k]);

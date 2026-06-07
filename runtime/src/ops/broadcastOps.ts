@@ -35,7 +35,7 @@ export class BroadcastOps {
       : b;
 
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const pipeline = getOrCreatePipeline(ELEMENTWISE_SHADER, op);
+    const pipeline = await getOrCreatePipeline(ELEMENTWISE_SHADER, op);
     dispatchCompute(pipeline, [aExpanded.buffer, bExpanded.buffer, out], calculateWorkgroups(outLength));
     await syncDevice();
 
@@ -59,7 +59,7 @@ export class BroadcastOps {
       : b;
 
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, outLength * 4));
-    const pipeline = getOrCreatePipeline(COMPARE_SHADER, op);
+    const pipeline = await getOrCreatePipeline(COMPARE_SHADER, op);
     dispatchCompute(pipeline, [aExpanded.buffer, bExpanded.buffer, out], calculateWorkgroups(outLength));
     await syncDevice();
 
@@ -102,7 +102,7 @@ export class BroadcastOps {
       usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
     });
     this.deviceMgr.writeBuffer(paramsBuffer, 0, paramsData);
-    const pipeline = getOrCreatePipeline(EXPAND_BROADCAST_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(EXPAND_BROADCAST_SHADER, "main");
     dispatchCompute(pipeline, [tensor.buffer, out, paramsBuffer], calculateWorkgroups(outLength));
     await syncDevice();
     paramsBuffer.destroy();

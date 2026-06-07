@@ -437,18 +437,19 @@ test.describe.serial("playground examples @webgpu", () => {
     ]);
     // named_modules yields root + each child of the Sequential (ReLU is at index 2)
     expect(result.module_names).toEqual(["", "0", "1", "2", "3"]);
-    // BatchNorm registers its running stats as buffers
+    // BatchNorm registers its running stats + num_batches_tracked as buffers
     expect(result.buffer_names).toEqual([
       "1.running_mean",
       "1.running_var",
+      "1.num_batches_tracked",
     ]);
-    // state_dict keys are qualified and include buffers
-    // (torch-pyodide does not currently register BatchNorm.num_batches_tracked;
-    // real PyTorch does — the parity test below accounts for that difference.)
+    // state_dict keys are qualified and include all buffers (matches real
+    // PyTorch's set after the num_batches_tracked buffer was added).
     expect(result.sd_keys).toEqual([
       "0.bias",
       "0.weight",
       "1.bias",
+      "1.num_batches_tracked",
       "1.running_mean",
       "1.running_var",
       "1.weight",
@@ -497,10 +498,10 @@ test.describe.serial("playground examples @webgpu", () => {
       buffer_names: string[];
       visited_classes: string[];
     }>(result.stdout);
-    // num_batches_tracked is real-PyTorch specific; our implementation
-    // doesn't register it. Strip it from the reference for the comparison.
-    const refKeys = refOutput.sd_keys.filter((k) => k !== "1.num_batches_tracked");
-    const refBuffers = refOutput.buffer_names.filter((k) => k !== "1.num_batches_tracked");
+    // num_batches_tracked is now present in both real PyTorch and
+    // torch-pyodide state_dicts (we register the buffer in _BatchNorm).
+    const refKeys = refOutput.sd_keys;
+    const refBuffers = refOutput.buffer_names;
 
     consoleFailures.length = 0;
     await page.locator("#example-select").selectOption("nn_module_state_dict");
@@ -534,13 +535,13 @@ test.describe.serial("playground examples @webgpu", () => {
       file_load_ok: boolean;
     }>(output);
 
-    // The serialized dict must contain all 8 tensors (weights/biases/buffers)
-    // torch-pyodide does not register BatchNorm.num_batches_tracked; real
-    // PyTorch does. The example doesn't materialize it in the browser output.
+    // The serialized dict must contain all 9 tensors (weights/biases/buffers)
+    // including BatchNorm.num_batches_tracked (now registered as a buffer).
     expect(Object.keys(result.sd_summary).sort()).toEqual([
       "0.bias",
       "0.weight",
       "1.bias",
+      "1.num_batches_tracked",
       "1.running_mean",
       "1.running_var",
       "1.weight",
@@ -596,11 +597,10 @@ test.describe.serial("playground examples @webgpu", () => {
       y_match: boolean;
     }>(result.stdout);
 
-    // Real PyTorch may register an extra num_batches_tracked buffer.
-    // Strip it for comparison.
-    const refKeys = Object.keys(refOutput.sd_summary).filter(
-      (k) => k !== "1.num_batches_tracked",
-    );
+    // num_batches_tracked is now registered in both real PyTorch and
+    // torch-pyodide (added as a buffer in _BatchNorm), so both sides
+    // include it and the comparison needs no filtering.
+    const refKeys = Object.keys(refOutput.sd_summary);
 
     consoleFailures.length = 0;
     await page.locator("#example-select").selectOption("save_load_state_dict");
@@ -1091,6 +1091,92 @@ test.describe.serial("playground examples @webgpu", () => {
     // self-check (sanity: the bundle was generated from the same model).
     expect(actual.preds).toEqual(ref.output!.preds);
     expect(actual.state_dict_keys).toEqual(ref.output!.state_dict_keys);
+
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("real pretrained MiniVGG with BatchNorm2d + Dropout matches real PyTorch", async () => {
+    // End-to-end smoke test of a VGG-like model with BatchNorm2d (running
+    // stats restored from state_dict), Dropout (no-op in eval mode), and
+    // Conv -> BN -> ReLU -> Pool blocks. The state_dict was produced by
+    // real PyTorch and embedded as a string literal; loading it in the
+    // browser must reproduce the same predictions, AND the model must be
+    // batch-invariant in eval mode (BN uses running stats, not batch stats).
+    const ref = runExampleWithRealTorch<{
+      bundle_version: number;
+      n_samples: number;
+      preds: number[];
+      ref_preds: number[];
+      preds_match: boolean;
+      logits_max_abs_diff: number;
+      first_pred: number;
+      first_pred_prob: number;
+      first_ref_pred: number;
+      state_dict_keys: string[];
+      state_dict_n_keys: number;
+      has_batchnorm_state: boolean;
+      has_dropout_in_model: boolean;
+      batch_invariant_eval_mode: boolean;
+    }>("real_model_pretrained_vgg.py");
+    if (ref.skipReason) test.skip(true, ref.skipReason);
+    expect(ref.output).toBeDefined();
+
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("real_model_pretrained_vgg");
+    await expect(page.locator("#example-select")).toHaveValue("real_model_pretrained_vgg");
+    const { output } = await runSelectedExample(page, "real_model_pretrained_vgg", 60000);
+
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+
+    const actual = parseJsonOutput<{
+      bundle_version: number;
+      n_samples: number;
+      preds: number[];
+      ref_preds: number[];
+      preds_match: boolean;
+      logits_max_abs_diff: number;
+      first_pred: number;
+      first_pred_prob: number;
+      first_ref_pred: number;
+      state_dict_keys: string[];
+      state_dict_n_keys: number;
+      has_batchnorm_state: boolean;
+      has_dropout_in_model: boolean;
+      batch_invariant_eval_mode: boolean;
+    }>(output);
+
+    // Predictions must match the reference baked into the bundle.
+    expect(actual.preds_match).toBe(true);
+    expect(actual.preds).toEqual(ref.output!.preds);
+    expect(actual.preds).toEqual(ref.output!.ref_preds);
+    expect(actual.first_pred).toBe(ref.output!.first_pred);
+    expect(actual.first_ref_pred).toBe(ref.output!.first_ref_pred);
+    expect(actual.n_samples).toBe(ref.output!.n_samples);
+
+    // The state_dict was produced by real PyTorch; loading it and running
+    // it through the browser's MiniVGG must reproduce the reference
+    // predictions with only a tiny WGSL f32 epsilon of drift. The model
+    // is deeper than TinyCNN (3 conv blocks + 2 FC) so the tolerance
+    // accumulates a bit more.
+    expect(actual.logits_max_abs_diff).toBeLessThan(0.1);
+
+    // The state_dict MUST carry BatchNorm2d's running stats (otherwise
+    // BN in eval mode would re-initialize them and predictions would
+    // be off). And the architecture MUST include Dropout.
+    expect(actual.has_batchnorm_state).toBe(true);
+    expect(actual.has_dropout_in_model).toBe(true);
+    expect(actual.state_dict_n_keys).toBe(ref.output!.state_dict_n_keys);
+
+    // The crucial BatchNorm2d-in-eval-mode check: predictions must be
+    // invariant to the input batch size, because BN uses the loaded
+    // running_mean / running_var instead of the current batch's stats.
+    expect(actual.batch_invariant_eval_mode).toBe(true);
+
+    // Cross-check against the live real-PyTorch run for the same fields.
+    expect(actual.state_dict_keys).toEqual(ref.output!.state_dict_keys);
+    expect(actual.batch_invariant_eval_mode).toBe(ref.output!.batch_invariant_eval_mode);
+    expect(actual.has_batchnorm_state).toBe(ref.output!.has_batchnorm_state);
+    expect(actual.has_dropout_in_model).toBe(ref.output!.has_dropout_in_model);
 
     expect(consoleFailures).toEqual([]);
   });

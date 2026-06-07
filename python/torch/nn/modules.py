@@ -263,8 +263,11 @@ def _load_into_tensor(target: Tensor, value: object) -> None:
         raise RuntimeError(f"Cannot load state value into tensor: {value!r}")
     target_shape = list(value["shape"])
     target_data = value["data"]
+    # 0-d tensors (scalars) come out of `tolist()` as a bare scalar
+    # rather than a 1-element list. Wrap so `torch.tensor(...)` produces
+    # a 0-d tensor that we can then `.reshape` to the target shape.
     if not isinstance(target_data, list):
-        raise RuntimeError("State tensor data must be a list")
+        target_data = [target_data]
     target_dtype = value.get("dtype", target.dtype)
     import torch
     new_t = torch.tensor(target_data, dtype=target_dtype)
@@ -553,11 +556,16 @@ class _BatchNorm(Module):
         # running stats are buffers (not parameters)
         self.register_buffer("running_mean", torch.zeros((num_features,)))
         self.register_buffer("running_var", torch.ones((num_features,)))
+        # `num_batches_tracked` is a scalar int64 buffer that real PyTorch
+        # carries in the state_dict. It increments on every forward pass
+        # in training mode and is not used in eval mode. Initialise to 0.
+        self.register_buffer("num_batches_tracked", torch.zeros((), dtype="int64"))
         # Re-attach as attributes for downstream functional calls (the
         # __setattr__ short-circuited to register_parameter when we used
         # `self.running_mean = ...` directly).
         self.running_mean = self._buffers["running_mean"]
         self.running_var = self._buffers["running_var"]
+        self.num_batches_tracked = self._buffers["num_batches_tracked"]
 
     def forward(self, x: Tensor) -> Tensor:
         from .functional import batch_norm

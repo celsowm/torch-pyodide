@@ -97,7 +97,7 @@ def _normalize_reshape_shape_from_args(shape: Sequence[int], input_shape: Sequen
 def _coerce_out_value(value: float, dtype: str) -> object:
     if dtype == "bool":
         return bool(value)
-    if dtype == "int32":
+    if dtype in ("int32", "int64", "long"):
         return int(value)
     return float(value)
 

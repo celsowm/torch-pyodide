@@ -220,7 +220,13 @@ def _save_to_zip(obj: object, fh: io.IOBase) -> None:
         if not ({"shape", "data", "dtype"} <= keys):
             return o
         shape = list(o["shape"])
-        data = list(o["data"])
+        raw_data = o["data"]
+        # 0-d tensors serialise to a bare scalar (not a list) in JSON.
+        # Wrap to a single-element list so the tensor constructor accepts it.
+        if isinstance(raw_data, (int, float)):
+            data = [raw_data]
+        else:
+            data = list(raw_data)
         dtype_str = str(o["dtype"]).replace("torch.", "")
         if dtype_str == "float32":
             dtype = "float32"

@@ -49,7 +49,7 @@ export class PoolingOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
-    const pipeline = getOrCreatePipeline(MAX_POOL2D_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(MAX_POOL2D_SHADER, "main");
     dispatchCompute(pipeline, [input.buffer, out, paramBuffer], calculateWorkgroups(total));
     await syncDevice();
     paramBuffer.destroy();
@@ -88,7 +88,7 @@ export class PoolingOps {
     });
     this.deviceMgr.writeBuffer(paramBuffer, 0, params);
 
-    const pipeline = getOrCreatePipeline(AVG_POOL2D_SHADER, "main");
+    const pipeline = await getOrCreatePipeline(AVG_POOL2D_SHADER, "main");
     dispatchCompute(pipeline, [input.buffer, out, paramBuffer], calculateWorkgroups(total));
     await syncDevice();
     paramBuffer.destroy();
