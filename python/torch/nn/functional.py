@@ -121,25 +121,17 @@ def batch_norm(
     momentum: float = 0.1,
     eps: float = 1e-5,
 ) -> Tensor:
-    from torch._tensor import batch_norm_inference_from_tensor
-    if training:
-        mean = x.mean(dim=0)
-        var = ((x - mean) ** 2).mean(dim=0)
-        if running_mean is not None:
-            running_mean._set(running_mean * (1 - momentum) + mean * momentum)
-        if running_var is not None:
-            running_var._set(running_var * (1 - momentum) + var * momentum)
-        inv_std = (var + eps).rsqrt()
-        x_norm = (x - mean) * inv_std
-        if weight is not None:
-            x_norm = x_norm * weight
-        if bias is not None:
-            x_norm = x_norm + bias
-        return x_norm
-    else:
-        if running_mean is None or running_var is None:
-            raise RuntimeError("running_mean and running_var required in eval mode")
-        return batch_norm_inference_from_tensor(x, running_mean, running_var, weight, bias, eps)
+    from torch._tensor import batch_norm_from_tensor
+    return batch_norm_from_tensor(
+        x,
+        weight=weight,
+        bias=bias,
+        running_mean=running_mean,
+        running_var=running_var,
+        eps=eps,
+        training=training,
+        momentum=momentum,
+    )
 
 
 def layer_norm(x: Tensor, normalized_shape: int | Sequence[int], weight: Tensor | None = None, bias: Tensor | None = None, eps: float = 1e-5) -> Tensor:

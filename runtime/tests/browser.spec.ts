@@ -1180,4 +1180,103 @@ test.describe.serial("playground examples @webgpu", () => {
 
     expect(consoleFailures).toEqual([]);
   });
+
+  test("BatchNorm2d training mode: forward + running stats + backward", async () => {
+    // End-to-end test of BatchNorm2d in training mode (Fase 12.5):
+    // 1. Forward pass produces normalized output using BATCH statistics
+    //    (not running stats).
+    // 2. running_mean and running_var are updated in-place each step.
+    // 3. num_batches_tracked increments.
+    // 4. .backward() produces correct gradients (compared to finite diffs).
+    // 5. After switching to .eval(), the model uses the saved running stats.
+    const ref = runExampleWithRealTorch<{
+      forward_shape: number[];
+      first_forward_y: number[];
+      expected_first_y: number[];
+      first_forward_close_to_expected: boolean;
+      running_mean_after_1_step: number[];
+      running_var_after_1_step: number[];
+      num_batches_tracked_after_2_more_steps: number;
+      x_grad_first: number[];
+      w_grad_first: number[];
+      b_grad_first: number[];
+      x_grad_finite_diff: number[];
+      w_grad_finite_diff: number[];
+      b_grad_finite_diff: number[];
+      grad_x_max_abs_diff: number;
+      grad_w_max_abs_diff: number;
+      grad_b_max_abs_diff: number;
+      eval_first_y_uses_running_stats: boolean;
+      loss_decreased: boolean;
+    }>("nn_batchnorm_training.py");
+    if (ref.skipReason) test.skip(true, ref.skipReason);
+    expect(ref.output).toBeDefined();
+
+    consoleFailures.length = 0;
+
+    await page.locator("#example-select").selectOption("nn_batchnorm_training");
+    await expect(page.locator("#example-select")).toHaveValue("nn_batchnorm_training");
+    const { output } = await runSelectedExample(page, "nn_batchnorm_training", 60000);
+
+    expect(output).not.toMatch(/nan|NaN|inf|Infinity|Traceback|ERROR/);
+
+    const actual = parseJsonOutput<{
+      forward_shape: number[];
+      first_forward_y: number[];
+      expected_first_y: number[];
+      first_forward_close_to_expected: boolean;
+      running_mean_after_1_step: number[];
+      running_var_after_1_step: number[];
+      num_batches_tracked_after_2_more_steps: number;
+      x_grad_first: number[];
+      w_grad_first: number[];
+      b_grad_first: number[];
+      x_grad_finite_diff: number[];
+      w_grad_finite_diff: number[];
+      b_grad_finite_diff: number[];
+      grad_x_max_abs_diff: number;
+      grad_w_max_abs_diff: number;
+      grad_b_max_abs_diff: number;
+      eval_first_y_uses_running_stats: boolean;
+      loss_decreased: boolean;
+    }>(output);
+
+    // 1. Forward output shape matches input.
+    expect(actual.forward_shape).toEqual(ref.output!.forward_shape);
+
+    // 2. Forward output matches the closed-form expected value (within fp32 eps).
+    expect(actual.first_forward_close_to_expected).toBe(true);
+    expect(actual.first_forward_y[0]).toBeCloseTo(ref.output!.first_forward_y[0], 2);
+    expect(actual.expected_first_y[0]).toBeCloseTo(ref.output!.expected_first_y[0], 2);
+
+    // 3. Running stats were updated (they should differ from initial 0/1).
+    expect(actual.running_mean_after_1_step).not.toEqual([0, 0, 0, 0]);
+    expect(actual.running_var_after_1_step).not.toEqual([1, 1, 1, 1]);
+    // And they should match real PyTorch's update (same momentum, same input).
+    for (let i = 0; i < actual.running_mean_after_1_step.length; i++) {
+      expect(actual.running_mean_after_1_step[i]).toBeCloseTo(
+        ref.output!.running_mean_after_1_step[i], 3);
+      expect(actual.running_var_after_1_step[i]).toBeCloseTo(
+        ref.output!.running_var_after_1_step[i], 3);
+    }
+
+    // 4. num_batches_tracked incremented on every training forward.
+    expect(actual.num_batches_tracked_after_2_more_steps).toBe(
+      ref.output!.num_batches_tracked_after_2_more_steps);
+    expect(actual.num_batches_tracked_after_2_more_steps).toBe(3);
+
+    // 5. Gradients match finite differences (autograd correctness).
+    // Tolerance is generous because the WGSL pipeline accumulates f32 error.
+    expect(actual.grad_x_max_abs_diff).toBeLessThan(0.05);
+    expect(actual.grad_w_max_abs_diff).toBeLessThan(0.01);
+    expect(actual.grad_b_max_abs_diff).toBeLessThan(0.01);
+
+    // 6. In eval mode, output uses running stats (different from training output).
+    expect(actual.eval_first_y_uses_running_stats).toBe(true);
+
+    // 7. End-to-end: a tiny model with BN trains and loss decreases.
+    expect(actual.loss_decreased).toBe(true);
+
+    expect(consoleFailures).toEqual([]);
+  });
 });

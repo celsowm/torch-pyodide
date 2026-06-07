@@ -939,6 +939,90 @@ def _grad_minimum(grad_output: Tensor, a: Tensor, b: Tensor) -> tuple[Tensor | N
     return grad_a, grad_b
 
 
+def _grad_batch_norm(
+    grad_output: Tensor,
+    x: Tensor,
+    weight: Tensor | None,
+    bias: Tensor | None,
+    x_hat: Tensor,
+    inv_std: Tensor,
+    spatial_size: int,
+) -> tuple[Tensor | None, Tensor | None, Tensor | None]:
+    """Backward pass for batch_norm training mode.
+
+    Given:
+      x:       input, shape (N, C, ...) — requires_grad
+      weight:  (C,) or None
+      bias:    (C,) or None
+      x_hat:   (x - mean) * inv_std, same shape as x (no affine applied)
+      inv_std: 1 / sqrt(var + eps), shape (C,)
+      spatial_size: M = N * H * W (or N for 2D)
+
+    Returns: (grad_x, grad_weight, grad_bias) — None where input doesn't require grad.
+
+    Reference: Ioffe & Szegedy 2015, Algorithm 1 in the backward pass.
+    """
+    from .tensor_ops import sum_dim_from_tensor, mean_dim_from_tensor
+    from .grad_mode import no_grad
+
+    M = float(spatial_size)
+    grad_x = grad_weight = grad_bias = None
+
+    with no_grad():
+        # dL/dx_hat: gradient w.r.t. the normalized (but not affine) output.
+        # Shape: (N, C, ...), same as x.
+        if weight is not None:
+            grad_x_hat = grad_output.mul(weight)  # broadcasts (C,) over leading dims
+        else:
+            grad_x_hat = grad_output
+
+        # Per-channel reductions over dims 0, 2, 3 (for 4D) or 0 (for 2D).
+        # We use a sequential approach: sum(dim=0) then sum over remaining spatial dims.
+        rank = len(grad_x_hat._shape)
+        sum_grad_xhat = grad_x_hat
+        for d in range(rank):
+            if d == 1:
+                continue  # skip the channel dim
+            sum_grad_xhat = sum_dim_from_tensor(sum_grad_xhat, d, keepdim=True)
+        # Now sum_grad_xhat has shape (1, C, 1, 1) or (C,) for 2D.
+
+        sum_grad_xhat_xhat = grad_x_hat.mul(x_hat)
+        sum_grad_xhat_xhat = sum_dim_from_tensor(sum_grad_xhat_xhat, 0, keepdim=True)
+        for d in range(1, rank):
+            if d == 1:
+                continue
+            sum_grad_xhat_xhat = sum_dim_from_tensor(sum_grad_xhat_xhat, d, keepdim=True)
+        # Shape (1, C, 1, 1) or (C,) — same channel position.
+
+        if x._requires_grad:
+            # Standard BN backward (Ioffe & Szegedy):
+            # dL/dx = (1/M) * inv_std * (M * dL/dx_hat
+            #                              - sum(dL/dx_hat)
+            #                              - x_hat * sum(dL/dx_hat * x_hat))
+            # The "M * dL/dx_hat" is a constant broadcast; combine it with the
+            # other terms by factoring out inv_std.
+            term1 = grad_x_hat.mul(M)
+            grad_x = term1.sub(sum_grad_xhat).sub(x_hat.mul(sum_grad_xhat_xhat))
+            grad_x = grad_x.mul(inv_std).mul(1.0 / M)
+
+        if weight is not None and weight._requires_grad:
+            grad_weight = sum_grad_xhat_xhat.squeeze() if rank > 1 else sum_grad_xhat_xhat
+            # Need to remove all size-1 dims except the channel dim.
+            for d in range(rank - 1, -1, -1):
+                if d == 1:
+                    continue
+                grad_weight = grad_weight.squeeze(d) if grad_weight._shape[d] == 1 else grad_weight
+
+        if bias is not None and bias._requires_grad:
+            grad_bias = sum_grad_xhat
+            for d in range(rank - 1, -1, -1):
+                if d == 1:
+                    continue
+                grad_bias = grad_bias.squeeze(d) if grad_bias._shape[d] == 1 else grad_bias
+
+    return grad_x, grad_weight, grad_bias
+
+
 
 
 

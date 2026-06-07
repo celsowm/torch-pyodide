@@ -96,19 +96,155 @@ def batch_norm_from_tensor(
     running_mean: "Tensor | None" = None,
     running_var: "Tensor | None" = None,
     eps: float = 1e-5,
+    training: bool = False,
+    momentum: float = 0.1,
 ) -> "Tensor":
+    """Batch normalization forward pass.
+
+    When `training=True`, computes batch statistics and updates running_mean /
+    running_var in-place; the output is `(x - batch_mean) / sqrt(batch_var + eps)
+    * weight + bias`. Registers an autograd node so `.backward()` flows through
+    x, weight, and bias.
+
+    When `training=False`, dispatches to the inference WGSL shader using the
+    running statistics.
+    """
     from ._tensor import Tensor
+    from .autograd import _Node, is_grad_enabled
+    from .autograd_rules import _grad_batch_norm
+    from .grad_mode import no_grad
     runtime = _get_runtime()
-    meta = _run_js_awaitable(runtime.batchNorm(
-        input._id,
-        weight._id if weight is not None else None,
-        bias._id if bias is not None else None,
-        running_mean._id if running_mean is not None else None,
-        running_var._id if running_var is not None else None,
-        float(eps),
-    ))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+
+    if not training:
+        # Inference path: WGSL shader using running stats.
+        meta = _run_js_awaitable(runtime.batchNorm(
+            input._id,
+            weight._id if weight is not None else None,
+            bias._id if bias is not None else None,
+            running_mean._id if running_mean is not None else None,
+            running_var._id if running_var is not None else None,
+            float(eps),
+        ))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    # Training path: compute batch statistics in Python (leveraging GPU-backed
+    # `mean` and arithmetic ops) and register an autograd node for backward.
+    rank = len(input._shape)
+    if rank < 2:
+        raise RuntimeError("batch_norm expects at least 2D input (N, C, ...)")
+
+    spatial = 1
+    for s in input._shape[2:]:
+        spatial *= s
+    m = float(input._shape[0] * spatial)  # M = N * H * W (or N for 2D)
+
+    with no_grad():
+        # batch mean, shape (C,): average over dims 0, 2, 3 (or 0 for 2D).
+        mean = input
+        for d in range(rank):
+            if d == 1:
+                continue
+            mean = mean.mean(dim=d, keepdim=True)
+        # Squeeze the non-channel dims so mean has shape (C,).
+        for d in range(rank - 1, -1, -1):
+            if d == 1:
+                continue
+            mean = mean.squeeze(d) if mean._shape[d] == 1 else mean
+
+        # Centered input and its variance.
+        # Broadcast mean (C,) over the leading N and trailing spatial dims:
+        # add a view of mean with shape (1, C, 1, 1) ... or (1, C).
+        mean_view = mean
+        for d in range(rank):
+            if d == 1:
+                continue
+            mean_view = mean_view.unsqueeze(d) if mean._shape[d] == 1 else mean_view
+        # `unsqueeze` after squeezing leaves mean_view with shape (1, C, 1, 1) for 4D
+        # or (1, C) for 2D — matching the broadcast pattern.
+
+        x_centered = input.sub(mean_view)
+        # variance = mean(x_centered^2)
+        var = x_centered.pow(2)
+        for d in range(rank):
+            if d == 1:
+                continue
+            var = var.mean(dim=d, keepdim=True)
+        for d in range(rank - 1, -1, -1):
+            if d == 1:
+                continue
+            var = var.squeeze(d) if var._shape[d] == 1 else var
+
+        inv_std = (var + float(eps)).rsqrt()
+
+        # x_hat: normalized but not affine, same shape as input.
+        inv_std_view = inv_std
+        for d in range(rank):
+            if d == 1:
+                continue
+            inv_std_view = inv_std_view.unsqueeze(d) if inv_std._shape[d] == 1 else inv_std_view
+
+        x_hat = x_centered.mul(inv_std_view)
+        # Apply affine (optional).
+        if weight is not None:
+            x_hat_aff = x_hat.mul(weight)
+        else:
+            x_hat_aff = x_hat
+        if bias is not None:
+            output = x_hat_aff.add(bias)
+        else:
+            output = x_hat_aff
+
+        # Update running stats in-place (outside autograd graph).
+        if running_mean is not None:
+            new_rm = mean.mul(float(momentum)).add(running_mean.mul(1.0 - float(momentum)))
+            running_mean._set(new_rm)
+        if running_var is not None:
+            # PyTorch's running_var stores the *unbiased* variance estimate
+            # (population variance with Bessel's correction: var * M / (M-1)).
+            # This matches what real PyTorch's BN layer expects when restored
+            # from state_dict.
+            unbiased_var = var.mul(m / (m - 1.0))
+            new_rv = unbiased_var.mul(float(momentum)).add(running_var.mul(1.0 - float(momentum)))
+            running_var._set(new_rv)
+
+    # The output tensor inherits requires_grad based on its inputs.
+    any_requires_grad = (
+        input._requires_grad
+        or (weight is not None and weight._requires_grad)
+        or (bias is not None and bias._requires_grad)
+    )
+    if is_grad_enabled() and any_requires_grad:
+        result = output
+        result._requires_grad = True
+        # Save the tensors needed for backward. We attach them to the closure.
+        saved_x = input
+        saved_weight = weight
+        saved_bias = bias
+        saved_x_hat = x_hat
+        saved_inv_std = inv_std
+
+        def grad_fn(grad_output: "Tensor"):
+            return _grad_batch_norm(
+                grad_output,
+                saved_x,
+                saved_weight,
+                saved_bias,
+                saved_x_hat,
+                saved_inv_std,
+                int(m),
+            )
+
+        # parents must be in the same order as grad_fn returns:
+        # (grad_x, grad_weight, grad_bias). Skip None for optional params.
+        parents = [input]
+        if weight is not None:
+            parents.append(weight)
+        if bias is not None:
+            parents.append(bias)
+        result._node = _Node(result, grad_fn, parents)
+        return result
+    return output
 
 
 def nll_loss_from_tensor(

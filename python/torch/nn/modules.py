@@ -569,6 +569,14 @@ class _BatchNorm(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         from .functional import batch_norm
+        if self.training:
+            # Increment num_batches_tracked (int64 0-d buffer) in-place.
+            # Real PyTorch does this every forward pass in training mode.
+            # `tolist()` on a 0-d tensor returns a bare Python int, not a list.
+            cur = self.num_batches_tracked.tolist()
+            if isinstance(cur, list):
+                cur = cur[0] if cur else 0
+            self.num_batches_tracked = self.num_batches_tracked + 1
         return batch_norm(
             x,
             running_mean=self.running_mean,
