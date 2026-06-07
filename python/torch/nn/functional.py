@@ -47,18 +47,47 @@ def dropout(x: Tensor, p: float = 0.5, training: bool = True) -> Tensor:
     if not training or p == 0.0:
         return x
     import torch as _torch
-    mask = _torch.rand(list(x.shape), dtype=x.dtype) > p
-    return x.mul(mask).div(1.0 - p)
+    from torch.autograd import _Node, is_grad_enabled
+    from torch.autograd_rules import _grad_dropout
+    from torch.grad_mode import no_grad
+    with no_grad():
+        mask_f = (_torch.rand(list(x.shape), dtype=x.dtype) > float(p)).to(x.dtype)
+    scale = 1.0 / (1.0 - float(p)) if p < 1.0 else 0.0
+    output = x.mul(mask_f).mul(scale)
+    if is_grad_enabled() and x._requires_grad:
+        output._requires_grad = True
+        saved_x = x
+        saved_mask = mask_f
+        saved_p = float(p)
+        def grad_fn(grad_output: Tensor):
+            return (_grad_dropout(grad_output, saved_x, saved_mask, saved_p),)
+        output._node = _Node(output, grad_fn, [x])
+    return output
 
 
 def dropout2d(x: Tensor, p: float = 0.5, training: bool = True) -> Tensor:
     if not training or p == 0.0:
         return x
     import torch as _torch
-    shape = list(x.shape)
-    mask_shape = [shape[0], shape[1]] + [1] * (len(shape) - 2)
-    mask = (_torch.rand(mask_shape, dtype=x.dtype) > p).to(x.dtype)
-    return x.mul(mask).div(1.0 - p)
+    from torch.autograd import _Node, is_grad_enabled
+    from torch.autograd_rules import _grad_dropout
+    from torch.grad_mode import no_grad
+    with no_grad():
+        shape = list(x.shape)
+        mask_shape = [shape[0], shape[1]] + [1] * (len(shape) - 2)
+        mask_f = (_torch.rand(mask_shape, dtype=x.dtype) > float(p)).to(x.dtype)
+    scale = 1.0 / (1.0 - float(p)) if p < 1.0 else 0.0
+    # Broadcast mask over spatial dims.
+    output = x.mul(mask_f).mul(scale)
+    if is_grad_enabled() and x._requires_grad:
+        output._requires_grad = True
+        saved_x = x
+        saved_mask = mask_f
+        saved_p = float(p)
+        def grad_fn(grad_output: Tensor):
+            return (_grad_dropout(grad_output, saved_x, saved_mask, saved_p),)
+        output._node = _Node(output, grad_fn, [x])
+    return output
 
 
 # ── Linear ────────────────────────────────────────────────────────

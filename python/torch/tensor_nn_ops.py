@@ -325,14 +325,88 @@ def layer_norm_from_tensor(
     bias: "Tensor | None" = None,
     eps: float = 1e-5,
 ) -> "Tensor":
+    """Layer normalization forward pass (autograd-aware).
+
+    Computes mean and variance over the last `len(normalized_shape)` dims
+    of `input` and normalizes: y = (x - mean) / sqrt(var + eps) * weight + bias.
+    Registers an autograd node so `.backward()` flows through x, weight, and bias.
+    """
     from ._tensor import Tensor
+    from .autograd import _Node, is_grad_enabled
+    from .autograd_rules import _grad_layer_norm
+    from .grad_mode import no_grad
     runtime = _get_runtime()
-    meta = _run_js_awaitable(runtime.layerNorm(
-        input._id,
-        [int(s) for s in normalized_shape],
-        weight._id if weight is not None else None,
-        bias._id if bias is not None else None,
-        float(eps),
-    ))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
-    return Tensor(tensor_id, out_shape, out_dtype)
+
+    n_norm = len(normalized_shape)
+    rank = len(input._shape)
+    if n_norm > rank:
+        raise RuntimeError("layer_norm normalized_shape has more dims than input")
+
+    any_requires_grad = (
+        input._requires_grad
+        or (weight is not None and weight._requires_grad)
+        or (bias is not None and bias._requires_grad)
+    )
+
+    if not (is_grad_enabled() and any_requires_grad):
+        # Fast path: WGSL shader, no autograd graph.
+        meta = _run_js_awaitable(runtime.layerNorm(
+            input._id,
+            [int(s) for s in normalized_shape],
+            weight._id if weight is not None else None,
+            bias._id if bias is not None else None,
+            float(eps),
+        ))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+
+    # Autograd path: compute mean/var/inv_std/x_hat in Python (using GPU-backed
+    # arithmetic) and register a backward node.
+    with no_grad():
+        # mean & var over the last `n_norm` dims (keepdim=True for broadcast).
+        mean = input
+        for d in range(n_norm):
+            mean = mean.mean(dim=-(d + 1), keepdim=True)
+
+        x_centered = input.sub(mean)
+        var = x_centered.pow(2)
+        for d in range(n_norm):
+            var = var.mean(dim=-(d + 1), keepdim=True)
+
+        inv_std = (var + float(eps)).rsqrt()  # same shape as mean (keepdim)
+        x_hat = x_centered.mul(inv_std)
+        if weight is not None:
+            output = x_hat.mul(weight)
+        else:
+            output = x_hat
+        if bias is not None:
+            output = output.add(bias)
+
+    result = output
+    result._requires_grad = True
+    saved_x = input
+    saved_weight = weight
+    saved_bias = bias
+    saved_x_hat = x_hat
+    saved_inv_std = inv_std
+    saved_norm_shape = tuple(int(s) for s in normalized_shape)
+
+    def grad_fn(grad_output: "Tensor"):
+        return _grad_layer_norm(
+            grad_output,
+            saved_x,
+            saved_weight,
+            saved_bias,
+            saved_x_hat,
+            saved_inv_std,
+            saved_norm_shape,
+        )
+
+    parents = [input]
+    if weight is not None:
+        parents.append(weight)
+    if bias is not None:
+        parents.append(bias)
+    result._node = _Node(result, grad_fn, parents)
+    return result
+

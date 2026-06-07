@@ -1023,6 +1023,108 @@ def _grad_batch_norm(
     return grad_x, grad_weight, grad_bias
 
 
+def _grad_layer_norm(
+    grad_output: Tensor,
+    x: Tensor,
+    weight: Tensor | None,
+    bias: Tensor | None,
+    x_hat: Tensor,
+    inv_std: Tensor,
+    normalized_shape: Sequence[int],
+) -> tuple[Tensor | None, Tensor | None, Tensor | None]:
+    """Backward pass for layer_norm.
+
+    Given:
+      x:       input, shape matches grad_output.
+      weight:  (normalized_shape,) or None
+      bias:    (normalized_shape,) or None
+      x_hat:   (x - mean) * inv_std, same shape as x (no affine applied)
+      inv_std: 1 / sqrt(var + eps), broadcastable to x_hat.
+      normalized_shape: the last-K dims that LN normalizes over (e.g. [D]
+               for nn.LayerNorm(D) on a 2D input [N, D]).
+
+    Returns: (grad_x, grad_weight, grad_bias) — None where input doesn't require grad.
+
+    Reference: standard LN backward derived from the per-instance formula.
+    M = product of normalized_shape dims.
+    """
+    from .tensor_ops import sum_dim_from_tensor
+    from .grad_mode import no_grad
+
+    M = 1
+    for s in normalized_shape:
+        M *= int(s)
+    M = float(M)
+    n_norm = len(normalized_shape)
+    grad_x = grad_weight = grad_bias = None
+
+    with no_grad():
+        # dL/dx_hat: gradient w.r.t. the normalized (but not affine) output.
+        if weight is not None:
+            grad_x_hat = grad_output.mul(weight)  # broadcasts over leading dims
+        else:
+            grad_x_hat = grad_output
+
+        # Reductions over the last `n_norm` dims, keeping shape for broadcasting.
+        sum_grad_xhat = grad_x_hat
+        for d in range(n_norm):
+            sum_grad_xhat = sum_dim_from_tensor(sum_grad_xhat, -(d + 1), keepdim=True)
+
+        sum_grad_xhat_xhat = grad_x_hat.mul(x_hat)
+        sum_grad_xhat_xhat = sum_dim_from_tensor(sum_grad_xhat_xhat, -(1), keepdim=True)
+        for d in range(1, n_norm):
+            sum_grad_xhat_xhat = sum_dim_from_tensor(sum_grad_xhat_xhat, -(d + 1), keepdim=True)
+
+        if x._requires_grad:
+            # dl/dx = (1/M) * inv_std * (M * dl/dx_hat
+            #                              - sum(dl/dx_hat)
+            #                              - x_hat * sum(dl/dx_hat * x_hat))
+            term1 = grad_x_hat.mul(M)
+            grad_x = term1.sub(sum_grad_xhat).sub(x_hat.mul(sum_grad_xhat_xhat))
+            grad_x = grad_x.mul(inv_std).mul(1.0 / M)
+
+        if weight is not None and weight._requires_grad:
+            # grad_weight = sum over the non-normalized (leading) dims of
+            # (grad_x_hat * x_hat). Start from `grad_x_hat * x_hat` directly
+            # (shape (..., normalized_shape)) and sum over each leading dim.
+            grad_weight = grad_x_hat.mul(x_hat)
+            rank = len(grad_weight._shape)
+            for d in range(rank - n_norm):
+                grad_weight = sum_dim_from_tensor(grad_weight, 0, keepdim=False)
+
+        if bias is not None and bias._requires_grad:
+            # grad_bias = sum over the non-normalized (leading) dims of grad_x_hat.
+            grad_bias = grad_x_hat
+            rank = len(grad_bias._shape)
+            for d in range(rank - n_norm):
+                grad_bias = sum_dim_from_tensor(grad_bias, 0, keepdim=False)
+
+    return grad_x, grad_weight, grad_bias
+
+
+def _grad_dropout(
+    grad_output: Tensor,
+    x: Tensor,
+    mask: Tensor,
+    p: float,
+) -> Tensor | None:
+    """Backward pass for inverted dropout (training mode).
+
+    Forward:  y = (x * mask) / (1 - p),  mask ~ Bernoulli(1 - p)
+    Backward: dl/dx = dl/dy * mask / (1 - p)
+
+    In eval mode there is no mask and the forward is identity, so this
+    function is only used when training=True.
+    """
+    if not x._requires_grad:
+        return None
+    from .grad_mode import no_grad
+    with no_grad():
+        scale = 1.0 / (1.0 - float(p)) if p < 1.0 else 0.0
+        return grad_output.mul(mask).mul(scale)
+
+
+
 
 
 

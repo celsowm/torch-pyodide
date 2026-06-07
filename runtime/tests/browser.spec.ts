@@ -1279,4 +1279,73 @@ test.describe.serial("playground examples @webgpu", () => {
 
     expect(consoleFailures).toEqual([]);
   });
+
+  test("LayerNorm + Dropout: forward + autograd + end-to-end training", async () => {
+    // End-to-end test of LayerNorm + Dropout (Fase 12.6):
+    // 1. Forward pass produces the closed-form expected output.
+    // 2. Autograd gradients match finite differences.
+    // 3. Dropout zeros a fraction of activations in training mode but
+    //    is identity in eval mode.
+    // 4. End-to-end: a Linear -> LayerNorm -> Dropout -> Linear model
+    //    trains and loss decreases.
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_layernorm_dropout");
+    await expect(page.locator("#example-select")).toHaveValue("nn_layernorm_dropout");
+    const { output } = await runSelectedExample(page, "nn_layernorm_dropout", 120000);
+    const actual = parseJsonOutput<{
+      forward_shape: number[];
+      first_forward_y: number[];
+      expected_first_y: number[];
+      first_forward_close_to_expected: boolean;
+      eval_first_y_equals_training_first_y: boolean;
+      x_grad_first: number[];
+      w_grad_first: number[];
+      b_grad_first: number[];
+      x_grad_finite_diff: number[];
+      w_grad_finite_diff: number[];
+      b_grad_finite_diff: number[];
+      grad_x_max_abs_diff: number;
+      grad_w_max_abs_diff: number;
+      grad_b_max_abs_diff: number;
+      dropout_train_zero_frac: number;
+      dropout_eval_zero_frac: number;
+      dropout_grad_at_p0: number[][];
+      losses_first_5: number[];
+      losses_last_5: number[];
+      loss_decreased: boolean;
+      eval_loss: number;
+    }>(output);
+
+    // 1. Forward matches expected closed-form (tolerance is generous because
+    //    LN normalizes over the last dim and uses f32 accumulation).
+    expect(actual.forward_shape).toEqual([3, 4]);
+    expect(actual.first_forward_close_to_expected).toBe(true);
+    for (let i = 0; i < 4; i++) {
+      expect(actual.first_forward_y[i]).toBeCloseTo(actual.expected_first_y[i], 3);
+    }
+
+    // 2. Eval mode output equals training output (LN has no running stats).
+    expect(actual.eval_first_y_equals_training_first_y).toBe(true);
+
+    // 3. Autograd vs finite differences (with squared loss to get non-zero x grad).
+    expect(actual.grad_x_max_abs_diff).toBeLessThan(0.05);
+    expect(actual.grad_w_max_abs_diff).toBeLessThan(0.01);
+    expect(actual.grad_b_max_abs_diff).toBeLessThan(0.01);
+
+    // 4. Dropout masks ~half (or 50% in expectation) the activations in training.
+    expect(actual.dropout_train_zero_frac).toBeGreaterThanOrEqual(0.0);
+    expect(actual.dropout_train_zero_frac).toBeLessThanOrEqual(1.0);
+    // 5. Dropout is identity in eval mode (no zeros).
+    expect(actual.dropout_eval_zero_frac).toBe(0.0);
+    // 6. Dropout gradient at p=0 is exactly 1.0.
+    expect(actual.dropout_grad_at_p0[0]).toEqual([1.0, 1.0, 1.0, 1.0]);
+
+    // 7. End-to-end: Linear -> LN -> Dropout -> Linear trains and loss decreases.
+    expect(actual.loss_decreased).toBe(true);
+    expect(actual.losses_last_5[actual.losses_last_5.length - 1]).toBeLessThan(
+      actual.losses_first_5[0] * 0.5
+    );
+
+    expect(consoleFailures).toEqual([]);
+  });
 });
