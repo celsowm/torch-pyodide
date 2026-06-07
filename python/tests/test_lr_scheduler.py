@@ -191,3 +191,105 @@ def test_steplr_records_initial_lr_on_first_use() -> None:
 
     StepLR(opt, step_size=1, gamma=0.1)
     assert math.isclose(opt.param_groups[0]["initial_lr"], 0.05, rel_tol=0, abs_tol=1e-12)
+
+
+def test_cosine_annealing_lr_starts_at_base_ends_at_eta_min() -> None:
+    opt = _FakeOptimizer([0.1])
+    from torch.optim.lr_scheduler import CosineAnnealingLR
+
+    sch = CosineAnnealingLR(opt, T_max=10, eta_min=0.001)
+    # First user step lands at last_epoch=1: still close to base.
+    sch.step()
+    base = opt.param_groups[0]["lr"]
+    assert base > 0.05
+    # Run to T_max: lr should be at eta_min.
+    for _ in range(9):
+        sch.step()
+    assert math.isclose(opt.param_groups[0]["lr"], 0.001, rel_tol=0, abs_tol=1e-6)
+
+
+def test_cosine_annealing_lr_is_monotone_decreasing() -> None:
+    opt = _FakeOptimizer([1.0])
+    from torch.optim.lr_scheduler import CosineAnnealingLR
+
+    sch = CosineAnnealingLR(opt, T_max=20, eta_min=0.0)
+    lrs = [opt.param_groups[0]["lr"]]
+    for _ in range(20):
+        sch.step()
+        lrs.append(opt.param_groups[0]["lr"])
+    for i in range(len(lrs) - 1):
+        assert lrs[i] >= lrs[i + 1] - 1e-9
+
+
+def test_cosine_annealing_lr_midpoint_matches_cosine_formula() -> None:
+    opt = _FakeOptimizer([0.4])
+    from torch.optim.lr_scheduler import CosineAnnealingLR
+
+    sch = CosineAnnealingLR(opt, T_max=10, eta_min=0.0)
+    # Advance to last_epoch=5 (halfway).
+    for _ in range(5):
+        sch.step()
+    # Real PyTorch formula: lr = eta_min + 0.5 * (base - eta_min) * (1 + cos(pi * t / T_max))
+    expected = 0.0 + 0.5 * 0.4 * (1.0 + math.cos(math.pi * 5 / 10))
+    assert math.isclose(opt.param_groups[0]["lr"], expected, rel_tol=1e-4, abs_tol=1e-6)
+
+
+def test_reduce_lr_on_plateau_reduces_after_patience_exhausted() -> None:
+    opt = _FakeOptimizer([0.1])
+    from torch.optim.lr_scheduler import ReduceLROnPlateau
+
+    sch = ReduceLROnPlateau(opt, mode="min", factor=0.5, patience=2)
+    # Send a strictly decreasing sequence first to seed `best`.
+    sch.step(0.5)
+    sch.step(0.4)
+    sch.step(0.3)
+    initial_lr = opt.param_groups[0]["lr"]
+    # Now plateau: send equal metrics.
+    sch.step(0.3)
+    sch.step(0.3)
+    sch.step(0.3)
+    # After 3 plateau steps with patience=2, the LR should have dropped.
+    assert opt.param_groups[0]["lr"] < initial_lr
+
+
+def test_reduce_lr_on_plateau_mode_max_tracks_decreasing() -> None:
+    opt = _FakeOptimizer([0.1])
+    from torch.optim.lr_scheduler import ReduceLROnPlateau
+
+    # patience=0 means decay after 1 bad step (num_bad_epochs > 0).
+    sch = ReduceLROnPlateau(opt, mode="max", factor=0.5, patience=0)
+    # First metric sets the best.
+    sch.step(0.1)
+    initial_lr = opt.param_groups[0]["lr"]
+    # Second metric is lower (worse for max). num_bad_epochs=1 > patience=0 -> decay.
+    sch.step(0.05)
+    assert opt.param_groups[0]["lr"] < initial_lr
+
+
+def test_reduce_lr_on_plateau_respects_min_lr() -> None:
+    opt = _FakeOptimizer([0.1])
+    from torch.optim.lr_scheduler import ReduceLROnPlateau
+
+    sch = ReduceLROnPlateau(
+        opt, mode="min", factor=0.5, patience=0, min_lr=[0.05]
+    )
+    # patience=0 means decay on every step (no improvement needed).
+    sch.step(0.5)  # first call sets best
+    sch.step(0.5)  # equal to best -> immediate decay
+    assert opt.param_groups[0]["lr"] == 0.05
+    sch.step(0.5)  # would try to halve again, but clamped at min_lr.
+    assert opt.param_groups[0]["lr"] == 0.05
+
+
+def test_reduce_lr_on_plateau_state_dict_roundtrip() -> None:
+    opt = _FakeOptimizer([0.1])
+    from torch.optim.lr_scheduler import ReduceLROnPlateau
+
+    sch = ReduceLROnPlateau(opt, mode="min", factor=0.5, patience=2)
+    sch.step(0.5)
+    sch.step(0.5)
+    snap = sch.state_dict()
+    sch2 = ReduceLROnPlateau(opt, mode="min", factor=0.5, patience=2)
+    sch2.load_state_dict(snap)
+    assert sch2.last_epoch == snap["last_epoch"]
+    assert math.isclose(sch2.best, snap["best"], rel_tol=0, abs_tol=1e-12)

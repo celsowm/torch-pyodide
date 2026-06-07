@@ -389,6 +389,12 @@ def smooth_l1_loss(input: Tensor, target: Tensor, reduction: str = "mean", beta:
     return loss.mean()
 
 
+def huber_loss(input: Tensor, target: Tensor, reduction: str = "mean", delta: float = 1.0) -> Tensor:
+    """Huber loss: smooth L1 with `delta` transition. Same as smooth_l1_loss
+    with `beta=delta`."""
+    return smooth_l1_loss(input, target, reduction=reduction, beta=delta)
+
+
 def binary_cross_entropy(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
     eps = 1e-12
     input_clamped = input.clamp(eps, 1.0 - eps)

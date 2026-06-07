@@ -1008,3 +1008,31 @@ class L1Loss(Module):
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
         from .functional import l1_loss
         return l1_loss(input, target, reduction=self.reduction)
+
+
+class SmoothL1Loss(Module):
+    """Smooth L1 loss module (Huber with `beta` transition point)."""
+    def __init__(self, reduction: str = "mean", beta: float = 1.0) -> None:
+        super().__init__()
+        self.reduction = reduction
+        self.beta = float(beta)
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import smooth_l1_loss
+        return smooth_l1_loss(input, target, reduction=self.reduction, beta=self.beta)
+
+
+class HuberLoss(Module):
+    """Huber loss module: smooth L1 with `delta` transition (default delta=1.0).
+
+    Equivalent to `SmoothL1Loss(beta=delta, reduction='mean')` with the
+    matching defaults. We expose the same name as real PyTorch.
+    """
+    def __init__(self, reduction: str = "mean", delta: float = 1.0) -> None:
+        super().__init__()
+        self.reduction = reduction
+        self.delta = float(delta)
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import smooth_l1_loss
+        return smooth_l1_loss(input, target, reduction=self.reduction, beta=self.delta)

@@ -1348,4 +1348,73 @@ test.describe.serial("playground examples @webgpu", () => {
 
     expect(consoleFailures).toEqual([]);
   });
+
+  test("ResNet8 + HuberLoss + CosineAnnealingLR + ReduceLROnPlateau + LBFGS", async () => {
+    // End-to-end test of Fase 12.7:
+    // 1. nn.HuberLoss == F.huber_loss and produces correct autograd.
+    // 2. ResNet8 forward + backward works (correct shape, finite grads).
+    // 3. CosineAnnealingLR smoothly anneals LR from base to eta_min.
+    // 4. ReduceLROnPlateau reduces LR when a metric plateaus.
+    // 5. LBFGS converges a small regression problem.
+    // 6. End-to-end ResNet8 training with HuberLoss + CosineAnnealingLR
+    //    decreases the loss.
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("nn_resnet8_schedulers_lbfgs");
+    await expect(page.locator("#example-select")).toHaveValue("nn_resnet8_schedulers_lbfgs");
+    const { output } = await runSelectedExample(page, "nn_resnet8_schedulers_lbfgs", 120000);
+    const actual = parseJsonOutput<{
+      huber_value: number;
+      huber_match_functional: boolean;
+      huber_grad_match: boolean;
+      forward_shape: number[];
+      first_grad_norm: number;
+      eval_outputs_finite: boolean;
+      eval_outputs_match_shape: boolean;
+      cos_lr_first: number;
+      cos_lr_last: number;
+      cos_lr_shape_ok: boolean;
+      cos_monotone_decreasing: boolean;
+      cos_mid_value: number;
+      plateau_lr_initial: number;
+      plateau_lr_final: number;
+      plateau_lr_reduced: boolean;
+      lbfgs_initial_loss: number;
+      lbfgs_final_loss: number;
+      lbfgs_converged: boolean;
+      lbfgs_losses_first_3: number[];
+      e2e_losses_first_5: number[];
+      e2e_losses_last_5: number[];
+      e2e_loss_decreased: boolean;
+    }>(output);
+
+    // 1. HuberLoss: functional and module match, gradient is correct.
+    expect(actual.huber_match_functional).toBe(true);
+    expect(actual.huber_grad_match).toBe(true);
+    expect(actual.huber_value).toBeCloseTo(0.125, 4);
+
+    // 2. ResNet8: forward shape and finite gradients.
+    expect(actual.forward_shape).toEqual([4, 5]);
+    expect(actual.eval_outputs_finite).toBe(true);
+    expect(actual.eval_outputs_match_shape).toBe(true);
+    expect(actual.first_grad_norm).toBeGreaterThan(0.0);
+
+    // 3. CosineAnnealingLR: starts at base, ends at eta_min, monotone.
+    expect(actual.cos_lr_shape_ok).toBe(true);
+    expect(actual.cos_monotone_decreasing).toBe(true);
+    expect(actual.cos_lr_first).toBeCloseTo(0.1, 4);
+    expect(actual.cos_lr_last).toBeCloseTo(0.001, 4);
+
+    // 4. ReduceLROnPlateau: reduced the LR after a plateau.
+    expect(actual.plateau_lr_reduced).toBe(true);
+    expect(actual.plateau_lr_final).toBeLessThan(actual.plateau_lr_initial);
+
+    // 5. LBFGS: converged the small regression problem.
+    expect(actual.lbfgs_converged).toBe(true);
+    expect(actual.lbfgs_final_loss).toBeLessThan(actual.lbfgs_initial_loss * 0.1);
+
+    // 6. End-to-end: ResNet8 + HuberLoss + CosineAnnealingLR trains.
+    expect(actual.e2e_loss_decreased).toBe(true);
+
+    expect(consoleFailures).toEqual([]);
+  });
 });

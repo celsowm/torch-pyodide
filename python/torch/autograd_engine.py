@@ -57,7 +57,10 @@ def _backward_from_tensor(
 
     # Se nenhum gradiente foi passado, assume grad = ones_like(tensor)
     if gradient is None:
-        if tensor._shape == [] or (len(tensor._shape) == 1 and tensor._shape[0] == 1):
+        if tensor._shape == []:
+            from .tensor_factories_ops import tensor_from_data
+            gradient = tensor_from_data([1.0], [], dtype=tensor._dtype)
+        elif len(tensor._shape) == 1 and tensor._shape[0] == 1:
             from .tensor_factories_ops import tensor_from_data
             gradient = tensor_from_data([1.0], [1], dtype=tensor._dtype)
         else:

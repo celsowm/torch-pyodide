@@ -155,13 +155,12 @@ def batch_norm_from_tensor(
         # Centered input and its variance.
         # Broadcast mean (C,) over the leading N and trailing spatial dims:
         # add a view of mean with shape (1, C, 1, 1) ... or (1, C).
-        mean_view = mean
-        for d in range(rank):
-            if d == 1:
-                continue
-            mean_view = mean_view.unsqueeze(d) if mean._shape[d] == 1 else mean_view
-        # `unsqueeze` after squeezing leaves mean_view with shape (1, C, 1, 1) for 4D
-        # or (1, C) for 2D — matching the broadcast pattern.
+        # `mean` has shape (C,) at this point. For 4D input we need (1, C, 1, 1);
+        # for 2D input we keep it as (1, C).
+        if rank == 2:
+            mean_view = mean.unsqueeze(0)  # (C,) -> (1, C)
+        else:
+            mean_view = mean.view(1, -1, 1, 1)  # (C,) -> (1, C, 1, 1)
 
         x_centered = input.sub(mean_view)
         # variance = mean(x_centered^2)
@@ -173,25 +172,34 @@ def batch_norm_from_tensor(
         for d in range(rank - 1, -1, -1):
             if d == 1:
                 continue
-            var = var.squeeze(d) if var._shape[d] == 1 else var
+            if d < len(var._shape) and var._shape[d] == 1:
+                var = var.squeeze(d)
 
         inv_std = (var + float(eps)).rsqrt()
 
         # x_hat: normalized but not affine, same shape as input.
-        inv_std_view = inv_std
-        for d in range(rank):
-            if d == 1:
-                continue
-            inv_std_view = inv_std_view.unsqueeze(d) if inv_std._shape[d] == 1 else inv_std_view
+        if rank == 2:
+            inv_std_view = inv_std.unsqueeze(0)  # (C,) -> (1, C)
+        else:
+            inv_std_view = inv_std.view(1, -1, 1, 1)  # (C,) -> (1, C, 1, 1)
 
         x_hat = x_centered.mul(inv_std_view)
-        # Apply affine (optional).
+        # Apply affine (optional). Reshape weight/bias to (1, C, 1, 1) for 4D
+        # or (1, C) for 2D so they broadcast over the input.
         if weight is not None:
-            x_hat_aff = x_hat.mul(weight)
+            if rank == 2:
+                weight_view = weight.unsqueeze(0)
+            else:
+                weight_view = weight.view(1, -1, 1, 1)
+            x_hat_aff = x_hat.mul(weight_view)
         else:
             x_hat_aff = x_hat
         if bias is not None:
-            output = x_hat_aff.add(bias)
+            if rank == 2:
+                bias_view = bias.unsqueeze(0)
+            else:
+                bias_view = bias.view(1, -1, 1, 1)
+            output = x_hat_aff.add(bias_view)
         else:
             output = x_hat_aff
 

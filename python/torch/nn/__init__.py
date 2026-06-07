@@ -98,6 +98,8 @@ from .modules import (
     BCEWithLogitsLoss,
     MSELoss,
     L1Loss,
+    SmoothL1Loss,
+    HuberLoss,
 )
 
 def __getattr__(name: str):
@@ -186,6 +188,8 @@ __all__ = [
     "BCEWithLogitsLoss",
     "MSELoss",
     "L1Loss",
+    "SmoothL1Loss",
+    "HuberLoss",
     "LSTM",
     "GRU",
     "RNN",

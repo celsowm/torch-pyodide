@@ -222,3 +222,163 @@ class ExponentialLR(_LRScheduler):
         if self._is_initial:
             return list(self.base_lrs)
         return [group["lr"] * self.gamma for group in self.optimizer.param_groups]
+
+
+class CosineAnnealingLR(_LRScheduler):
+    """Cosine-anneal the LR from each base_lr down to `eta_min` over `T_max` epochs.
+
+    Matches `torch.optim.lr_scheduler.CosineAnnealingLR`. The formula at
+    epoch `last_epoch` is::
+
+        lr = eta_min + 0.5 * (base_lr - eta_min) * (1 + cos(pi * last_epoch / T_max))
+
+    `T_max` must be positive. The very first call (last_epoch=0 from
+    `__init__`'s initial step) gives lr = base_lr.
+    """
+
+    def __init__(
+        self,
+        optimizer,
+        T_max: int,
+        eta_min: float = 0.0,
+        last_epoch: int = -1,
+    ) -> None:
+        if T_max <= 0:
+            raise ValueError(f"T_max must be positive, got {T_max}")
+        self.T_max = int(T_max)
+        self.eta_min = float(eta_min)
+        super().__init__(optimizer, last_epoch)
+
+    def get_lr(self) -> List[float]:
+        if self._is_initial:
+            return list(self.base_lrs)
+        import math
+        # Real PyTorch computes the new lr at last_epoch in [0, T_max] and
+        # clamps the cosine factor to 0 when last_epoch >= T_max.
+        e = min(self.last_epoch, self.T_max)
+        cos_factor = 0.5 * (1.0 + math.cos(math.pi * e / self.T_max))
+        return [
+            self.eta_min + (base_lr - self.eta_min) * cos_factor
+            for base_lr in self.base_lrs
+        ]
+
+
+class ReduceLROnPlateau:
+    """Reduce LR when a metric has stopped improving.
+
+    Matches `torch.optim.lr_scheduler.ReduceLROnPlateau`. Unlike the other
+    schedulers, this one takes a `step(metrics)` call (you pass the
+    monitored metric value) and is not a subclass of `_LRScheduler`.
+
+    Args:
+        optimizer: wrapped optimizer.
+        mode: 'min' (lower is better) or 'max' (higher is better).
+        factor: factor by which the LR is reduced (lr *= factor).
+        patience: number of steps with no improvement after which LR is reduced.
+        threshold: threshold for measuring the new optimum.
+        threshold_mode: 'rel' (relative) or 'abs' (absolute).
+        cooldown: number of steps to wait before resuming normal operation.
+        min_lr: lower bound on the LR per param group (scalar or list of scalars).
+        eps: minimal decay applied to the LR.
+    """
+
+    def __init__(
+        self,
+        optimizer,
+        mode: str = "min",
+        factor: float = 0.1,
+        patience: int = 10,
+        threshold: float = 1e-4,
+        threshold_mode: str = "rel",
+        cooldown: int = 0,
+        min_lr: float | list[float] = 0.0,
+        eps: float = 1e-8,
+    ) -> None:
+        if factor >= 1.0:
+            raise ValueError(f"factor must be < 1.0, got {factor}")
+        if mode not in ("min", "max"):
+            raise ValueError(f"mode must be 'min' or 'max', got {mode}")
+        if threshold_mode not in ("rel", "abs"):
+            raise ValueError(f"threshold_mode must be 'rel' or 'abs', got {threshold_mode}")
+        if not hasattr(optimizer, "param_groups"):
+            raise TypeError("optimizer must expose a `param_groups` attribute")
+
+        self.optimizer = optimizer
+        self.mode = mode
+        self.factor = float(factor)
+        self.patience = int(patience)
+        self.threshold = float(threshold)
+        self.threshold_mode = threshold_mode
+        self.cooldown = int(cooldown)
+        self.cooldown_counter = 0
+        self.eps = float(eps)
+
+        if isinstance(min_lr, (list, tuple)):
+            if len(min_lr) != len(optimizer.param_groups):
+                raise ValueError("expected min_lr per param group")
+            self.min_lrs = [float(v) for v in min_lr]
+        else:
+            self.min_lrs = [float(min_lr)] * len(optimizer.param_groups)
+
+        for group in optimizer.param_groups:
+            if "initial_lr" not in group:
+                group["initial_lr"] = group["lr"]
+        self.base_lrs = [group["initial_lr"] for group in optimizer.param_groups]
+
+        self.best: float = float("inf") if mode == "min" else float("-inf")
+        self.num_bad_epochs: int = 0
+        self.last_epoch: int = 0
+
+    def is_better(self, a: float, best: float) -> bool:
+        if self.mode == "min" and self.threshold_mode == "rel":
+            return a < best * (1.0 - self.threshold)
+        if self.mode == "min" and self.threshold_mode == "abs":
+            return a < best - self.threshold
+        if self.mode == "max" and self.threshold_mode == "rel":
+            return a > best * (1.0 + self.threshold)
+        # mode == "max", threshold_mode == "abs"
+        return a > best + self.threshold
+
+    def step(self, metrics: float, epoch: int | None = None) -> None:
+        """Advance the scheduler by one step using the current metric value."""
+        current = float(metrics)
+        if self.is_better(current, self.best):
+            self.best = current
+            self.num_bad_epochs = 0
+        else:
+            self.num_bad_epochs += 1
+
+        if self.cooldown_counter > 0:
+            self.cooldown_counter -= 1
+            self.num_bad_epochs = 0
+
+        if self.num_bad_epochs > self.patience:
+            self._reduce_lr()
+            self.cooldown_counter = self.cooldown
+            self.num_bad_epochs = 0
+
+        if epoch is None:
+            self.last_epoch += 1
+        else:
+            self.last_epoch = int(epoch)
+
+    def _reduce_lr(self) -> None:
+        for i, group in enumerate(self.optimizer.param_groups):
+            old_lr = float(group["lr"])
+            new_lr = max(old_lr * self.factor, self.min_lrs[i])
+            if old_lr - new_lr > self.eps:
+                group["lr"] = new_lr
+
+    def state_dict(self) -> dict[str, object]:
+        return {
+            "best": self.best,
+            "num_bad_epochs": self.num_bad_epochs,
+            "cooldown_counter": self.cooldown_counter,
+            "last_epoch": self.last_epoch,
+        }
+
+    def load_state_dict(self, state_dict: dict[str, object]) -> None:
+        self.best = float(state_dict["best"])
+        self.num_bad_epochs = int(state_dict["num_bad_epochs"])
+        self.cooldown_counter = int(state_dict["cooldown_counter"])
+        self.last_epoch = int(state_dict["last_epoch"])

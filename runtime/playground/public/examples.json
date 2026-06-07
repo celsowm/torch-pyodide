@@ -38,6 +38,7 @@
     { "id": "nn_adamw_token_classifier", "label": "nn AdamW token classifier", "file": "examples/nn_adamw_token_classifier.py" },
     { "id": "nn_batchnorm_training", "label": "BatchNorm Training vs Eval", "file": "examples/nn_batchnorm_training.py" },
     { "id": "nn_layernorm_dropout", "label": "LayerNorm + Dropout: forward + autograd + training", "file": "examples/nn_layernorm_dropout.py" },
+    { "id": "nn_resnet8_schedulers_lbfgs", "label": "ResNet8 + HuberLoss + CosineAnnealing + LBFGS", "file": "examples/nn_resnet8_schedulers_lbfgs.py" },
     { "id": "autograd_basic", "label": "Autograd: Backprop", "file": "examples/autograd_basic.py" },
     { "id": "autograd_conv2d", "label": "Autograd: Conv2d Backward", "file": "examples/autograd_conv2d_backward.py" },
     { "id": "autograd_nll", "label": "Autograd: NLL Loss Backward", "file": "examples/autograd_nll_loss.py" },
