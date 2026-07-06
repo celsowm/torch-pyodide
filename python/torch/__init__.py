@@ -889,11 +889,11 @@ def ge(a: Tensor, b: Tensor) -> Tensor:
     return a.ge(b)
 
 
-def sum(input: Tensor, dim: int | None = None, keepdim: bool = False) -> Tensor:
+def sum(input: Tensor, dim: int | Sequence[int] | None = None, keepdim: bool = False) -> Tensor:
     return input.sum(dim=dim, keepdim=keepdim)
 
 
-def mean(input: Tensor, dim: int | None = None, keepdim: bool = False) -> Tensor:
+def mean(input: Tensor, dim: int | Sequence[int] | None = None, keepdim: bool = False) -> Tensor:
     return input.mean(dim=dim, keepdim=keepdim)
 
 
@@ -901,12 +901,12 @@ def prod(x: Tensor) -> Tensor:
     return x.prod()
 
 
-def min(x: Tensor) -> Tensor:
-    return x.min()
+def min(input: Tensor, dim: int | None = None, keepdim: bool = False) -> object:
+    return input.min(dim=dim, keepdim=keepdim)
 
 
-def max(x: Tensor) -> Tensor:
-    return x.max()
+def max(input: Tensor, dim: int | None = None, keepdim: bool = False) -> object:
+    return input.max(dim=dim, keepdim=keepdim)
 
 
 def masked_select(input: Tensor, mask: Tensor) -> Tensor:
@@ -956,6 +956,43 @@ def load(f: str, map_location: object = None, weights_only: bool = False) -> obj
     from ._save import load as _load
     return _load(f, map_location=map_location, weights_only=weights_only)
 
+
+
+# ── Comparison / Reduction ───────────────────────────────────────
+
+def isclose(input: Tensor, other: Tensor, rtol: float = 1e-05, atol: float = 1e-08, equal_nan: bool = False) -> Tensor:
+    diff = (input - other).abs()
+    res = diff <= (atol + rtol * other.abs())
+    if equal_nan:
+        res = res | (input.isnan() & other.isnan())
+    return res
+
+def allclose(input: Tensor, other: Tensor, rtol: float = 1e-05, atol: float = 1e-08, equal_nan: bool = False) -> bool:
+    return bool(isclose(input, other, rtol, atol, equal_nan).all().item())
+
+def logsumexp(input: Tensor, dim: int, keepdim: bool = False) -> Tensor:
+    max_val = input.max(dim=dim, keepdim=True)
+    return max_val + (input - max_val).exp().sum(dim=dim, keepdim=keepdim).log()
+
+def var(input: Tensor, dim: int | Sequence[int] | None = None, keepdim: bool = False, correction: int = 1) -> Tensor:
+    if dim is None:
+        n = input.numel()
+        m = input.mean()
+    else:
+        if isinstance(dim, int):
+            n = input.shape[dim]
+        else:
+            n = 1
+            for d in dim:
+                n *= input.shape[d]
+        m = input.mean(dim=dim, keepdim=True)
+    diff = input - m
+    sq = diff * diff
+    s = sq.sum(dim=dim, keepdim=keepdim)
+    return s / (n - correction)
+
+def std(input: Tensor, dim: int | Sequence[int] | None = None, keepdim: bool = False, correction: int = 1) -> Tensor:
+    return var(input, dim=dim, keepdim=keepdim, correction=correction).sqrt()
 
 # ── diag ─────────────────────────────────────────────────────────
 

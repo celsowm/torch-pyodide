@@ -1,349 +1,79 @@
 {
-  "implemented": 385,
-  "total": 385,
+  "implemented": 1034,
+  "total": 1034,
   "percentage": 100.0,
   "by_kind": {
+    "nn_class_method": {
+      "implemented": 319,
+      "total": 319
+    },
+    "optim_class_method": {
+      "implemented": 4,
+      "total": 4
+    },
+    "tensor_property": {
+      "implemented": 7,
+      "total": 7
+    },
+    "tensor_method": {
+      "implemented": 181,
+      "total": 181
+    },
+    "nn_class": {
+      "implemented": 60,
+      "total": 60
+    },
+    "nn_func": {
+      "implemented": 97,
+      "total": 97
+    },
     "module_func": {
-      "implemented": 151,
-      "total": 151
+      "implemented": 340,
+      "total": 340
     },
     "cuda_func": {
       "implemented": 11,
       "total": 11
     },
-    "tensor_method": {
-      "implemented": 138,
-      "total": 138
-    },
-    "tensor_property": {
-      "implemented": 6,
-      "total": 6
-    },
-    "nn_func": {
-      "implemented": 25,
-      "total": 25
-    },
-    "nn_class": {
-      "implemented": 23,
-      "total": 23
-    },
-    "nn_class_method": {
-      "implemented": 19,
-      "total": 19
-    },
     "optim_class": {
-      "implemented": 8,
-      "total": 8
-    },
-    "optim_class_method": {
-      "implemented": 4,
-      "total": 4
+      "implemented": 15,
+      "total": 15
     }
   },
   "targets": [
     {
-      "id": "torch.tensor",
-      "kind": "module_func",
+      "id": "Linear.reset_parameters",
+      "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "torch.zeros",
-      "kind": "module_func",
+      "id": "Optimizer.load_state_dict",
+      "kind": "optim_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "torch.ones",
-      "kind": "module_func",
+      "id": "Optimizer.state_dict",
+      "kind": "optim_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "torch.add",
-      "kind": "module_func",
+      "id": "Optimizer.step",
+      "kind": "optim_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "torch.sub",
-      "kind": "module_func",
+      "id": "Optimizer.zero_grad",
+      "kind": "optim_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "torch.mul",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.div",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.matmul",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.relu",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.randn",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.arange",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.full",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.full_like",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.zeros_like",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.ones_like",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.abs",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.sqrt",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.exp",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.log",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.neg",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.clamp",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.where",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.argmax",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.argmin",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.reshape",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.flatten",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.squeeze",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.unsqueeze",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.transpose",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.permute",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.select",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.slice",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.is_available",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.is_initialized",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.init",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.device_count",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.current_device",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.get_device_name",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.get_device_properties",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.memory_allocated",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.memory_reserved",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.memory.memory_allocated",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cuda.memory.memory_reserved",
-      "kind": "cuda_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.add",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.sub",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.mul",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.div",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.matmul",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.sum",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.mean",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.relu",
-      "kind": "tensor_method",
+      "id": "Tensor.T",
+      "kind": "tensor_property",
       "implemented": true,
       "note": "ok"
     },
@@ -354,31 +84,43 @@
       "note": "ok"
     },
     {
-      "id": "Tensor.sqrt",
+      "id": "Tensor.acos",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "Tensor.exp",
+      "id": "Tensor.acosh",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "Tensor.log",
+      "id": "Tensor.add",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "Tensor.neg",
+      "id": "Tensor.addcdiv",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "Tensor.clamp",
+      "id": "Tensor.addcmul",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.all",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.any",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
@@ -396,919 +138,7 @@
       "note": "ok"
     },
     {
-      "id": "Tensor.reshape",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.view",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.flatten",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.squeeze",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.unsqueeze",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.transpose",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.permute",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.select",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.slice",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.tolist",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.destroy",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cat",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.stack",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.expand",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.index_select",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.expand",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.T",
-      "kind": "tensor_property",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.shape",
-      "kind": "tensor_property",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.dtype",
-      "kind": "tensor_property",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.empty",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.empty_like",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.pow",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.heaviside",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.maximum",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.minimum",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.any",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.all",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cumsum",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cumprod",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.tril",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.triu",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.flip",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.tan",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.asin",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.acos",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.atan",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.sinh",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cosh",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.asinh",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.acosh",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.atanh",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.exp2",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.log2",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.log10",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.log1p",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.expm1",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.trunc",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.frac",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.softplus",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.mish",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.hardsigmoid",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.hardswish",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.softsign",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.tanhshrink",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.rsqrt",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.sign",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.sgn",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.isnan",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.isinf",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.isfinite",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.isposinf",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.isneginf",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.logical_not",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.erf",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.erfc",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.lgamma",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.digamma",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.i0",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.deg2rad",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.rad2deg",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.rand",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.square",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.reciprocal",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.floor",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.ceil",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.round",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.sigmoid",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.gelu",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.silu",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.leaky_relu",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.masked_select",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.masked_fill",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.sin",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cos",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.max",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.min",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.prod",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cat",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.eq",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.ne",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.gt",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.lt",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.ge",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.le",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.relu",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.sigmoid",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.tanh",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.gelu",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.silu",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.leaky_relu",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.softmax",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.log_softmax",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.dropout",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.dropout2d",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.linear",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.batch_norm",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.layer_norm",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.cross_entropy",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.mse_loss",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.binary_cross_entropy",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.nll_loss",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.conv2d",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.max_pool2d",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.avg_pool2d",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.pad",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Module",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Sequential",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Linear",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Conv2d",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.ReLU",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Sigmoid",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Tanh",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.GELU",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.SiLU",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.LeakyReLU",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Softmax",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.LogSoftmax",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Dropout",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Dropout2d",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.BatchNorm1d",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.BatchNorm2d",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.LayerNorm",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Flatten",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Unflatten",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Identity",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.MaxPool2d",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.AvgPool2d",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.ndim",
-      "kind": "tensor_property",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.to",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.softmax",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.log_softmax",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.sigmoid",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.gelu",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.silu",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.leaky_relu",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.round",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.floor",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.ceil",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.trunc",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.frac",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.reciprocal",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.square",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.tan",
+      "id": "Tensor.argsort",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
@@ -1320,7 +150,7 @@
       "note": "ok"
     },
     {
-      "id": "Tensor.acos",
+      "id": "Tensor.asinh",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
@@ -1332,25 +162,7 @@
       "note": "ok"
     },
     {
-      "id": "Tensor.sinh",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.cosh",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.asinh",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.acosh",
+      "id": "Tensor.atan2",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
@@ -1362,763 +174,25 @@
       "note": "ok"
     },
     {
-      "id": "Tensor.exp2",
+      "id": "Tensor.backward",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "Tensor.log2",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.log10",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.log1p",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.expm1",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.softplus",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.mish",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.hardsigmoid",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.hardswish",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.softsign",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.tanhshrink",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.rsqrt",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.sign",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.sgn",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.erf",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.erfc",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.lgamma",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.digamma",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.i0",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.deg2rad",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.rad2deg",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.isnan",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.isinf",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.isfinite",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.isposinf",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.isneginf",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.logical_not",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.pow",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.heaviside",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.maximum",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.minimum",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.any",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.all",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.cumsum",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.cumprod",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.tril",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.triu",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.flip",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.empty_like",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.zeros_like",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.ones_like",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.where",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.cat",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.stack",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.index_select",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.masked_select",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.masked_fill",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.eq",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.ne",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.gt",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.lt",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.ge",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.mm",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.bmm",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.mv",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.dot",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.outer",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.mm",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.bmm",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.mv",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.dot",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.outer",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.norm",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.norm",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.functional.bilinear",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Bilinear",
-      "kind": "nn_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.cholesky",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.cholesky",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.lu",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.lu",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.inv",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.inv",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.triangular_solve",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.triangular_solve",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.det",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.det",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.item",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Linear.reset_parameters",
-      "kind": "nn_class_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.init.kaiming_uniform_",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.init.uniform_",
-      "kind": "nn_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.atan2",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.hypot",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.fmod",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.remainder",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.fmax",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.fmin",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.logaddexp",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.logaddexp2",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.lerp",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.addcmul",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.addcdiv",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.xlogy",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.copysign",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.nextafter",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.floor_divide",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.true_divide",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.logical_and",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.logical_or",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.logical_xor",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.bitwise_and",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.bitwise_or",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.bitwise_xor",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.bitwise_not",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.normal",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.bernoulli",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.exponential",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.log_normal",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.atan2",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.hypot",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.fmod",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.remainder",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.fmax",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.fmin",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.logaddexp",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.logaddexp2",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.lerp",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.addcmul",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.addcdiv",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.xlogy",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.copysign",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.nextafter",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.floor_divide",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.true_divide",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.logical_and",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.logical_or",
-      "kind": "tensor_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.logical_xor",
+      "id": "Tensor.bfloat16",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
     },
     {
       "id": "Tensor.bitwise_and",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.bitwise_not",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
@@ -2136,50 +210,2618 @@
       "note": "ok"
     },
     {
-      "id": "Tensor.bitwise_not",
+      "id": "Tensor.bmm",
       "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "nn.Module.state_dict",
+      "id": "Tensor.bool",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.byte",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.cat",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.ceil",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.cholesky",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.chunk",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.clamp",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.clone",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.contiguous",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.copy_",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.copysign",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.cos",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.cosh",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.cpu",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.cuda",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.cumprod",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.cumsum",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.deg2rad",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.destroy",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.det",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.detach",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.detach_",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.device",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.diag",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.digamma",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.div",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.dot",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.double",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.dtype",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.empty_like",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.eq",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.erf",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.erfc",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.exp",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.exp2",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.expand",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.expand_as",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.expm1",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.fill_",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.flatten",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.flip",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.float",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.floor",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.floor_divide",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.fmax",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.fmin",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.fmod",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.frac",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.gather",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.ge",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.gelu",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.gt",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.half",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.hardsigmoid",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.hardswish",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.heaviside",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.hypot",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.i0",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.index_select",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.int",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.inv",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.is_leaf",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.isfinite",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.isinf",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.isnan",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.isneginf",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.isposinf",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.item",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.le",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.leaky_relu",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.lerp",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.lgamma",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.log",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.log10",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.log1p",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.log2",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.log_softmax",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logaddexp",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logaddexp2",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logical_and",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logical_not",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logical_or",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.logical_xor",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.long",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.lt",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.lu",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.masked_fill",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.masked_select",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.matmul",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.max",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.maximum",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.mean",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.min",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.minimum",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.mish",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.mm",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.mul",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.mv",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.narrow",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.ndim",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.ne",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.neg",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.nextafter",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.norm",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.numel",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.ones_like",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.outer",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.permute",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.pow",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.prod",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.rad2deg",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.reciprocal",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.register_hook",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.relu",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.remainder",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.remove_hook",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.repeat",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.repeat_interleave",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.requires_grad",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.requires_grad_",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.reshape",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.retain_grad",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.round",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.rsqrt",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.scatter_",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.select",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sgn",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.shape",
+      "kind": "tensor_property",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sigmoid",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sign",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.silu",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sin",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sinh",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.slice",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.softmax",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.softplus",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.softsign",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sort",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.split",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sqrt",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.square",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.squeeze",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.stack",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sub",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.sum",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.tan",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.tanh",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.tanhshrink",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.tile",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.to",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.tolist",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.topk",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.transpose",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.triangular_solve",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.tril",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.triu",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.true_divide",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.trunc",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.unsqueeze",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.view",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.where",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.xlogy",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.zero_",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "Tensor.zeros_like",
+      "kind": "tensor_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.AdaptiveAvgPool1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.AdaptiveAvgPool2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.AdaptiveMaxPool2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.AvgPool1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.AvgPool2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BCEWithLogitsLoss",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.apply",
       "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "nn.Module.load_state_dict",
+      "id": "nn.BatchNorm2d.buffers",
       "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "nn.Module.named_parameters",
+      "id": "nn.BatchNorm2d.cpu",
       "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "nn.Module.named_modules",
+      "id": "nn.BatchNorm2d.cuda",
       "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "nn.Module.named_buffers",
+      "id": "nn.BatchNorm2d.double",
       "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "nn.Module.buffers",
+      "id": "nn.BatchNorm2d.eval",
       "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "nn.Module.register_buffer",
+      "id": "nn.BatchNorm2d.float",
       "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.BatchNorm2d.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Bilinear",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CELU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.reset_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Conv2d.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ConvTranspose2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Dropout2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ELU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.reset_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Embedding.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Flatten",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GELU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GLU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GRU.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.GroupNorm",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.HuberLoss",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Identity",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.InstanceNorm1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.InstanceNorm2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.L1Loss",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LSTM.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LayerNorm.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LeakyReLU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.reset_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Linear.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.LogSoftmax",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MSELoss.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MaxPool2d.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module",
+      "kind": "nn_class",
       "implemented": true,
       "note": "ok"
     },
@@ -2190,7 +2832,7 @@
       "note": "ok"
     },
     {
-      "id": "nn.Module.to",
+      "id": "nn.Module.buffers",
       "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
@@ -2208,55 +2850,7 @@
       "note": "ok"
     },
     {
-      "id": "nn.Module.float",
-      "kind": "nn_class_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
       "id": "nn.Module.double",
-      "kind": "nn_class_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Module.requires_grad_",
-      "kind": "nn_class_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Module.zero_grad",
-      "kind": "nn_class_method",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.save",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.load",
-      "kind": "module_func",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.numel",
-      "kind": "tensor_property",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "Tensor.device",
-      "kind": "tensor_property",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "nn.Module.train",
       "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
@@ -2268,13 +2862,2749 @@
       "note": "ok"
     },
     {
-      "id": "nn.Linear.reset_parameters",
+      "id": "nn.Module.float",
       "kind": "nn_class_method",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "torch.optim.SGD",
+      "id": "nn.Module.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Module.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ModuleDict",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ModuleList",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.MultiheadAttention",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.PReLU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Parameter",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ParameterDict",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ParameterList",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RNN.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.RReLU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ReLU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sequential.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.SiLU",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Sigmoid",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.SmoothL1Loss",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Softmax",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Tanh",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.apply",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.cpu",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.cuda",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.double",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.eval",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.float",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.forward",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.load_state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.named_buffers",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.named_modules",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.named_parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.parameters",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.register_buffer",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.register_module",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.register_parameter",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.requires_grad_",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.state_dict",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.to",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.train",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Transformer.zero_grad",
+      "kind": "nn_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.TransformerDecoder",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.TransformerDecoderLayer",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.TransformerEncoder",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.TransformerEncoderLayer",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Unflatten",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.Upsample",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.avg_pool1d",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.batch_norm",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.bilinear",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.binary_cross_entropy",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.binary_cross_entropy_with_logits",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.celu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.cross_entropy",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.dropout",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.dropout2d",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.elu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.embedding",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.avg_pool1d",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.avg_pool2d",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.batch_norm",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.bilinear",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.binary_cross_entropy",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.binary_cross_entropy_with_logits",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.celu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.conv2d",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.cross_entropy",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.dropout",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.dropout2d",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.elu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.embedding",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.gelu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.glu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.group_norm",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.hardsigmoid",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.hardswish",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.huber_loss",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.interpolate",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.l1_loss",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.layer_norm",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.leaky_relu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.linear",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.log_softmax",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.max_pool1d",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.max_pool2d",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.mish",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.mse_loss",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.nll_loss",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.normalize",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.one_hot",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.pad",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.prelu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.relu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.rrelu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.sigmoid",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.silu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.smooth_l1_loss",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.softmax",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.softplus",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.softsign",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.tanh",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.tanhshrink",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.gelu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.glu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.group_norm",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.hardsigmoid",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.hardswish",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.Sequence",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.constant_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.dirac_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.eye_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.kaiming_normal_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.kaiming_uniform_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.normal_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.ones_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.orthogonal_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.uniform_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.xavier_normal_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.xavier_uniform_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.init.zeros_",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.interpolate",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.l1_loss",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.layer_norm",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.leaky_relu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.linear",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.log_softmax",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.max_pool1d",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.mish",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.mse_loss",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.nll_loss",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.normalize",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.one_hot",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.pad",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.prelu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.relu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.rrelu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.sigmoid",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.silu",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.smooth_l1_loss",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.softmax",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.softplus",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.softsign",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.tanh",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.tanhshrink",
+      "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.BatchSampler",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ConcatDataset",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.DataLoader",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.Dataset",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.RandomSampler",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.Sampler",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.Sequence",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.SequentialSampler",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.Subset",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.SubsetRandomSampler",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.TensorDataset",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.WeightedRandomSampler",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.abs",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.acos",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.acos_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.acosh",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.acosh_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.add",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.addcdiv",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.addcdiv_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.addcmul",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.addcmul_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.all",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.all_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.any",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.any_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.arange",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.arange_from_values",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.argmax",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.argmin",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.asin",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.asin_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.asinh",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.asinh_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.atan",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.atan2",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.atan2_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.atan_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.atanh",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.atanh_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bernoulli",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bernoulli_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_and",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_and_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_not",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_not_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_or",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_or_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_xor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bitwise_xor_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.bmm",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cat",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cat_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ceil",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ceil_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cholesky",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.chunk",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.clamp",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.copysign",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.copysign_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cos",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cos_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cosh",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cosh_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.current_device",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.device_count",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.get_device_name",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.get_device_properties",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.init",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.is_available",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.is_initialized",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.memory.memory_allocated",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.memory.memory_reserved",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.memory_allocated",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cuda.memory_reserved",
+      "kind": "cuda_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cumprod",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cumprod_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cumsum",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.cumsum_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.default_collate",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.default_convert",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.deg2rad",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.deg2rad_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.det",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.diag",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.digamma",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.digamma_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.distributions.Bernoulli",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.distributions.Categorical",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.distributions.Distribution",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.distributions.Normal",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.distributions.Uniform",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.div",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.dot",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.einsum",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.embedding",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.empty",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.empty_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.empty_like",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.empty_like_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.eq",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.eq_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.erf",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.erf_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.erfc",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.erfc_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.exp",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.exp2",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.exp2_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.expand",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.expand_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.expm1",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.expm1_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.exponential",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.exponential_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.eye",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.flatten",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.flip",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.flip_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.floor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.floor_divide",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.floor_divide_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.floor_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fmax",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fmin",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fmod",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fmod_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.frac",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.frac_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.full",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.full_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.full_like",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.full_like_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.gather",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.gather_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ge",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ge_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.gelu",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.gelu_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.grad",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.gt",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.gt_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.hardsigmoid",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.hardsigmoid_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.hardswish",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.hardswish_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.heaviside",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.heaviside_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.hypot",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.hypot_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.i0",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.i0_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.index_select",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.index_select_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.inference_mode",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.inv",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.is_grad_enabled",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isfinite",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isfinite_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isinf",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isinf_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isnan",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isnan_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isneginf",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isneginf_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isposinf",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.isposinf_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.jit.ignore",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.jit.load",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.jit.script",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.jit.trace",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.jit.unused",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.le",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.le_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.leaky_relu",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.leaky_relu_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.lerp",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.lerp_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.lgamma",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.lgamma_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.cholesky",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.det",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.eig",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.eigh",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.inv",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.lstsq",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.lu",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.matrix_power",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.matrix_rank",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.norm",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.pinv",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.qr",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.solve",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.svd",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linspace",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.load",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log10",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log10_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log1p",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log1p_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log2",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log2_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log_normal",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log_normal_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log_softmax",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.log_softmax_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logaddexp",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logaddexp2",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logaddexp2_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logaddexp_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_and",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_and_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_not",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_not_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_or",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_or_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_xor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logical_xor_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.logspace",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.lt",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.lt_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.lu",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.manual_seed",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.masked_fill",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.masked_fill_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.masked_select",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.masked_select_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.matmul",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.max",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.max_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.maximum",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.maximum_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.mean",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.mean_dim_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.min",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.min_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.minimum",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.minimum_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.mish",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.mish_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.mm",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.mul",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.mul_scalar_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.multinomial",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.mv",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ne",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ne_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.neg",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.nextafter",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.nextafter_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.no_grad",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.norm",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.normal",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.normal_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ones",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ones_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ones_like",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.ones_like_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.Adagrad",
       "kind": "optim_class",
       "implemented": true,
       "note": "ok"
@@ -2292,19 +5622,31 @@
       "note": "ok"
     },
     {
-      "id": "torch.optim.RMSprop",
-      "kind": "optim_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
-      "id": "torch.optim.Adagrad",
-      "kind": "optim_class",
-      "implemented": true,
-      "note": "ok"
-    },
-    {
       "id": "torch.optim.Adamax",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.CosineAnnealingLR",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.ExponentialLR",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.LBFGS",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.MultiStepLR",
       "kind": "optim_class",
       "implemented": true,
       "note": "ok"
@@ -2316,38 +5658,590 @@
       "note": "ok"
     },
     {
+      "id": "torch.optim.Optimizer",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
       "id": "torch.optim.RAdam",
       "kind": "optim_class",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "nn.functional.elu",
-      "kind": "nn_func",
+      "id": "torch.optim.RMSprop",
+      "kind": "optim_class",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "Optimizer.step",
-      "kind": "optim_class_method",
+      "id": "torch.optim.ReduceLROnPlateau",
+      "kind": "optim_class",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "Optimizer.zero_grad",
-      "kind": "optim_class_method",
+      "id": "torch.optim.SGD",
+      "kind": "optim_class",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "Optimizer.state_dict",
-      "kind": "optim_class_method",
+      "id": "torch.optim.StepLR",
+      "kind": "optim_class",
       "implemented": true,
       "note": "ok"
     },
     {
-      "id": "Optimizer.load_state_dict",
-      "kind": "optim_class_method",
+      "id": "torch.outer",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.permute",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.pow",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.pow_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.prod",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.prod_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.rad2deg",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.rad2deg_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.rand",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.rand_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.randint",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.randn",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.randn_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.randperm",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.reciprocal",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.reciprocal_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.relu",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.remainder",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.remainder_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.repeat",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.reshape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.round",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.round_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.rsqrt",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.rsqrt_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.save",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.scatter",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.scatter_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.seed",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.select",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.set_grad_enabled",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sgn",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sgn_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sigmoid",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sigmoid_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sign",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sign_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.silu",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.silu_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sin",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sin_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sinh",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sinh_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.slice",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.softmax",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.softmax_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.softplus",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.softplus_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.softsign",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.softsign_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sort",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sort_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.split",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sqrt",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.square",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.square_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.squeeze",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.stack",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.stack_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sub",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sum",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.sum_dim_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tan",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tan_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tanh",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tanh_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tanhshrink",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tanhshrink_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tensor_from_data",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tile",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.topk",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.topk_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.transpose",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.triangular_solve",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tril",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.tril_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.triu",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.triu_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.true_divide",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.true_divide_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.trunc",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.trunc_from_tensor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.unsqueeze",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.where",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.where_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.xlogy",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.xlogy_from_tensors",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.zeros",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.zeros_from_shape",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.zeros_like",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.zeros_like_from_tensor",
+      "kind": "module_func",
       "implemented": true,
       "note": "ok"
     }

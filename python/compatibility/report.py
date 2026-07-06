@@ -27,10 +27,15 @@ def _check_target(torch_mod: Any, tensor_cls: Any, target: dict[str, str]) -> Ta
     kind = target["kind"]
 
     if kind == "module_func":
-        name = target_id.split(".", 1)[1]
-        if not (hasattr(torch_mod, name) and callable(getattr(torch_mod, name))):
-            return TargetResult(target_id, kind, False, "missing")
-        obj = getattr(torch_mod, name)
+        parts = target_id.split(".")
+        curr = torch_mod
+        for p in parts[1:]:
+            if not hasattr(curr, p):
+                return TargetResult(target_id, kind, False, "missing")
+            curr = getattr(curr, p)
+        obj = curr
+        if not callable(obj):
+            return TargetResult(target_id, kind, False, "not callable")
         expected_params = target.get("params")
         if expected_params:
             got = list(inspect.signature(obj).parameters.keys())

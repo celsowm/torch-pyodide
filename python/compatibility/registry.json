@@ -3,224 +3,982 @@
   "description": "Subset de APIs do PyTorch usado para medir progresso do torch-pyodide.",
   "targets": [
     {
-      "id": "torch.tensor",
-      "kind": "module_func"
+      "id": "Linear.reset_parameters",
+      "kind": "nn_class_method"
     },
     {
-      "id": "torch.zeros",
-      "kind": "module_func"
+      "id": "Optimizer.load_state_dict",
+      "kind": "optim_class_method"
     },
     {
-      "id": "torch.ones",
-      "kind": "module_func"
+      "id": "Optimizer.state_dict",
+      "kind": "optim_class_method"
     },
     {
-      "id": "torch.add",
-      "kind": "module_func"
+      "id": "Optimizer.step",
+      "kind": "optim_class_method"
     },
     {
-      "id": "torch.sub",
-      "kind": "module_func"
+      "id": "Optimizer.zero_grad",
+      "kind": "optim_class_method"
     },
     {
-      "id": "torch.mul",
-      "kind": "module_func"
+      "id": "Tensor.T",
+      "kind": "tensor_property"
     },
     {
-      "id": "torch.div",
-      "kind": "module_func"
+      "id": "Tensor.abs",
+      "kind": "tensor_method",
+      "params": []
     },
     {
-      "id": "torch.matmul",
-      "kind": "module_func"
+      "id": "Tensor.acos",
+      "kind": "tensor_method",
+      "params": []
     },
     {
-      "id": "torch.relu",
-      "kind": "module_func"
+      "id": "Tensor.acosh",
+      "kind": "tensor_method",
+      "params": []
     },
     {
-      "id": "torch.randn",
-      "kind": "module_func",
+      "id": "Tensor.add",
+      "kind": "tensor_method",
       "params": [
-        "size",
-        "dtype"
+        "other"
       ]
     },
     {
-      "id": "torch.arange",
-      "kind": "module_func",
+      "id": "Tensor.addcdiv",
+      "kind": "tensor_method",
       "params": [
-        "start",
-        "end",
-        "step",
-        "dtype"
+        "t1",
+        "t2",
+        "value"
       ]
     },
     {
-      "id": "torch.full",
-      "kind": "module_func",
+      "id": "Tensor.addcmul",
+      "kind": "tensor_method",
       "params": [
-        "size",
-        "fill_value",
-        "dtype"
+        "t1",
+        "t2",
+        "value"
       ]
     },
     {
-      "id": "torch.full_like",
-      "kind": "module_func",
+      "id": "Tensor.all",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.any",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.argmax",
+      "kind": "tensor_method",
       "params": [
-        "input",
-        "fill_value",
-        "dtype"
+        "dim",
+        "keepdim"
       ]
     },
     {
-      "id": "torch.zeros_like",
-      "kind": "module_func",
+      "id": "Tensor.argmin",
+      "kind": "tensor_method",
       "params": [
-        "input",
-        "dtype"
+        "dim",
+        "keepdim"
       ]
     },
     {
-      "id": "torch.ones_like",
-      "kind": "module_func",
+      "id": "Tensor.argsort",
+      "kind": "tensor_method",
       "params": [
-        "input",
-        "dtype"
+        "dim",
+        "descending"
       ]
     },
     {
-      "id": "torch.abs",
-      "kind": "module_func",
+      "id": "Tensor.asin",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.asinh",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.atan",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.atan2",
+      "kind": "tensor_method",
       "params": [
-        "x"
+        "other"
       ]
     },
     {
-      "id": "torch.sqrt",
-      "kind": "module_func",
+      "id": "Tensor.atanh",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.backward",
+      "kind": "tensor_method",
       "params": [
-        "x"
+        "gradient",
+        "retain_graph",
+        "create_graph",
+        "inputs"
       ]
     },
     {
-      "id": "torch.exp",
-      "kind": "module_func",
+      "id": "Tensor.bfloat16",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.bitwise_and",
+      "kind": "tensor_method",
       "params": [
-        "x"
+        "other"
       ]
     },
     {
-      "id": "torch.log",
-      "kind": "module_func",
+      "id": "Tensor.bitwise_not",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.bitwise_or",
+      "kind": "tensor_method",
       "params": [
-        "x"
+        "other"
       ]
     },
     {
-      "id": "torch.neg",
-      "kind": "module_func",
+      "id": "Tensor.bitwise_xor",
+      "kind": "tensor_method",
       "params": [
-        "x"
+        "other"
       ]
     },
     {
-      "id": "torch.clamp",
-      "kind": "module_func",
+      "id": "Tensor.bmm",
+      "kind": "tensor_method",
       "params": [
-        "x",
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.bool",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.byte",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.cat",
+      "kind": "tensor_method",
+      "params": [
+        "other",
+        "dim"
+      ]
+    },
+    {
+      "id": "Tensor.ceil",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.cholesky",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.chunk",
+      "kind": "tensor_method",
+      "params": [
+        "chunks",
+        "dim"
+      ]
+    },
+    {
+      "id": "Tensor.clamp",
+      "kind": "tensor_method",
+      "params": [
         "min",
         "max"
       ]
     },
     {
-      "id": "torch.where",
-      "kind": "module_func",
+      "id": "Tensor.clone",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.contiguous",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.copy_",
+      "kind": "tensor_method",
       "params": [
-        "condition",
-        "x",
-        "y"
+        "src"
       ]
     },
     {
-      "id": "torch.argmax",
-      "kind": "module_func",
+      "id": "Tensor.copysign",
+      "kind": "tensor_method",
       "params": [
-        "x"
+        "other"
       ]
     },
     {
-      "id": "torch.argmin",
-      "kind": "module_func",
+      "id": "Tensor.cos",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.cosh",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.cpu",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.cuda",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.cumprod",
+      "kind": "tensor_method",
       "params": [
-        "x"
+        "dim"
       ]
     },
     {
-      "id": "torch.reshape",
-      "kind": "module_func",
+      "id": "Tensor.cumsum",
+      "kind": "tensor_method",
       "params": [
-        "input",
+        "dim"
+      ]
+    },
+    {
+      "id": "Tensor.deg2rad",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.destroy",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.det",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.detach",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.detach_",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.device",
+      "kind": "tensor_property"
+    },
+    {
+      "id": "Tensor.diag",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.digamma",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.div",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.dot",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.double",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.dtype",
+      "kind": "tensor_property"
+    },
+    {
+      "id": "Tensor.empty_like",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.eq",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.erf",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.erfc",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.exp",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.exp2",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.expand",
+      "kind": "tensor_method",
+      "params": [
         "shape"
       ]
     },
     {
-      "id": "torch.flatten",
-      "kind": "module_func",
+      "id": "Tensor.expand_as",
+      "kind": "tensor_method",
       "params": [
-        "input",
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.expm1",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.fill_",
+      "kind": "tensor_method",
+      "params": [
+        "value"
+      ]
+    },
+    {
+      "id": "Tensor.flatten",
+      "kind": "tensor_method",
+      "params": [
         "start_dim",
         "end_dim"
       ]
     },
     {
-      "id": "torch.squeeze",
-      "kind": "module_func",
+      "id": "Tensor.flip",
+      "kind": "tensor_method",
       "params": [
-        "input",
-        "dim"
-      ]
-    },
-    {
-      "id": "torch.unsqueeze",
-      "kind": "module_func",
-      "params": [
-        "input",
-        "dim"
-      ]
-    },
-    {
-      "id": "torch.transpose",
-      "kind": "module_func",
-      "params": [
-        "input",
-        "dim0",
-        "dim1"
-      ]
-    },
-    {
-      "id": "torch.permute",
-      "kind": "module_func",
-      "params": [
-        "input",
         "dims"
       ]
     },
     {
-      "id": "torch.select",
-      "kind": "module_func",
+      "id": "Tensor.float",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.floor",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.floor_divide",
+      "kind": "tensor_method",
       "params": [
-        "input",
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.fmax",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.fmin",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.fmod",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.frac",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.gather",
+      "kind": "tensor_method",
+      "params": [
         "dim",
         "index"
       ]
     },
     {
-      "id": "torch.slice",
-      "kind": "module_func",
+      "id": "Tensor.ge",
+      "kind": "tensor_method",
       "params": [
-        "input",
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.gelu",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.gt",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.half",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.hardsigmoid",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.hardswish",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.heaviside",
+      "kind": "tensor_method",
+      "params": [
+        "values"
+      ]
+    },
+    {
+      "id": "Tensor.hypot",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.i0",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.index_select",
+      "kind": "tensor_method",
+      "params": [
+        "dim",
+        "index"
+      ]
+    },
+    {
+      "id": "Tensor.int",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.inv",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.is_leaf",
+      "kind": "tensor_property"
+    },
+    {
+      "id": "Tensor.isfinite",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.isinf",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.isnan",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.isneginf",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.isposinf",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.item",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.le",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.leaky_relu",
+      "kind": "tensor_method",
+      "params": [
+        "alpha"
+      ]
+    },
+    {
+      "id": "Tensor.lerp",
+      "kind": "tensor_method",
+      "params": [
+        "end",
+        "weight"
+      ]
+    },
+    {
+      "id": "Tensor.lgamma",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.log",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.log10",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.log1p",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.log2",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.log_softmax",
+      "kind": "tensor_method",
+      "params": [
+        "dim"
+      ]
+    },
+    {
+      "id": "Tensor.logaddexp",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.logaddexp2",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.logical_and",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.logical_not",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.logical_or",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.logical_xor",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.long",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.lt",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.lu",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.masked_fill",
+      "kind": "tensor_method",
+      "params": [
+        "mask",
+        "value"
+      ]
+    },
+    {
+      "id": "Tensor.masked_select",
+      "kind": "tensor_method",
+      "params": [
+        "mask"
+      ]
+    },
+    {
+      "id": "Tensor.matmul",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.max",
+      "kind": "tensor_method",
+      "params": [
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "Tensor.maximum",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.mean",
+      "kind": "tensor_method",
+      "params": [
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "Tensor.min",
+      "kind": "tensor_method",
+      "params": [
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "Tensor.minimum",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.mish",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.mm",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.mul",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.mv",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.narrow",
+      "kind": "tensor_method",
+      "params": [
+        "dim",
+        "start",
+        "length"
+      ]
+    },
+    {
+      "id": "Tensor.ndim",
+      "kind": "tensor_property"
+    },
+    {
+      "id": "Tensor.ne",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.neg",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.nextafter",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.norm",
+      "kind": "tensor_method",
+      "params": [
+        "p"
+      ]
+    },
+    {
+      "id": "Tensor.numel",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.ones_like",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.outer",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.permute",
+      "kind": "tensor_method",
+      "params": [
+        "dims"
+      ]
+    },
+    {
+      "id": "Tensor.pow",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.prod",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.rad2deg",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.reciprocal",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.register_hook",
+      "kind": "tensor_method",
+      "params": [
+        "hook"
+      ]
+    },
+    {
+      "id": "Tensor.relu",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.remainder",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.remove_hook",
+      "kind": "tensor_method",
+      "params": [
+        "hook_id"
+      ]
+    },
+    {
+      "id": "Tensor.repeat",
+      "kind": "tensor_method",
+      "params": [
+        "sizes"
+      ]
+    },
+    {
+      "id": "Tensor.repeat_interleave",
+      "kind": "tensor_method",
+      "params": [
+        "repeats",
+        "dim"
+      ]
+    },
+    {
+      "id": "Tensor.requires_grad",
+      "kind": "tensor_property"
+    },
+    {
+      "id": "Tensor.requires_grad_",
+      "kind": "tensor_method",
+      "params": [
+        "requires_grad_"
+      ]
+    },
+    {
+      "id": "Tensor.reshape",
+      "kind": "tensor_method",
+      "params": [
+        "shape"
+      ]
+    },
+    {
+      "id": "Tensor.retain_grad",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.round",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.rsqrt",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.scatter_",
+      "kind": "tensor_method",
+      "params": [
+        "dim",
+        "index",
+        "src"
+      ]
+    },
+    {
+      "id": "Tensor.select",
+      "kind": "tensor_method",
+      "params": [
+        "dim",
+        "index"
+      ]
+    },
+    {
+      "id": "Tensor.sgn",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.shape",
+      "kind": "tensor_property"
+    },
+    {
+      "id": "Tensor.sigmoid",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.sign",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.silu",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.sin",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.sinh",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.slice",
+      "kind": "tensor_method",
+      "params": [
         "dim",
         "start",
         "end",
@@ -228,315 +986,2253 @@
       ]
     },
     {
-      "id": "torch.cuda.is_available",
-      "kind": "cuda_func"
+      "id": "Tensor.softmax",
+      "kind": "tensor_method",
+      "params": [
+        "dim"
+      ]
     },
     {
-      "id": "torch.cuda.is_initialized",
-      "kind": "cuda_func"
+      "id": "Tensor.softplus",
+      "kind": "tensor_method",
+      "params": []
     },
     {
-      "id": "torch.cuda.init",
-      "kind": "cuda_func"
+      "id": "Tensor.softsign",
+      "kind": "tensor_method",
+      "params": []
     },
     {
-      "id": "torch.cuda.device_count",
-      "kind": "cuda_func"
+      "id": "Tensor.sort",
+      "kind": "tensor_method",
+      "params": [
+        "dim",
+        "descending"
+      ]
     },
     {
-      "id": "torch.cuda.current_device",
-      "kind": "cuda_func"
-    },
-    {
-      "id": "torch.cuda.get_device_name",
-      "kind": "cuda_func"
-    },
-    {
-      "id": "torch.cuda.get_device_properties",
-      "kind": "cuda_func"
-    },
-    {
-      "id": "torch.cuda.memory_allocated",
-      "kind": "cuda_func"
-    },
-    {
-      "id": "torch.cuda.memory_reserved",
-      "kind": "cuda_func"
-    },
-    {
-      "id": "torch.cuda.memory.memory_allocated",
-      "kind": "cuda_func"
-    },
-    {
-      "id": "torch.cuda.memory.memory_reserved",
-      "kind": "cuda_func"
-    },
-    {
-      "id": "Tensor.add",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.sub",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.mul",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.div",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.matmul",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.sum",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.mean",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.relu",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.abs",
-      "kind": "tensor_method"
+      "id": "Tensor.split",
+      "kind": "tensor_method",
+      "params": [
+        "split_size",
+        "dim"
+      ]
     },
     {
       "id": "Tensor.sqrt",
-      "kind": "tensor_method"
+      "kind": "tensor_method",
+      "params": []
     },
     {
-      "id": "Tensor.exp",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.log",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.neg",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.clamp",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.argmax",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.argmin",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.reshape",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.view",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.flatten",
-      "kind": "tensor_method"
+      "id": "Tensor.square",
+      "kind": "tensor_method",
+      "params": []
     },
     {
       "id": "Tensor.squeeze",
-      "kind": "tensor_method"
+      "kind": "tensor_method",
+      "params": [
+        "dim"
+      ]
     },
     {
-      "id": "Tensor.unsqueeze",
-      "kind": "tensor_method"
+      "id": "Tensor.stack",
+      "kind": "tensor_method",
+      "params": [
+        "other",
+        "dim"
+      ]
     },
     {
-      "id": "Tensor.transpose",
-      "kind": "tensor_method"
+      "id": "Tensor.sub",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
     },
     {
-      "id": "Tensor.permute",
-      "kind": "tensor_method"
+      "id": "Tensor.sum",
+      "kind": "tensor_method",
+      "params": [
+        "dim",
+        "keepdim"
+      ]
     },
     {
-      "id": "Tensor.select",
-      "kind": "tensor_method"
+      "id": "Tensor.tan",
+      "kind": "tensor_method",
+      "params": []
     },
     {
-      "id": "Tensor.slice",
-      "kind": "tensor_method"
+      "id": "Tensor.tanh",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.tanhshrink",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.tile",
+      "kind": "tensor_method",
+      "params": [
+        "sizes"
+      ]
+    },
+    {
+      "id": "Tensor.to",
+      "kind": "tensor_method",
+      "params": [
+        "dtype",
+        "device"
+      ]
     },
     {
       "id": "Tensor.tolist",
-      "kind": "tensor_method"
+      "kind": "tensor_method",
+      "params": []
     },
     {
-      "id": "Tensor.destroy",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "torch.cat",
-      "kind": "module_func",
+      "id": "Tensor.topk",
+      "kind": "tensor_method",
       "params": [
-        "tensors",
+        "k",
+        "dim",
+        "largest"
+      ]
+    },
+    {
+      "id": "Tensor.transpose",
+      "kind": "tensor_method",
+      "params": [
+        "dim0",
+        "dim1"
+      ]
+    },
+    {
+      "id": "Tensor.triangular_solve",
+      "kind": "tensor_method",
+      "params": [
+        "b",
+        "upper"
+      ]
+    },
+    {
+      "id": "Tensor.tril",
+      "kind": "tensor_method",
+      "params": [
+        "diagonal"
+      ]
+    },
+    {
+      "id": "Tensor.triu",
+      "kind": "tensor_method",
+      "params": [
+        "diagonal"
+      ]
+    },
+    {
+      "id": "Tensor.true_divide",
+      "kind": "tensor_method",
+      "params": [
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.trunc",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.unsqueeze",
+      "kind": "tensor_method",
+      "params": [
         "dim"
       ]
     },
     {
-      "id": "torch.stack",
-      "kind": "module_func",
+      "id": "Tensor.view",
+      "kind": "tensor_method",
       "params": [
-        "tensors",
-        "dim"
-      ]
-    },
-    {
-      "id": "torch.expand",
-      "kind": "module_func",
-      "params": [
-        "input",
         "shape"
       ]
     },
     {
-      "id": "torch.index_select",
-      "kind": "module_func",
+      "id": "Tensor.where",
+      "kind": "tensor_method",
+      "params": [
+        "condition",
+        "other"
+      ]
+    },
+    {
+      "id": "Tensor.xlogy",
+      "kind": "tensor_method",
+      "params": [
+        "y"
+      ]
+    },
+    {
+      "id": "Tensor.zero_",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "Tensor.zeros_like",
+      "kind": "tensor_method",
+      "params": []
+    },
+    {
+      "id": "nn.AdaptiveAvgPool1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.AdaptiveAvgPool2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.AdaptiveMaxPool2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.AvgPool1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.AvgPool2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.BCEWithLogitsLoss",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.BatchNorm1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.BatchNorm2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.BatchNorm2d.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.BatchNorm2d.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Bilinear",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.CELU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Conv1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Conv2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Conv2d.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.reset_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Conv2d.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.ConvTranspose2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.CrossEntropyLoss",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.CrossEntropyLoss.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Dropout.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Dropout2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ELU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Embedding",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Embedding.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.reset_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Embedding.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Flatten",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.GELU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.GLU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.GRU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.GRU.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GRU.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.GroupNorm",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.HuberLoss",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Identity",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.InstanceNorm1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.InstanceNorm2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.L1Loss",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.LSTM",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.LSTM.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LSTM.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.LayerNorm.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LayerNorm.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LeakyReLU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Linear",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Linear.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.reset_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Linear.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.LogSoftmax",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.MSELoss",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.MSELoss.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MSELoss.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.MaxPool2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.MaxPool2d.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.MaxPool2d.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Module.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Module.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.ModuleDict",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ModuleList",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.MultiheadAttention",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.PReLU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Parameter",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ParameterDict",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ParameterList",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.RNN",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.RNN.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RNN.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.RReLU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ReLU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Sequential",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Sequential.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Sequential.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.SiLU",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Sigmoid",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.SmoothL1Loss",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Softmax",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Tanh",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Transformer",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Transformer.apply",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.cpu",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.cuda",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.double",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.eval",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.float",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.forward",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.load_state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.named_buffers",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.named_modules",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.named_parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.parameters",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.register_buffer",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.register_module",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.register_parameter",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.requires_grad_",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.state_dict",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.to",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.train",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.Transformer.zero_grad",
+      "kind": "nn_class_method"
+    },
+    {
+      "id": "nn.TransformerDecoder",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.TransformerDecoderLayer",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.TransformerEncoder",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.TransformerEncoderLayer",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Unflatten",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.Upsample",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.avg_pool1d",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.batch_norm",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.bilinear",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.binary_cross_entropy",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.binary_cross_entropy_with_logits",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.celu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.cross_entropy",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.dropout",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.dropout2d",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.elu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.embedding",
+      "kind": "nn_func",
       "params": [
         "input",
-        "dim",
-        "index"
+        "weight",
+        "padding_idx"
       ]
     },
     {
-      "id": "Tensor.expand",
-      "kind": "tensor_method"
+      "id": "nn.functional.avg_pool1d",
+      "kind": "nn_func"
     },
     {
-      "id": "Tensor.T",
-      "kind": "tensor_property"
+      "id": "nn.functional.avg_pool2d",
+      "kind": "nn_func"
     },
     {
-      "id": "Tensor.shape",
-      "kind": "tensor_property"
+      "id": "nn.functional.batch_norm",
+      "kind": "nn_func"
     },
     {
-      "id": "Tensor.dtype",
-      "kind": "tensor_property"
+      "id": "nn.functional.bilinear",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.empty",
-      "kind": "module_func",
-      "params": [
-        "size",
-        "dtype"
-      ]
+      "id": "nn.functional.binary_cross_entropy",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.empty_like",
-      "kind": "module_func",
-      "params": [
-        "input",
-        "dtype"
-      ]
+      "id": "nn.functional.binary_cross_entropy_with_logits",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.pow",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
-      ]
+      "id": "nn.functional.celu",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.heaviside",
-      "kind": "module_func",
-      "params": [
-        "input",
-        "values"
-      ]
+      "id": "nn.functional.conv2d",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.maximum",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
-      ]
+      "id": "nn.functional.cross_entropy",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.minimum",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
-      ]
+      "id": "nn.functional.dropout",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.any",
-      "kind": "module_func",
-      "params": [
-        "input"
-      ]
+      "id": "nn.functional.dropout2d",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.all",
-      "kind": "module_func",
-      "params": [
-        "input"
-      ]
+      "id": "nn.functional.elu",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.cumsum",
-      "kind": "module_func",
-      "params": [
-        "input"
-      ]
+      "id": "nn.functional.embedding",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.cumprod",
-      "kind": "module_func",
-      "params": [
-        "input"
-      ]
+      "id": "nn.functional.gelu",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.tril",
-      "kind": "module_func",
-      "params": [
-        "input",
-        "diagonal"
-      ]
+      "id": "nn.functional.glu",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.triu",
-      "kind": "module_func",
-      "params": [
-        "input",
-        "diagonal"
-      ]
+      "id": "nn.functional.group_norm",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.flip",
-      "kind": "module_func",
-      "params": [
-        "input",
-        "dims"
-      ]
+      "id": "nn.functional.hardsigmoid",
+      "kind": "nn_func"
     },
     {
-      "id": "torch.tan",
-      "kind": "module_func",
+      "id": "nn.functional.hardswish",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.huber_loss",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.interpolate",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.l1_loss",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.layer_norm",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.leaky_relu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.linear",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.log_softmax",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.max_pool1d",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.max_pool2d",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.mish",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.mse_loss",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.nll_loss",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.normalize",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.one_hot",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.pad",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.prelu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.relu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.rrelu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.sigmoid",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.silu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.smooth_l1_loss",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.softmax",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.softplus",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.softsign",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.tanh",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.functional.tanhshrink",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.gelu",
+      "kind": "nn_func",
       "params": [
         "x"
       ]
     },
     {
-      "id": "torch.asin",
+      "id": "nn.glu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.group_norm",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.hardsigmoid",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "nn.hardswish",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "nn.init.Sequence",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.constant_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.dirac_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.eye_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.kaiming_normal_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.kaiming_uniform_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.normal_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.ones_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.orthogonal_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.uniform_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.xavier_normal_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.xavier_uniform_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.init.zeros_",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.interpolate",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.l1_loss",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.layer_norm",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.leaky_relu",
+      "kind": "nn_func",
+      "params": [
+        "x",
+        "negative_slope"
+      ]
+    },
+    {
+      "id": "nn.linear",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.log_softmax",
+      "kind": "nn_func",
+      "params": [
+        "input",
+        "dim"
+      ]
+    },
+    {
+      "id": "nn.max_pool1d",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.mish",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "nn.mse_loss",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.nll_loss",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.normalize",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.one_hot",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.pad",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.prelu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.relu",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "nn.rrelu",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.sigmoid",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "nn.silu",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "nn.smooth_l1_loss",
+      "kind": "nn_func"
+    },
+    {
+      "id": "nn.softmax",
+      "kind": "nn_func",
+      "params": [
+        "input",
+        "dim"
+      ]
+    },
+    {
+      "id": "nn.softplus",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "nn.softsign",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "nn.tanh",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "nn.tanhshrink",
+      "kind": "nn_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.BatchSampler",
+      "kind": "module_func",
+      "params": [
+        "sampler",
+        "batch_size",
+        "drop_last"
+      ]
+    },
+    {
+      "id": "torch.ConcatDataset",
+      "kind": "module_func",
+      "params": [
+        "datasets"
+      ]
+    },
+    {
+      "id": "torch.DataLoader",
+      "kind": "module_func",
+      "params": [
+        "dataset",
+        "batch_size",
+        "shuffle",
+        "sampler",
+        "batch_sampler",
+        "drop_last",
+        "collate_fn",
+        "pin_memory",
+        "worker_init_fn"
+      ]
+    },
+    {
+      "id": "torch.Dataset",
+      "kind": "module_func",
+      "params": []
+    },
+    {
+      "id": "torch.RandomSampler",
+      "kind": "module_func",
+      "params": [
+        "data_source",
+        "replacement",
+        "num_samples"
+      ]
+    },
+    {
+      "id": "torch.Sampler",
+      "kind": "module_func",
+      "params": [
+        "data_source"
+      ]
+    },
+    {
+      "id": "torch.Sequence",
+      "kind": "module_func",
+      "params": [
+        "args",
+        "kwargs"
+      ]
+    },
+    {
+      "id": "torch.SequentialSampler",
+      "kind": "module_func",
+      "params": [
+        "data_source"
+      ]
+    },
+    {
+      "id": "torch.Subset",
+      "kind": "module_func",
+      "params": [
+        "dataset",
+        "indices"
+      ]
+    },
+    {
+      "id": "torch.SubsetRandomSampler",
+      "kind": "module_func",
+      "params": [
+        "indices"
+      ]
+    },
+    {
+      "id": "torch.TensorDataset",
+      "kind": "module_func",
+      "params": [
+        "tensors"
+      ]
+    },
+    {
+      "id": "torch.WeightedRandomSampler",
+      "kind": "module_func",
+      "params": [
+        "weights",
+        "num_samples",
+        "replacement"
+      ]
+    },
+    {
+      "id": "torch.abs",
       "kind": "module_func",
       "params": [
         "x"
@@ -550,31 +3246,10 @@
       ]
     },
     {
-      "id": "torch.atan",
+      "id": "torch.acos_from_tensor",
       "kind": "module_func",
       "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.sinh",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.cosh",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.asinh",
-      "kind": "module_func",
-      "params": [
-        "x"
+        "tensor"
       ]
     },
     {
@@ -585,6 +3260,186 @@
       ]
     },
     {
+      "id": "torch.acosh_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.add",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.addcdiv",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "t1",
+        "t2",
+        "value"
+      ]
+    },
+    {
+      "id": "torch.addcdiv_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "input_",
+        "t1",
+        "t2",
+        "value"
+      ]
+    },
+    {
+      "id": "torch.addcmul",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "t1",
+        "t2",
+        "value"
+      ]
+    },
+    {
+      "id": "torch.addcmul_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "input_",
+        "t1",
+        "t2",
+        "value"
+      ]
+    },
+    {
+      "id": "torch.all",
+      "kind": "module_func",
+      "params": [
+        "input"
+      ]
+    },
+    {
+      "id": "torch.all_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.any",
+      "kind": "module_func",
+      "params": [
+        "input"
+      ]
+    },
+    {
+      "id": "torch.any_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.arange",
+      "kind": "module_func",
+      "params": [
+        "start",
+        "end",
+        "step",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.arange_from_values",
+      "kind": "module_func",
+      "params": [
+        "start",
+        "end",
+        "step",
+        "dtype"
+      ]
+    },
+    {
+      "id": "torch.argmax",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "torch.argmin",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "torch.asin",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.asin_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.asinh",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.asinh_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.atan",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.atan2",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.atan2_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.atan_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
       "id": "torch.atanh",
       "kind": "module_func",
       "params": [
@@ -592,175 +3447,334 @@
       ]
     },
     {
-      "id": "torch.exp2",
+      "id": "torch.atanh_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.bernoulli",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "size",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.bernoulli_from_shape",
+      "kind": "module_func",
+      "params": [
+        "shape",
+        "p",
+        "dtype"
+      ]
+    },
+    {
+      "id": "torch.bitwise_and",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.bitwise_and_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.bitwise_not",
       "kind": "module_func",
       "params": [
         "x"
       ]
     },
     {
-      "id": "torch.log2",
+      "id": "torch.bitwise_not_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.bitwise_or",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.bitwise_or_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.bitwise_xor",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.bitwise_xor_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.bmm",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.cat",
+      "kind": "module_func",
+      "params": [
+        "tensors",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.cat_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "tensors",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.ceil",
       "kind": "module_func",
       "params": [
         "x"
       ]
     },
     {
-      "id": "torch.log10",
+      "id": "torch.ceil_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.cholesky",
       "kind": "module_func",
       "params": [
         "x"
       ]
     },
     {
-      "id": "torch.log1p",
+      "id": "torch.chunk",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "chunks",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.clamp",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "min",
+        "max"
+      ]
+    },
+    {
+      "id": "torch.copysign",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.copysign_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.cos",
       "kind": "module_func",
       "params": [
         "x"
       ]
     },
     {
-      "id": "torch.expm1",
+      "id": "torch.cos_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.cosh",
       "kind": "module_func",
       "params": [
         "x"
       ]
     },
     {
-      "id": "torch.trunc",
+      "id": "torch.cosh_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.cuda.current_device",
+      "kind": "cuda_func",
+      "params": []
+    },
+    {
+      "id": "torch.cuda.device_count",
+      "kind": "cuda_func",
+      "params": []
+    },
+    {
+      "id": "torch.cuda.get_device_name",
+      "kind": "cuda_func",
+      "params": [
+        "device"
+      ]
+    },
+    {
+      "id": "torch.cuda.get_device_properties",
+      "kind": "cuda_func",
+      "params": [
+        "device"
+      ]
+    },
+    {
+      "id": "torch.cuda.init",
+      "kind": "cuda_func",
+      "params": []
+    },
+    {
+      "id": "torch.cuda.is_available",
+      "kind": "cuda_func",
+      "params": []
+    },
+    {
+      "id": "torch.cuda.is_initialized",
+      "kind": "cuda_func",
+      "params": []
+    },
+    {
+      "id": "torch.cuda.memory.memory_allocated",
+      "kind": "cuda_func",
+      "params": [
+        "device"
+      ]
+    },
+    {
+      "id": "torch.cuda.memory.memory_reserved",
+      "kind": "cuda_func",
+      "params": [
+        "device"
+      ]
+    },
+    {
+      "id": "torch.cuda.memory_allocated",
+      "kind": "cuda_func",
+      "params": [
+        "device"
+      ]
+    },
+    {
+      "id": "torch.cuda.memory_reserved",
+      "kind": "cuda_func",
+      "params": [
+        "device"
+      ]
+    },
+    {
+      "id": "torch.cumprod",
+      "kind": "module_func",
+      "params": [
+        "input"
+      ]
+    },
+    {
+      "id": "torch.cumprod_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.cumsum",
+      "kind": "module_func",
+      "params": [
+        "input"
+      ]
+    },
+    {
+      "id": "torch.cumsum_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.default_collate",
+      "kind": "module_func",
+      "params": [
+        "batch"
+      ]
+    },
+    {
+      "id": "torch.default_convert",
+      "kind": "module_func",
+      "params": [
+        "data"
+      ]
+    },
+    {
+      "id": "torch.deg2rad",
       "kind": "module_func",
       "params": [
         "x"
       ]
     },
     {
-      "id": "torch.frac",
+      "id": "torch.deg2rad_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.det",
       "kind": "module_func",
       "params": [
         "x"
       ]
     },
     {
-      "id": "torch.softplus",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.mish",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.hardsigmoid",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.hardswish",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.softsign",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.tanhshrink",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.rsqrt",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.sign",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.sgn",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.isnan",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.isinf",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.isfinite",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.isposinf",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.isneginf",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.logical_not",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.erf",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.erfc",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.lgamma",
+      "id": "torch.diag",
       "kind": "module_func",
       "params": [
         "x"
@@ -774,156 +3788,114 @@
       ]
     },
     {
-      "id": "torch.i0",
+      "id": "torch.digamma_from_tensor",
       "kind": "module_func",
       "params": [
-        "x"
+        "tensor"
       ]
     },
     {
-      "id": "torch.deg2rad",
+      "id": "torch.distributions.Bernoulli",
       "kind": "module_func",
       "params": [
-        "x"
+        "probs"
       ]
     },
     {
-      "id": "torch.rad2deg",
+      "id": "torch.distributions.Categorical",
       "kind": "module_func",
       "params": [
-        "x"
+        "logits",
+        "probs"
       ]
     },
     {
-      "id": "torch.rand",
+      "id": "torch.distributions.Distribution",
+      "kind": "module_func",
+      "params": []
+    },
+    {
+      "id": "torch.distributions.Normal",
+      "kind": "module_func",
+      "params": [
+        "loc",
+        "scale"
+      ]
+    },
+    {
+      "id": "torch.distributions.Uniform",
+      "kind": "module_func",
+      "params": [
+        "low",
+        "high"
+      ]
+    },
+    {
+      "id": "torch.div",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.dot",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.einsum",
+      "kind": "module_func",
+      "params": [
+        "equation",
+        "operands"
+      ]
+    },
+    {
+      "id": "torch.embedding",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "weight",
+        "padding_idx"
+      ]
+    },
+    {
+      "id": "torch.empty",
       "kind": "module_func",
       "params": [
         "size",
+        "dtype",
+        "device",
+        "requires_grad"
+      ]
+    },
+    {
+      "id": "torch.empty_from_shape",
+      "kind": "module_func",
+      "params": [
+        "shape",
         "dtype"
       ]
     },
     {
-      "id": "torch.square",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.reciprocal",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.floor",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.ceil",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.round",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.sigmoid",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.gelu",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.silu",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.leaky_relu",
-      "kind": "module_func",
-      "params": [
-        "x",
-        "negative_slope"
-      ]
-    },
-    {
-      "id": "torch.masked_select",
+      "id": "torch.empty_like",
       "kind": "module_func",
       "params": [
         "input",
-        "mask"
+        "dtype",
+        "device"
       ]
     },
     {
-      "id": "torch.masked_fill",
+      "id": "torch.empty_like_from_tensor",
       "kind": "module_func",
       "params": [
-        "input",
-        "mask",
-        "value"
-      ]
-    },
-    {
-      "id": "torch.sin",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.cos",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.max",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.min",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.prod",
-      "kind": "module_func",
-      "params": [
-        "x"
-      ]
-    },
-    {
-      "id": "torch.cat",
-      "kind": "module_func",
-      "params": [
-        "tensors",
-        "dim"
+        "tensor",
+        "dtype"
       ]
     },
     {
@@ -935,7 +3907,7 @@
       ]
     },
     {
-      "id": "torch.ne",
+      "id": "torch.eq_from_tensors",
       "kind": "module_func",
       "params": [
         "a",
@@ -943,7 +3915,147 @@
       ]
     },
     {
-      "id": "torch.gt",
+      "id": "torch.erf",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.erf_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.erfc",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.erfc_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.exp",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.exp2",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.exp2_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.expand",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "shape"
+      ]
+    },
+    {
+      "id": "torch.expand_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "shape"
+      ]
+    },
+    {
+      "id": "torch.expm1",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.expm1_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.exponential",
+      "kind": "module_func",
+      "params": [
+        "lambd",
+        "size",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.exponential_from_shape",
+      "kind": "module_func",
+      "params": [
+        "shape",
+        "lambd",
+        "dtype"
+      ]
+    },
+    {
+      "id": "torch.eye",
+      "kind": "module_func",
+      "params": [
+        "n",
+        "m",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.flatten",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "start_dim",
+        "end_dim"
+      ]
+    },
+    {
+      "id": "torch.flip",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dims"
+      ]
+    },
+    {
+      "id": "torch.flip_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dims"
+      ]
+    },
+    {
+      "id": "torch.floor",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.floor_divide",
       "kind": "module_func",
       "params": [
         "a",
@@ -951,7 +4063,7 @@
       ]
     },
     {
-      "id": "torch.lt",
+      "id": "torch.floor_divide_from_tensors",
       "kind": "module_func",
       "params": [
         "a",
@@ -959,643 +4071,10 @@
       ]
     },
     {
-      "id": "torch.ge",
+      "id": "torch.floor_from_tensor",
       "kind": "module_func",
       "params": [
-        "a",
-        "b"
-      ]
-    },
-    {
-      "id": "torch.le",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
-      ]
-    },
-    {
-      "id": "nn.functional.relu",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.sigmoid",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.tanh",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.gelu",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.silu",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.leaky_relu",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.softmax",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.log_softmax",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.dropout",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.dropout2d",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.linear",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.batch_norm",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.layer_norm",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.cross_entropy",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.mse_loss",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.binary_cross_entropy",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.nll_loss",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.conv2d",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.max_pool2d",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.avg_pool2d",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.functional.pad",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.Module",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Sequential",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Linear",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Conv2d",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.ReLU",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Sigmoid",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Tanh",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.GELU",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.SiLU",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.LeakyReLU",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Softmax",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.LogSoftmax",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Dropout",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Dropout2d",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.BatchNorm1d",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.BatchNorm2d",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.LayerNorm",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Flatten",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Unflatten",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.Identity",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.MaxPool2d",
-      "kind": "nn_class"
-    },
-    {
-      "id": "nn.AvgPool2d",
-      "kind": "nn_class"
-    },
-    {
-      "id": "Tensor.ndim",
-      "kind": "tensor_property"
-    },
-    {
-      "id": "Tensor.to",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.softmax",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.log_softmax",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.sigmoid",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.gelu",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.silu",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.leaky_relu",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.round",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.floor",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.ceil",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.trunc",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.frac",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.reciprocal",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.square",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.tan",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.asin",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.acos",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.atan",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.sinh",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.cosh",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.asinh",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.acosh",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.atanh",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.exp2",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.log2",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.log10",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.log1p",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.expm1",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.softplus",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.mish",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.hardsigmoid",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.hardswish",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.softsign",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.tanhshrink",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.rsqrt",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.sign",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.sgn",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.erf",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.erfc",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.lgamma",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.digamma",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.i0",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.deg2rad",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.rad2deg",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.isnan",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.isinf",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.isfinite",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.isposinf",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.isneginf",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.logical_not",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.pow",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.heaviside",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.maximum",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.minimum",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.any",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.all",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.cumsum",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.cumprod",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.tril",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.triu",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.flip",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.empty_like",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.zeros_like",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.ones_like",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.where",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.cat",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.stack",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.index_select",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.masked_select",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.masked_fill",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.eq",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.ne",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.gt",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.lt",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.ge",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "torch.mm",
-      "kind": "module_func"
-    },
-    {
-      "id": "torch.bmm",
-      "kind": "module_func"
-    },
-    {
-      "id": "torch.mv",
-      "kind": "module_func"
-    },
-    {
-      "id": "torch.dot",
-      "kind": "module_func"
-    },
-    {
-      "id": "torch.outer",
-      "kind": "module_func"
-    },
-    {
-      "id": "Tensor.mm",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.bmm",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.mv",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.dot",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.outer",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "torch.norm",
-      "kind": "module_func",
-      "params": [
-        "x",
-        "p"
-      ]
-    },
-    {
-      "id": "Tensor.norm",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "nn.functional.bilinear",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.Bilinear",
-      "kind": "nn_class"
-    },
-    {
-      "id": "torch.cholesky",
-      "kind": "module_func"
-    },
-    {
-      "id": "Tensor.cholesky",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "torch.lu",
-      "kind": "module_func"
-    },
-    {
-      "id": "Tensor.lu",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "torch.inv",
-      "kind": "module_func"
-    },
-    {
-      "id": "Tensor.inv",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "torch.triangular_solve",
-      "kind": "module_func"
-    },
-    {
-      "id": "Tensor.triangular_solve",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "torch.det",
-      "kind": "module_func"
-    },
-    {
-      "id": "Tensor.det",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.item",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Linear.reset_parameters",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.init.kaiming_uniform_",
-      "kind": "nn_func"
-    },
-    {
-      "id": "nn.init.uniform_",
-      "kind": "nn_func"
-    },
-    {
-      "id": "torch.atan2",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
-      ]
-    },
-    {
-      "id": "torch.hypot",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
-      ]
-    },
-    {
-      "id": "torch.fmod",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
-      ]
-    },
-    {
-      "id": "torch.remainder",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
+        "tensor"
       ]
     },
     {
@@ -1615,6 +4094,644 @@
       ]
     },
     {
+      "id": "torch.fmod",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.fmod_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.frac",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.frac_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.full",
+      "kind": "module_func",
+      "params": [
+        "size",
+        "fill_value",
+        "dtype",
+        "device",
+        "requires_grad"
+      ]
+    },
+    {
+      "id": "torch.full_from_shape",
+      "kind": "module_func",
+      "params": [
+        "shape",
+        "fill_value",
+        "dtype"
+      ]
+    },
+    {
+      "id": "torch.full_like",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "fill_value",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.full_like_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "fill_value",
+        "dtype"
+      ]
+    },
+    {
+      "id": "torch.gather",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim",
+        "index"
+      ]
+    },
+    {
+      "id": "torch.gather_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim",
+        "index"
+      ]
+    },
+    {
+      "id": "torch.ge",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.ge_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.gelu",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.gelu_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.grad",
+      "kind": "module_func",
+      "params": [
+        "outputs",
+        "inputs",
+        "grad_outputs",
+        "retain_graph",
+        "create_graph"
+      ]
+    },
+    {
+      "id": "torch.gt",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.gt_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.hardsigmoid",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.hardsigmoid_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.hardswish",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.hardswish_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.heaviside",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "values"
+      ]
+    },
+    {
+      "id": "torch.heaviside_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "input_",
+        "values"
+      ]
+    },
+    {
+      "id": "torch.hypot",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.hypot_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.i0",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.i0_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.index_select",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim",
+        "index"
+      ]
+    },
+    {
+      "id": "torch.index_select_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim",
+        "index"
+      ]
+    },
+    {
+      "id": "torch.inference_mode",
+      "kind": "module_func",
+      "params": [
+        "mode"
+      ]
+    },
+    {
+      "id": "torch.inv",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.is_grad_enabled",
+      "kind": "module_func",
+      "params": []
+    },
+    {
+      "id": "torch.isfinite",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.isfinite_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.isinf",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.isinf_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.isnan",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.isnan_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.isneginf",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.isneginf_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.isposinf",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.isposinf_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.jit.ignore",
+      "kind": "module_func",
+      "params": [
+        "fn"
+      ]
+    },
+    {
+      "id": "torch.jit.load",
+      "kind": "module_func",
+      "params": [
+        "f",
+        "map_location"
+      ]
+    },
+    {
+      "id": "torch.jit.script",
+      "kind": "module_func",
+      "params": [
+        "obj"
+      ]
+    },
+    {
+      "id": "torch.jit.trace",
+      "kind": "module_func",
+      "params": [
+        "func",
+        "args",
+        "kwargs"
+      ]
+    },
+    {
+      "id": "torch.jit.unused",
+      "kind": "module_func",
+      "params": [
+        "fn"
+      ]
+    },
+    {
+      "id": "torch.le",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.le_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.leaky_relu",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "negative_slope"
+      ]
+    },
+    {
+      "id": "torch.leaky_relu_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "alpha"
+      ]
+    },
+    {
+      "id": "torch.lerp",
+      "kind": "module_func",
+      "params": [
+        "start",
+        "end",
+        "weight"
+      ]
+    },
+    {
+      "id": "torch.lerp_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "start",
+        "end",
+        "weight"
+      ]
+    },
+    {
+      "id": "torch.lgamma",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.lgamma_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.linalg.cholesky",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.linalg.det",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.linalg.eig",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.linalg.eigh",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.linalg.inv",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.linalg.lstsq",
+      "kind": "module_func",
+      "params": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "torch.linalg.lu",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.linalg.matrix_power",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "n"
+      ]
+    },
+    {
+      "id": "torch.linalg.matrix_rank",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "tol"
+      ]
+    },
+    {
+      "id": "torch.linalg.norm",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "ord"
+      ]
+    },
+    {
+      "id": "torch.linalg.pinv",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "rcond"
+      ]
+    },
+    {
+      "id": "torch.linalg.qr",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "mode"
+      ]
+    },
+    {
+      "id": "torch.linalg.solve",
+      "kind": "module_func",
+      "params": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "torch.linalg.svd",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.linspace",
+      "kind": "module_func",
+      "params": [
+        "start",
+        "end",
+        "steps",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.load",
+      "kind": "module_func",
+      "params": [
+        "f",
+        "map_location",
+        "weights_only"
+      ]
+    },
+    {
+      "id": "torch.log",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.log10",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.log10_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.log1p",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.log1p_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.log2",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.log2_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.log_normal",
+      "kind": "module_func",
+      "params": [
+        "mean",
+        "std",
+        "size",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.log_normal_from_shape",
+      "kind": "module_func",
+      "params": [
+        "shape",
+        "mean",
+        "std",
+        "dtype"
+      ]
+    },
+    {
+      "id": "torch.log_softmax",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.log_softmax_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim"
+      ]
+    },
+    {
       "id": "torch.logaddexp",
       "kind": "module_func",
       "params": [
@@ -1631,44 +4748,7 @@
       ]
     },
     {
-      "id": "torch.lerp",
-      "kind": "module_func",
-      "params": [
-        "start",
-        "end",
-        "weight"
-      ]
-    },
-    {
-      "id": "torch.addcmul",
-      "kind": "module_func",
-      "params": [
-        "input",
-        "t1",
-        "t2",
-        "value"
-      ]
-    },
-    {
-      "id": "torch.addcdiv",
-      "kind": "module_func",
-      "params": [
-        "input",
-        "t1",
-        "t2",
-        "value"
-      ]
-    },
-    {
-      "id": "torch.xlogy",
-      "kind": "module_func",
-      "params": [
-        "x",
-        "y"
-      ]
-    },
-    {
-      "id": "torch.copysign",
+      "id": "torch.logaddexp2_from_tensors",
       "kind": "module_func",
       "params": [
         "a",
@@ -1676,23 +4756,7 @@
       ]
     },
     {
-      "id": "torch.nextafter",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
-      ]
-    },
-    {
-      "id": "torch.floor_divide",
-      "kind": "module_func",
-      "params": [
-        "a",
-        "b"
-      ]
-    },
-    {
-      "id": "torch.true_divide",
+      "id": "torch.logaddexp_from_tensors",
       "kind": "module_func",
       "params": [
         "a",
@@ -1708,7 +4772,37 @@
       ]
     },
     {
+      "id": "torch.logical_and_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.logical_not",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.logical_not_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
       "id": "torch.logical_or",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.logical_or_from_tensors",
       "kind": "module_func",
       "params": [
         "a",
@@ -1724,7 +4818,7 @@
       ]
     },
     {
-      "id": "torch.bitwise_and",
+      "id": "torch.logical_xor_from_tensors",
       "kind": "module_func",
       "params": [
         "a",
@@ -1732,7 +4826,19 @@
       ]
     },
     {
-      "id": "torch.bitwise_or",
+      "id": "torch.logspace",
+      "kind": "module_func",
+      "params": [
+        "start",
+        "end",
+        "steps",
+        "base",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.lt",
       "kind": "module_func",
       "params": [
         "a",
@@ -1740,7 +4846,7 @@
       ]
     },
     {
-      "id": "torch.bitwise_xor",
+      "id": "torch.lt_from_tensors",
       "kind": "module_func",
       "params": [
         "a",
@@ -1748,10 +4854,249 @@
       ]
     },
     {
-      "id": "torch.bitwise_not",
+      "id": "torch.lu",
       "kind": "module_func",
       "params": [
         "x"
+      ]
+    },
+    {
+      "id": "torch.manual_seed",
+      "kind": "module_func",
+      "params": [
+        "seed"
+      ]
+    },
+    {
+      "id": "torch.masked_fill",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "mask",
+        "value"
+      ]
+    },
+    {
+      "id": "torch.masked_fill_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "mask",
+        "value"
+      ]
+    },
+    {
+      "id": "torch.masked_select",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "mask"
+      ]
+    },
+    {
+      "id": "torch.masked_select_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "mask"
+      ]
+    },
+    {
+      "id": "torch.matmul",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.max",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "torch.max_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.maximum",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.maximum_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.mean",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "torch.mean_dim_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "torch.min",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "torch.min_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.minimum",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.minimum_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.mish",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.mish_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.mm",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.mul",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.mul_scalar_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "value"
+      ]
+    },
+    {
+      "id": "torch.multinomial",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "num_samples",
+        "replacement",
+        "generator"
+      ]
+    },
+    {
+      "id": "torch.mv",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.ne",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.ne_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.neg",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.nextafter",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.nextafter_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.no_grad",
+      "kind": "module_func",
+      "params": []
+    },
+    {
+      "id": "torch.norm",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "p"
       ]
     },
     {
@@ -1760,264 +5105,955 @@
       "params": [
         "mean",
         "std",
-        "size"
+        "size",
+        "dtype",
+        "device"
       ]
     },
     {
-      "id": "torch.bernoulli",
+      "id": "torch.normal_from_shape",
       "kind": "module_func",
       "params": [
-        "input"
-      ]
-    },
-    {
-      "id": "torch.exponential",
-      "kind": "module_func",
-      "params": [
-        "lambd",
-        "size"
-      ]
-    },
-    {
-      "id": "torch.log_normal",
-      "kind": "module_func",
-      "params": [
+        "shape",
         "mean",
         "std",
-        "size"
+        "dtype"
       ]
     },
     {
-      "id": "Tensor.atan2",
-      "kind": "tensor_method"
+      "id": "torch.ones",
+      "kind": "module_func",
+      "params": [
+        "size",
+        "dtype",
+        "device",
+        "requires_grad"
+      ]
     },
     {
-      "id": "Tensor.hypot",
-      "kind": "tensor_method"
+      "id": "torch.ones_from_shape",
+      "kind": "module_func",
+      "params": [
+        "shape",
+        "dtype"
+      ]
     },
     {
-      "id": "Tensor.fmod",
-      "kind": "tensor_method"
+      "id": "torch.ones_like",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dtype",
+        "device"
+      ]
     },
     {
-      "id": "Tensor.remainder",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.fmax",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.fmin",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.logaddexp",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.logaddexp2",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.lerp",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.addcmul",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.addcdiv",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.xlogy",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.copysign",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.nextafter",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.floor_divide",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.true_divide",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.logical_and",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.logical_or",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.logical_xor",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.bitwise_and",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.bitwise_or",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.bitwise_xor",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "Tensor.bitwise_not",
-      "kind": "tensor_method"
-    },
-    {
-      "id": "nn.Module.state_dict",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.load_state_dict",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.named_parameters",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.named_modules",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.named_buffers",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.buffers",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.register_buffer",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.apply",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.to",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.cpu",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.cuda",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.float",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.double",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.requires_grad_",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.zero_grad",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "torch.save",
-      "kind": "module_func"
-    },
-    {
-      "id": "torch.load",
-      "kind": "module_func"
-    },
-    {
-      "id": "Tensor.numel",
-      "kind": "tensor_property"
-    },
-    {
-      "id": "Tensor.device",
-      "kind": "tensor_property"
-    },
-    {
-      "id": "nn.Module.train",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Module.eval",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "nn.Linear.reset_parameters",
-      "kind": "nn_class_method"
-    },
-    {
-      "id": "torch.optim.SGD",
-      "kind": "optim_class"
-    },
-    {
-      "id": "torch.optim.Adam",
-      "kind": "optim_class"
-    },
-    {
-      "id": "torch.optim.AdamW",
-      "kind": "optim_class"
-    },
-    {
-      "id": "torch.optim.RMSprop",
-      "kind": "optim_class"
+      "id": "torch.ones_like_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dtype"
+      ]
     },
     {
       "id": "torch.optim.Adagrad",
-      "kind": "optim_class"
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "lr",
+        "lr_decay",
+        "weight_decay",
+        "initial_accumulator_value",
+        "eps"
+      ]
+    },
+    {
+      "id": "torch.optim.Adam",
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "lr",
+        "betas",
+        "eps",
+        "weight_decay",
+        "amsgrad"
+      ]
+    },
+    {
+      "id": "torch.optim.AdamW",
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "lr",
+        "betas",
+        "eps",
+        "weight_decay",
+        "amsgrad"
+      ]
     },
     {
       "id": "torch.optim.Adamax",
-      "kind": "optim_class"
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "lr",
+        "betas",
+        "eps",
+        "weight_decay"
+      ]
+    },
+    {
+      "id": "torch.optim.CosineAnnealingLR",
+      "kind": "optim_class",
+      "params": [
+        "optimizer",
+        "T_max",
+        "eta_min",
+        "last_epoch"
+      ]
+    },
+    {
+      "id": "torch.optim.ExponentialLR",
+      "kind": "optim_class",
+      "params": [
+        "optimizer",
+        "gamma",
+        "last_epoch"
+      ]
+    },
+    {
+      "id": "torch.optim.LBFGS",
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "lr",
+        "max_iter",
+        "max_eval",
+        "tolerance_grad",
+        "tolerance_change",
+        "history_size",
+        "line_search_fn"
+      ]
+    },
+    {
+      "id": "torch.optim.MultiStepLR",
+      "kind": "optim_class",
+      "params": [
+        "optimizer",
+        "milestones",
+        "gamma",
+        "last_epoch"
+      ]
     },
     {
       "id": "torch.optim.NAdam",
-      "kind": "optim_class"
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "lr",
+        "betas",
+        "eps",
+        "weight_decay",
+        "momentum_decay"
+      ]
+    },
+    {
+      "id": "torch.optim.Optimizer",
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "defaults"
+      ]
     },
     {
       "id": "torch.optim.RAdam",
-      "kind": "optim_class"
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "lr",
+        "betas",
+        "eps",
+        "weight_decay"
+      ]
     },
     {
-      "id": "nn.functional.elu",
-      "kind": "nn_func"
+      "id": "torch.optim.RMSprop",
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "lr",
+        "alpha",
+        "eps",
+        "weight_decay",
+        "momentum"
+      ]
     },
     {
-      "id": "Optimizer.step",
-      "kind": "optim_class_method"
+      "id": "torch.optim.ReduceLROnPlateau",
+      "kind": "optim_class",
+      "params": [
+        "optimizer",
+        "mode",
+        "factor",
+        "patience",
+        "threshold",
+        "threshold_mode",
+        "cooldown",
+        "min_lr",
+        "eps"
+      ]
     },
     {
-      "id": "Optimizer.zero_grad",
-      "kind": "optim_class_method"
+      "id": "torch.optim.SGD",
+      "kind": "optim_class",
+      "params": [
+        "params",
+        "lr",
+        "momentum",
+        "weight_decay",
+        "dampening",
+        "nesterov"
+      ]
     },
     {
-      "id": "Optimizer.state_dict",
-      "kind": "optim_class_method"
+      "id": "torch.optim.StepLR",
+      "kind": "optim_class",
+      "params": [
+        "optimizer",
+        "step_size",
+        "gamma",
+        "last_epoch"
+      ]
     },
     {
-      "id": "Optimizer.load_state_dict",
-      "kind": "optim_class_method"
+      "id": "torch.outer",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.permute",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dims"
+      ]
+    },
+    {
+      "id": "torch.pow",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.pow_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.prod",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.prod_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.rad2deg",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.rad2deg_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.rand",
+      "kind": "module_func",
+      "params": [
+        "size",
+        "dtype",
+        "device",
+        "requires_grad"
+      ]
+    },
+    {
+      "id": "torch.rand_from_shape",
+      "kind": "module_func",
+      "params": [
+        "shape",
+        "dtype"
+      ]
+    },
+    {
+      "id": "torch.randint",
+      "kind": "module_func",
+      "params": [
+        "low",
+        "high",
+        "size",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.randn",
+      "kind": "module_func",
+      "params": [
+        "size",
+        "dtype",
+        "device",
+        "requires_grad"
+      ]
+    },
+    {
+      "id": "torch.randn_from_shape",
+      "kind": "module_func",
+      "params": [
+        "shape",
+        "dtype"
+      ]
+    },
+    {
+      "id": "torch.randperm",
+      "kind": "module_func",
+      "params": [
+        "n",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.reciprocal",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.reciprocal_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.relu",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.remainder",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.remainder_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.repeat",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "sizes"
+      ]
+    },
+    {
+      "id": "torch.reshape",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "shape"
+      ]
+    },
+    {
+      "id": "torch.round",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.round_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.rsqrt",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.rsqrt_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.save",
+      "kind": "module_func",
+      "params": [
+        "obj",
+        "f"
+      ]
+    },
+    {
+      "id": "torch.scatter",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim",
+        "index",
+        "src"
+      ]
+    },
+    {
+      "id": "torch.scatter_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim",
+        "index",
+        "src"
+      ]
+    },
+    {
+      "id": "torch.seed",
+      "kind": "module_func",
+      "params": []
+    },
+    {
+      "id": "torch.select",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim",
+        "index"
+      ]
+    },
+    {
+      "id": "torch.set_grad_enabled",
+      "kind": "module_func",
+      "params": [
+        "mode"
+      ]
+    },
+    {
+      "id": "torch.sgn",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.sgn_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.sigmoid",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.sigmoid_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.sign",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.sign_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.silu",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.silu_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.sin",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.sin_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.sinh",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.sinh_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.slice",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim",
+        "start",
+        "end",
+        "step"
+      ]
+    },
+    {
+      "id": "torch.softmax",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.softmax_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.softplus",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.softplus_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.softsign",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.softsign_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.sort",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim",
+        "descending"
+      ]
+    },
+    {
+      "id": "torch.sort_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim",
+        "descending"
+      ]
+    },
+    {
+      "id": "torch.split",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "split_size",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.sqrt",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.square",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.square_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.squeeze",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.stack",
+      "kind": "module_func",
+      "params": [
+        "tensors",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.stack_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "tensors",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.sub",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.sum",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "torch.sum_dim_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dim",
+        "keepdim"
+      ]
+    },
+    {
+      "id": "torch.tan",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.tan_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.tanh",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.tanh_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.tanhshrink",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.tanhshrink_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.tensor",
+      "kind": "module_func",
+      "params": [
+        "data",
+        "dtype",
+        "requires_grad",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.tensor_from_data",
+      "kind": "module_func",
+      "params": [
+        "data",
+        "shape",
+        "dtype",
+        "requires_grad"
+      ]
+    },
+    {
+      "id": "torch.tile",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "sizes"
+      ]
+    },
+    {
+      "id": "torch.topk",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "k",
+        "dim",
+        "largest"
+      ]
+    },
+    {
+      "id": "torch.topk_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "k",
+        "dim",
+        "largest"
+      ]
+    },
+    {
+      "id": "torch.transpose",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim0",
+        "dim1"
+      ]
+    },
+    {
+      "id": "torch.triangular_solve",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b",
+        "upper"
+      ]
+    },
+    {
+      "id": "torch.tril",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "diagonal"
+      ]
+    },
+    {
+      "id": "torch.tril_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "diagonal"
+      ]
+    },
+    {
+      "id": "torch.triu",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "diagonal"
+      ]
+    },
+    {
+      "id": "torch.triu_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "diagonal"
+      ]
+    },
+    {
+      "id": "torch.true_divide",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.true_divide_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.trunc",
+      "kind": "module_func",
+      "params": [
+        "x"
+      ]
+    },
+    {
+      "id": "torch.trunc_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor"
+      ]
+    },
+    {
+      "id": "torch.unsqueeze",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dim"
+      ]
+    },
+    {
+      "id": "torch.where",
+      "kind": "module_func",
+      "params": [
+        "condition",
+        "x",
+        "y"
+      ]
+    },
+    {
+      "id": "torch.where_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "condition",
+        "x",
+        "y"
+      ]
+    },
+    {
+      "id": "torch.xlogy",
+      "kind": "module_func",
+      "params": [
+        "x",
+        "y"
+      ]
+    },
+    {
+      "id": "torch.xlogy_from_tensors",
+      "kind": "module_func",
+      "params": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "torch.zeros",
+      "kind": "module_func",
+      "params": [
+        "size",
+        "dtype",
+        "device",
+        "requires_grad"
+      ]
+    },
+    {
+      "id": "torch.zeros_from_shape",
+      "kind": "module_func",
+      "params": [
+        "shape",
+        "dtype"
+      ]
+    },
+    {
+      "id": "torch.zeros_like",
+      "kind": "module_func",
+      "params": [
+        "input",
+        "dtype",
+        "device"
+      ]
+    },
+    {
+      "id": "torch.zeros_like_from_tensor",
+      "kind": "module_func",
+      "params": [
+        "tensor",
+        "dtype"
+      ]
     }
   ]
 }
