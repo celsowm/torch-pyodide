@@ -70,13 +70,11 @@ export class ReductionOps {
   }
 
   async any(tensorId: number): Promise<TensorHandle> {
-    const result = await this.reduceAll(tensorId, "sum");
-    return result; // sum > 0 gives "any" — user must check via tolist
+    return this.reduceAll(tensorId, "max");
   }
 
   async all(tensorId: number): Promise<TensorHandle> {
-    const result = await this.reduceAll(tensorId, "sum");
-    return result; // sum == length gives "all"
+    return this.reduceAll(tensorId, "min");
   }
 
   async cumsum(tensorId: number): Promise<TensorHandle> {

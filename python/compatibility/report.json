@@ -12,12 +12,12 @@
       "total": 4
     },
     "tensor_property": {
-      "implemented": 8,
-      "total": 8
+      "implemented": 7,
+      "total": 7
     },
     "tensor_method": {
-      "implemented": 180,
-      "total": 180
+      "implemented": 181,
+      "total": 181
     },
     "nn_class": {
       "implemented": 60,
@@ -841,7 +841,7 @@
     },
     {
       "id": "Tensor.numel",
-      "kind": "tensor_property",
+      "kind": "tensor_method",
       "implemented": true,
       "note": "ok"
     },

@@ -48,7 +48,6 @@ class Tensor:
     def ndim(self) -> int:
         return len(self._shape)
 
-    @property
     def numel(self) -> int:
         n = 1
         for s in self._shape:
@@ -895,31 +894,66 @@ class Tensor:
         from .tensor_ops import le_from_tensors
         return le_from_tensors(self, other)
 
-    def sum(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
-        if dim is not None:
+    def sum(self, dim: int | Sequence[int] | None = None, keepdim: bool = False) -> "Tensor":
+        if dim is None:
+            from .tensor_ops import sum_from_tensor
+            return sum_from_tensor(self)
+        if isinstance(dim, int):
             from .tensor_ops import sum_dim_from_tensor
             return sum_dim_from_tensor(self, dim, keepdim)
-        from .tensor_ops import sum_from_tensor
-        return sum_from_tensor(self)
+        res = self
+        dims = sorted([d if d >= 0 else d + self.ndim for d in dim], reverse=True)
+        for d in dims:
+            res = res.sum(dim=d, keepdim=True)
+        if not keepdim:
+            for d in dims:
+                res = res.squeeze(d)
+        return res
 
-    def mean(self, dim: int | None = None, keepdim: bool = False) -> "Tensor":
-        if dim is not None:
+    def mean(self, dim: int | Sequence[int] | None = None, keepdim: bool = False) -> "Tensor":
+        if dim is None:
+            from .tensor_ops import mean_from_tensor
+            return mean_from_tensor(self)
+        if isinstance(dim, int):
             from .tensor_ops import mean_dim_from_tensor
             return mean_dim_from_tensor(self, dim, keepdim)
-        from .tensor_ops import mean_from_tensor
-        return mean_from_tensor(self)
+        res = self
+        dims = sorted([d if d >= 0 else d + self.ndim for d in dim], reverse=True)
+        total_elements = 1
+        for d in dims:
+            total_elements *= self.shape[d]
+            res = res.sum(dim=d, keepdim=True)
+        res = res / float(total_elements)
+        if not keepdim:
+            for d in dims:
+                res = res.squeeze(d)
+        return res
 
     def prod(self) -> "Tensor":
         from .tensor_ops import prod_from_tensor
         return prod_from_tensor(self)
 
-    def min(self) -> "Tensor":
-        from .tensor_ops import min_from_tensor
-        return min_from_tensor(self)
+    def min(self, dim: int | None = None, keepdim: bool = False) -> object:
+        if dim is None:
+            from .tensor_ops import min_from_tensor
+            return min_from_tensor(self)
+        indices = self.argmin(dim=dim, keepdim=keepdim)
+        values = self.gather(dim=dim, index=indices if keepdim else indices.unsqueeze(dim))
+        if not keepdim:
+            values = values.squeeze(dim)
+        from collections import namedtuple
+        return namedtuple('min', ['values', 'indices'])(values, indices)
 
-    def max(self) -> "Tensor":
-        from .tensor_ops import max_from_tensor
-        return max_from_tensor(self)
+    def max(self, dim: int | None = None, keepdim: bool = False) -> object:
+        if dim is None:
+            from .tensor_ops import max_from_tensor
+            return max_from_tensor(self)
+        indices = self.argmax(dim=dim, keepdim=keepdim)
+        values = self.gather(dim=dim, index=indices if keepdim else indices.unsqueeze(dim))
+        if not keepdim:
+            values = values.squeeze(dim)
+        from collections import namedtuple
+        return namedtuple('max', ['values', 'indices'])(values, indices)
 
     def masked_select(self, mask: "Tensor") -> "Tensor":
         from .tensor_ops import masked_select_from_tensor

@@ -704,7 +704,10 @@
     {
       "id": "Tensor.max",
       "kind": "tensor_method",
-      "params": []
+      "params": [
+        "dim",
+        "keepdim"
+      ]
     },
     {
       "id": "Tensor.maximum",
@@ -724,7 +727,10 @@
     {
       "id": "Tensor.min",
       "kind": "tensor_method",
-      "params": []
+      "params": [
+        "dim",
+        "keepdim"
+      ]
     },
     {
       "id": "Tensor.minimum",
@@ -800,7 +806,8 @@
     },
     {
       "id": "Tensor.numel",
-      "kind": "tensor_property"
+      "kind": "tensor_method",
+      "params": []
     },
     {
       "id": "Tensor.ones_like",
@@ -4825,6 +4832,7 @@
         "start",
         "end",
         "steps",
+        "base",
         "dtype",
         "device"
       ]
@@ -4905,7 +4913,9 @@
       "id": "torch.max",
       "kind": "module_func",
       "params": [
-        "x"
+        "input",
+        "dim",
+        "keepdim"
       ]
     },
     {
@@ -4953,7 +4963,9 @@
       "id": "torch.min",
       "kind": "module_func",
       "params": [
-        "x"
+        "input",
+        "dim",
+        "keepdim"
       ]
     },
     {

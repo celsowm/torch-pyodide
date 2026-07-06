@@ -250,7 +250,9 @@ def linspace(start: float, end: float, steps: int, dtype: str = "float32", devic
 
 def logspace(start: float, end: float, steps: int, base: float = 10.0, dtype: str = "float32", device: object = None) -> Tensor:
     _normalize_device(device)
-    return linspace(start, end, steps, dtype=dtype).pow(base)
+    exponent = linspace(start, end, steps, dtype=dtype)
+    # base^exponent
+    return tensor(base, dtype=dtype).pow(exponent)
 
 
 def normal(

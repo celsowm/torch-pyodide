@@ -889,11 +889,11 @@ def ge(a: Tensor, b: Tensor) -> Tensor:
     return a.ge(b)
 
 
-def sum(input: Tensor, dim: int | None = None, keepdim: bool = False) -> Tensor:
+def sum(input: Tensor, dim: int | Sequence[int] | None = None, keepdim: bool = False) -> Tensor:
     return input.sum(dim=dim, keepdim=keepdim)
 
 
-def mean(input: Tensor, dim: int | None = None, keepdim: bool = False) -> Tensor:
+def mean(input: Tensor, dim: int | Sequence[int] | None = None, keepdim: bool = False) -> Tensor:
     return input.mean(dim=dim, keepdim=keepdim)
 
 
@@ -901,12 +901,12 @@ def prod(x: Tensor) -> Tensor:
     return x.prod()
 
 
-def min(x: Tensor) -> Tensor:
-    return x.min()
+def min(input: Tensor, dim: int | None = None, keepdim: bool = False) -> object:
+    return input.min(dim=dim, keepdim=keepdim)
 
 
-def max(x: Tensor) -> Tensor:
-    return x.max()
+def max(input: Tensor, dim: int | None = None, keepdim: bool = False) -> object:
+    return input.max(dim=dim, keepdim=keepdim)
 
 
 def masked_select(input: Tensor, mask: Tensor) -> Tensor:
