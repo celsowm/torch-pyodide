@@ -32,6 +32,7 @@ import {
   SORT_BACKWARD_SHADER,
   TOPK_BACKWARD_SHADER,
   NONZERO_SHADER,
+  ROLL_SHADER,
   normalizeDim,
   computeStrides,
   normalizeSliceStart,
@@ -848,5 +849,20 @@ export class ShapeOps {
       clippedCount,
     );
     return { count: clippedCount, indices: indicesHandle };
+  }
+
+  async roll(tensorId: number, shift: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const totalLen = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, totalLen * 4));
+
+    const params = new Int32Array([shift, totalLen, 0, 0]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
+    const pipeline = await getOrCreatePipeline(ROLL_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(totalLen));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, totalLen);
   }
 }

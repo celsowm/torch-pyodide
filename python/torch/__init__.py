@@ -94,6 +94,10 @@ from .tensor_ops import (
     masked_select_from_tensor,
     masked_fill_from_tensor,
     nonzero_from_tensor,
+    roll_from_tensor,
+    equal_from_tensors,
+    allclose_from_tensors,
+    isclose_from_tensors,
     log_softmax_from_tensor,
     softmax_from_tensor,
     # New in this session
@@ -321,6 +325,10 @@ __all__ = [
     "masked_select",
     "masked_fill",
     "nonzero",
+    "roll",
+    "equal",
+    "allclose",
+    "isclose",
     "softmax",
     "log_softmax",
     "tril",
@@ -921,6 +929,22 @@ def masked_fill(input: Tensor, mask: Tensor, value: float) -> Tensor:
 
 def nonzero(input: Tensor) -> Tensor:
     return nonzero_from_tensor(input)
+
+
+def roll(input: Tensor, shifts: int | list[int], dims: int | list[int] | None = None) -> Tensor:
+    return roll_from_tensor(input, shifts, dims)
+
+
+def equal(input: Tensor, other: Tensor) -> Tensor:
+    return equal_from_tensors(input, other)
+
+
+def allclose(input: Tensor, other: Tensor, rtol: float = 1e-05, atol: float = 1e-08, equal_nan: bool = False) -> Tensor:
+    return allclose_from_tensors(input, other, rtol, atol, equal_nan)
+
+
+def isclose(input: Tensor, other: Tensor, rtol: float = 1e-05, atol: float = 1e-08, equal_nan: bool = False) -> Tensor:
+    return isclose_from_tensors(input, other, rtol, atol, equal_nan)
 
 
 def softmax(input: Tensor, dim: int = -1) -> Tensor:

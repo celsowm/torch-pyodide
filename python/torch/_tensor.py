@@ -933,6 +933,22 @@ class Tensor:
         from .tensor_ops import nonzero_from_tensor
         return nonzero_from_tensor(self)
 
+    def roll(self, shifts: int | list[int], dims: int | list[int] | None = None) -> "Tensor":
+        from .tensor_ops import roll_from_tensor
+        return roll_from_tensor(self, shifts, dims)
+
+    def equal(self, other: "Tensor") -> "Tensor":
+        from .tensor_ops import equal_from_tensors
+        return equal_from_tensors(self, other)
+
+    def allclose(self, other: "Tensor", rtol: float = 1e-05, atol: float = 1e-08, equal_nan: bool = False) -> "Tensor":
+        from .tensor_ops import allclose_from_tensors
+        return allclose_from_tensors(self, other, rtol, atol, equal_nan)
+
+    def isclose(self, other: "Tensor", rtol: float = 1e-05, atol: float = 1e-08, equal_nan: bool = False) -> "Tensor":
+        from .tensor_ops import isclose_from_tensors
+        return isclose_from_tensors(self, other, rtol, atol, equal_nan)
+
     def _set(self, other: "Tensor") -> None:
         self._id = other._id
         self._shape = list(other._shape)

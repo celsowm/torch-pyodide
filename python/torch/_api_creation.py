@@ -233,7 +233,18 @@ def multinomial(
         raise RuntimeError("prob_dist must be 1 or 2 dim")
 
     if not replacement:
-        # Without replacement — fall back to legacy CPU path.
+        # GPU path via Gumbel-top-k: add Gumbel noise to log-probabilities, take topk.
+        # score = log(input + eps) + Gumbel(0,1), where Gumbel noise = -log(-log(uniform)).
+        try:
+            noise = torch.rand(list(input.shape), dtype=input.dtype)
+            safe_noise = noise.clamp(min=1e-10)
+            gumbel = safe_noise.log().neg().log().neg()
+            scores = input.add(1e-10).log().add(gumbel)
+            _, indices = scores.topk(int(num_samples), dim=-1)
+            return indices.to(dtype=torch.int64)
+        except Exception:
+            pass
+        # Fallback to legacy CPU path.
         values = input.tolist()
         if len(input.shape) == 1:
             return tensor(_sample_multinomial_row(values, int(num_samples), False), dtype="int64")

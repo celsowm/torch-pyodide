@@ -1137,6 +1137,34 @@ def nonzero_from_tensor(tensor: "Tensor") -> "Tensor":
     return cat(coords, dim=1).to(dtype="int64")
 
 
+def roll_from_tensor(tensor: "Tensor", shifts: int | list[int], dims: int | list[int] | None = None) -> "Tensor":
+    """Roll the tensor along given dimensions.
+
+    Flat shift if no dims specified. Multi-dim roll applied sequentially.
+    """
+    from ._tensor import Tensor
+    from .__init__ import cat
+    if dims is None:
+        shift = int(shifts) if isinstance(shifts, (int, float)) else int(shifts[0])
+        runtime = _get_runtime()
+        meta = _run_js_awaitable(runtime.roll(tensor._id, shift))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+        return Tensor(tensor_id, out_shape, out_dtype)
+    shifts_list = [shifts] if isinstance(shifts, int) else list(shifts)
+    dims_list = [dims] if isinstance(dims, int) else list(dims)
+    result = tensor
+    for s, d in zip(shifts_list, dims_list):
+        d_norm = d if d >= 0 else d + len(tensor.shape)
+        n = tensor.shape[d_norm]
+        shift_mod = int(s) % n
+        if shift_mod == 0:
+            continue
+        front = result.narrow(d_norm, 0, n - shift_mod)
+        back = result.narrow(d_norm, n - shift_mod, shift_mod)
+        result = cat([back, front], dim=d_norm)
+    return result
+
+
 def softmax_from_tensor(tensor: "Tensor", dim: int = -1) -> "Tensor":
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_softmax
@@ -1213,3 +1241,39 @@ def ge_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
     meta = _run_js_awaitable(runtime.ge(a._id, b._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
+
+
+def equal_from_tensors(a: "Tensor", b: "Tensor") -> "Tensor":
+    """Returns True if two tensors are element-wise equal."""
+    return a.eq(b).all()
+
+
+def isclose_from_tensors(
+    a: "Tensor",
+    b: "Tensor",
+    rtol: float = 1e-05,
+    atol: float = 1e-08,
+    equal_nan: bool = False,
+) -> "Tensor":
+    """Returns a boolean tensor where two tensors are element-wise close."""
+    from .__init__ import abs, le, logical_or, logical_and, ne
+    # |a - b| <= atol + rtol * |b|
+    diff = abs(a.sub(b))
+    rhs = abs(b).mul(rtol).add(atol)
+    result = le(diff, rhs)
+    if equal_nan:
+        both_nan = logical_and(ne(a, a), ne(b, b))
+        result = logical_or(result, both_nan)
+    return result
+
+
+def allclose_from_tensors(
+    a: "Tensor",
+    b: "Tensor",
+    rtol: float = 1e-05,
+    atol: float = 1e-08,
+    equal_nan: bool = False,
+) -> "Tensor":
+    """Returns True if all elements are close."""
+    from .__init__ import all
+    return all(isclose_from_tensors(a, b, rtol, atol, equal_nan))
