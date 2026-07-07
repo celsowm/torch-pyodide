@@ -93,6 +93,7 @@ from .tensor_ops import (
     max_from_tensor,
     masked_select_from_tensor,
     masked_fill_from_tensor,
+    nonzero_from_tensor,
     log_softmax_from_tensor,
     softmax_from_tensor,
     # New in this session
@@ -319,6 +320,7 @@ __all__ = [
     "cumprod",
     "masked_select",
     "masked_fill",
+    "nonzero",
     "softmax",
     "log_softmax",
     "tril",
@@ -915,6 +917,10 @@ def masked_select(input: Tensor, mask: Tensor) -> Tensor:
 
 def masked_fill(input: Tensor, mask: Tensor, value: float) -> Tensor:
     return masked_fill_from_tensor(input, mask=mask, value=value)
+
+
+def nonzero(input: Tensor) -> Tensor:
+    return nonzero_from_tensor(input)
 
 
 def softmax(input: Tensor, dim: int = -1) -> Tensor:

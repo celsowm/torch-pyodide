@@ -1105,6 +1105,38 @@ def masked_fill_from_tensor(tensor: "Tensor", mask: "Tensor", value: float) -> "
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
+def nonzero_from_tensor(tensor: "Tensor") -> "Tensor":
+    """Returns indices of non-zero elements as a 2D tensor of shape [N, ndim].
+
+    Each row contains the coordinates of a non-zero element.
+    """
+    from ._tensor import Tensor
+    from .__init__ import cat
+
+    runtime = _get_runtime()
+    result = _run_js_awaitable(runtime.nonzero(tensor._id))
+    count = int(result.count)
+    linear_id = int(result.indices.id)
+    linear_shape = list(result.indices.shape.to_py() if hasattr(result.indices.shape, "to_py") else result.indices.shape)
+    linear_dtype = str(result.indices.dtype)
+    ndim = len(tensor.shape)
+
+    if count == 0:
+        from .tensor_factories_ops import full_from_shape
+        return full_from_shape([0, ndim], 0, dtype="int64")
+
+    # Convert linear indices to coordinate tuples.
+    flat_indices = Tensor(linear_id, linear_shape, linear_dtype)
+    strides = [1]
+    for s in reversed(tensor.shape[1:]):
+        strides.insert(0, strides[0] * s)
+    coords = []
+    for dim_idx, stride in enumerate(strides):
+        coord = flat_indices.floor_divide(stride).remainder(tensor.shape[dim_idx])
+        coords.append(coord.to(dtype="int64"))
+    return cat(coords, dim=1).to(dtype="int64")
+
+
 def softmax_from_tensor(tensor: "Tensor", dim: int = -1) -> "Tensor":
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_softmax

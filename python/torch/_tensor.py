@@ -929,6 +929,10 @@ class Tensor:
         from .tensor_ops import masked_fill_from_tensor
         return masked_fill_from_tensor(self, mask, value)
 
+    def nonzero(self) -> "Tensor":
+        from .tensor_ops import nonzero_from_tensor
+        return nonzero_from_tensor(self)
+
     def _set(self, other: "Tensor") -> None:
         self._id = other._id
         self._shape = list(other._shape)

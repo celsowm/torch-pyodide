@@ -91,6 +91,7 @@ import RMSPROP_STEP_SHADER from './rmsprop_step.wgsl';
 import MAXMIN_BACKWARD_SHADER from './maxmin_backward.wgsl';
 import TERNARY_SHADER from './ternary.wgsl';
 import EXTENDED_STEP_SHADER from './extended_step.wgsl';
+import NONZERO_SHADER from './nonzero.wgsl';
 
 export {
   ELEMENTWISE_SHADER,
@@ -180,4 +181,5 @@ export {
   MAXMIN_BACKWARD_SHADER,
   TERNARY_SHADER,
   EXTENDED_STEP_SHADER,
+  NONZERO_SHADER,
 };

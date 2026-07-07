@@ -31,6 +31,7 @@ import {
   SORT_SHADER,
   SORT_BACKWARD_SHADER,
   TOPK_BACKWARD_SHADER,
+  NONZERO_SHADER,
   normalizeDim,
   computeStrides,
   normalizeSliceStart,
@@ -807,5 +808,45 @@ export class ShapeOps {
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(gradInput, [...inputShape], gradOutput.dtype as SupportedDType, inputLength);
+  }
+
+  async nonzero(tensorId: number): Promise<{ count: number; indices: TensorHandle }> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const totalLen = product(meta.shape);
+    const maxCount = totalLen;
+
+    // Output buffer for linear indices (max capacity = totalLen).
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, maxCount * 4));
+
+    // Counter buffer initialized to 0.
+    const counterBuf = this.deviceMgr.device!.createBuffer({
+      size: 4,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+    });
+    const clearEncoder = this.deviceMgr.device!.createCommandEncoder();
+    clearEncoder.clearBuffer(counterBuf, 0, 4);
+    this.deviceMgr.device!.queue.submit([clearEncoder.finish()]);
+
+    const params = new Uint32Array([totalLen, maxCount, 0, 0]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
+    const pipeline = await getOrCreatePipeline(NONZERO_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, counterBuf, paramBuffer], calculateWorkgroups(totalLen));
+    await syncDevice();
+    paramBuffer.destroy();
+
+    // Read back the counter to determine actual output size.
+    const countData = await this.deviceMgr.readFromGPUBuffer(counterBuf, 4);
+    const count = new Uint32Array(countData)[0];
+    counterBuf.destroy();
+
+    const clippedCount = Math.min(count, maxCount);
+    const indicesHandle = this.deviceMgr.registerTensorAsHandle(
+      out,
+      [clippedCount],
+      "float32",
+      clippedCount,
+    );
+    return { count: clippedCount, indices: indicesHandle };
   }
 }

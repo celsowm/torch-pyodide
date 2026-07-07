@@ -693,7 +693,22 @@ def _grad_masked_select(grad_output: Tensor, input_tensor: Tensor, mask: Tensor)
     """d/dinput masked_select(input, mask) = zeros_like(input); result[mask] = grad_output"""
     if not input_tensor._requires_grad:
         return None
-    from .tensor_factories_ops import tensor_from_data
+    from .tensor_factories_ops import zeros_like_from_tensor, tensor_from_data
+    from .tensor_ops import cumsum_from_tensor, where_from_tensors, gather_from_tensor
+    try:
+        # GPU approach: prefix sum of mask -> gather grad at sequential positions -> zero out non-masked.
+        mask_flat = mask.reshape(-1).to(dtype="float32")
+        mask_bool = mask_flat.ne(0.0)
+        cum = cumsum_from_tensor(mask_flat)
+        src_idx = cum.sub(1.0)
+        zeros_f = zeros_like_from_tensor(src_idx)
+        safe_idx = where_from_tensors(mask_bool, src_idx, zeros_f)
+        grad_flat = grad_output.reshape(-1)
+        gathered = gather_from_tensor(grad_flat, 0, safe_idx.to(dtype="int64"))
+        result_flat = where_from_tensors(mask_bool, gathered, zeros_f)
+        return result_flat.reshape(input_tensor.shape)
+    except Exception:
+        pass
     from .tensor_shape_utils import _flatten
     in_shape = list(input_tensor._shape)
     n = 1
@@ -714,13 +729,38 @@ def _grad_index_select(grad_output: Tensor, input_tensor: Tensor, dim: int, inde
     """d/dinput index_select(input, dim, index) = zeros_like(input); result[dim, index] = grad_output"""
     if not input_tensor._requires_grad:
         return None
+    import math
+    from .tensor_factories_ops import zeros_like_from_tensor
+    from .tensor_ops import scatter_add_from_tensor
+    from ._api_creation import arange
+    try:
+        # GPU approach: compute flat positions via arange -> broadcast -> flat scatter_add.
+        in_shape = list(input_tensor._shape)
+        d = dim if dim >= 0 else dim + len(in_shape)
+        inner_size = math.prod(in_shape[d+1:]) if d + 1 < len(in_shape) else 1
+        outer_size = math.prod(in_shape[:d]) if d > 0 else 1
+        index_len = int(math.prod(index._shape))
+        in_dim_size = in_shape[d]
+
+        # Build flat position tensor matching grad_output layout.
+        # flat_pos = outer * in_dim_size * inner_size + index[k] * inner_size + inner
+        outer = arange(0, outer_size, 1, dtype="int64").reshape([outer_size, 1, 1] if outer_size > 0 else [1]) * (in_dim_size * inner_size)
+        pos_k = index.reshape([1, index_len, 1]).to(dtype="int64") * inner_size
+        inner = arange(0, inner_size, 1, dtype="int64").reshape([1, 1, inner_size] if inner_size > 0 else [1])
+        flat_pos = outer.add(pos_k).add(inner).reshape(-1)
+
+        grad_input = scatter_add_from_tensor(
+            zeros_like_from_tensor(input_tensor),
+            0, flat_pos, grad_output.reshape(-1),
+        )
+        return grad_input
+    except Exception:
+        pass
     from .tensor_factories_ops import tensor_from_data
     from .tensor_shape_utils import _flatten
     in_shape = list(input_tensor._shape)
     d = dim if dim >= 0 else dim + len(in_shape)
-    n = 1
-    for s in in_shape:
-        n *= s
+    n = math.prod(in_shape)
     flat_list = [0.0] * n
     idx_vals = _flatten(index.tolist())
     out_flat = _flatten(grad_output.tolist())

@@ -955,6 +955,10 @@ export class TorchPyodideRuntime {
     return this.shapeOps.flip(tensorId, dims);
   }
 
+  async nonzero(tensorId: number): Promise<{ count: number; indices: TensorHandle }> {
+    return this.shapeOps.nonzero(tensorId);
+  }
+
   async replicationPad(
     tensorId: number,
     padLeft: number,
