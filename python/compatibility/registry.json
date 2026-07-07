@@ -2018,6 +2018,46 @@
     {
       "id": "Optimizer.load_state_dict",
       "kind": "optim_class_method"
+    },
+    {
+      "id": "nn.ReplicationPad1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ReplicationPad2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ReflectionPad1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ReflectionPad2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.CircularPad1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.CircularPad2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ConstantPad1d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ConstantPad2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.ZeroPad2d",
+      "kind": "nn_class"
+    },
+    {
+      "id": "nn.functional.interpolate",
+      "kind": "nn_func"
     }
   ]
 }

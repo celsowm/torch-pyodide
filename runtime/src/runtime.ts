@@ -947,6 +947,57 @@ export class TorchPyodideRuntime {
     return this.shapeOps.flip(tensorId, dims);
   }
 
+  async replicationPad(
+    tensorId: number,
+    padLeft: number,
+    padRight: number,
+    padTop: number,
+    padBottom: number,
+  ): Promise<TensorHandle> {
+    return this.shapeOps.replicationPad(tensorId, padLeft, padRight, padTop, padBottom);
+  }
+
+  async reflectionPad(
+    tensorId: number,
+    padLeft: number,
+    padRight: number,
+    padTop: number,
+    padBottom: number,
+  ): Promise<TensorHandle> {
+    return this.shapeOps.reflectionPad(tensorId, padLeft, padRight, padTop, padBottom);
+  }
+
+  async circularPad(
+    tensorId: number,
+    padLeft: number,
+    padRight: number,
+    padTop: number,
+    padBottom: number,
+  ): Promise<TensorHandle> {
+    return this.shapeOps.circularPad(tensorId, padLeft, padRight, padTop, padBottom);
+  }
+
+  async constantPad(
+    tensorId: number,
+    padLeft: number,
+    padRight: number,
+    padTop: number,
+    padBottom: number,
+    value: number,
+  ): Promise<TensorHandle> {
+    return this.shapeOps.constantPad(tensorId, padLeft, padRight, padTop, padBottom, value);
+  }
+
+  async upsample2d(
+    tensorId: number,
+    outH: number,
+    outW: number,
+    mode: number,
+    alignCorners: number,
+  ): Promise<TensorHandle> {
+    return this.shapeOps.upsample2d(tensorId, outH, outW, mode, alignCorners);
+  }
+
   async repeat(tensorId: number, sizes: number[]): Promise<TensorHandle> {
     return this.shapeOps.repeat(tensorId, sizes);
   }

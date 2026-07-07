@@ -69,6 +69,11 @@ import SELECT_SHADER from './select.wgsl';
 import LEAKY_RELU_SHADER from './leaky_relu.wgsl';
 import EXPAND_BROADCAST_SHADER from './expand_broadcast.wgsl';
 import REPEAT_SHADER from './repeat.wgsl';
+import REPLICATION_PAD2D_SHADER from './replication_pad2d.wgsl';
+import REFLECTION_PAD2D_SHADER from './reflection_pad2d.wgsl';
+import CIRCULAR_PAD2D_SHADER from './circular_pad2d.wgsl';
+import CONSTANT_PAD2D_SHADER from './constant_pad2d.wgsl';
+import UPSAMPLE2D_SHADER from './upsample2d.wgsl';
 import GATHER_SHADER from './gather.wgsl';
 import SORT_SHADER from './sort.wgsl';
 import SORT_BACKWARD_SHADER from './sort_backward.wgsl';
@@ -151,6 +156,11 @@ export {
   LEAKY_RELU_SHADER,
   EXPAND_BROADCAST_SHADER,
   REPEAT_SHADER,
+  REPLICATION_PAD2D_SHADER,
+  REFLECTION_PAD2D_SHADER,
+  CIRCULAR_PAD2D_SHADER,
+  CONSTANT_PAD2D_SHADER,
+  UPSAMPLE2D_SHADER,
   GATHER_SHADER,
   SORT_SHADER,
   SORT_BACKWARD_SHADER,

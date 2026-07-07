@@ -55,6 +55,7 @@
     { "id": "training_classification", "label": "Training: Classification (Adam)", "file": "examples/training_classification.py" },
     { "id": "training_sequential_mlp", "label": "Training: Sequential MLP (SGD)", "file": "examples/training_sequential_mlp.py" },
     { "id": "padding_modes", "label": "Padding: reflect, replicate, circular", "file": "examples/padding_modes.py" },
+    { "id": "upsample", "label": "Upsample: nearest + bilinear", "file": "examples/upsample.py" },
     { "id": "einsum_multi", "label": "Einsum: 3+ operands", "file": "examples/einsum_multi_operand.py" },
     { "id": "context_managers", "label": "Context: no_grad, inference_mode", "file": "examples/context_managers.py" },
     { "id": "distributions", "label": "Distributions: Normal, Uniform, Bernoulli", "file": "examples/distributions.py" },

@@ -857,6 +857,47 @@ test.describe.serial("playground examples @webgpu", () => {
     expect(consoleFailures).toEqual([]);
   });
 
+  test("upsample parity matches real PyTorch", async () => {
+    const ref = runExampleWithRealTorch<{
+      input: number[][][][];
+      nearest_values: number[][][][];
+      bilinear_values: number[][][][];
+      bilinear_align_corners_values: number[][][][];
+      nearest_shape: number[];
+      bilinear_shape: number[];
+    }>("upsample.py");
+    if (ref.skipReason) test.skip(true, ref.skipReason);
+
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("upsample");
+    await expect(page.locator("#example-select")).toHaveValue("upsample");
+    const { output } = await runSelectedExample(page, "upsample");
+
+    const actual = parseJsonOutput<{
+      input: number[][][][];
+      nearest_values: number[][][][];
+      bilinear_values: number[][][][];
+      bilinear_align_corners_values: number[][][][];
+      nearest_shape: number[];
+      bilinear_shape: number[];
+    }>(output);
+    expect(actual.input).toEqual(ref.output!.input);
+    expect(actual.nearest_values).toEqual(ref.output!.nearest_values);
+    // Bilinear interpolation is a float op; GPU vs CPU can differ at ULP level.
+    expect(actual.nearest_shape).toEqual(ref.output!.nearest_shape);
+    expect(actual.bilinear_shape).toEqual(ref.output!.bilinear_shape);
+    // Approximate compare for float fields (ϵ=1e-5)
+    function approxEq(a: any, b: any, eps: number): boolean {
+      if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) < eps;
+      if (Array.isArray(a) && Array.isArray(b) && a.length === b.length)
+        return a.every((_: any, i: number) => approxEq(a[i], b[i], eps));
+      return false;
+    }
+    expect(approxEq(actual.bilinear_values, ref.output!.bilinear_values, 1e-5)).toBe(true);
+    expect(approxEq(actual.bilinear_align_corners_values, ref.output!.bilinear_align_corners_values, 1e-5)).toBe(true);
+    expect(consoleFailures).toEqual([]);
+  });
+
   test("optimizer state_dict roundtrip parity matches real PyTorch", async () => {
     const ref = runExampleWithRealTorch<{
       losses_a_first: number[];

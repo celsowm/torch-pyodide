@@ -1,6 +1,6 @@
 {
-  "implemented": 385,
-  "total": 385,
+  "implemented": 395,
+  "total": 395,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
@@ -20,12 +20,12 @@
       "total": 6
     },
     "nn_func": {
-      "implemented": 25,
-      "total": 25
+      "implemented": 26,
+      "total": 26
     },
     "nn_class": {
-      "implemented": 23,
-      "total": 23
+      "implemented": 32,
+      "total": 32
     },
     "nn_class_method": {
       "implemented": 19,
@@ -2348,6 +2348,66 @@
     {
       "id": "Optimizer.load_state_dict",
       "kind": "optim_class_method",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ReplicationPad1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ReplicationPad2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ReflectionPad1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ReflectionPad2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CircularPad1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.CircularPad2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ConstantPad1d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ConstantPad2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.ZeroPad2d",
+      "kind": "nn_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "nn.functional.interpolate",
+      "kind": "nn_func",
       "implemented": true,
       "note": "ok"
     }

@@ -1022,6 +1022,116 @@ class AvgPool1d(Module):
         return avg_pool1d(x, self.kernel_size, self.stride, self.padding)
 
 
+class ReplicationPad1d(Module):
+    def __init__(self, padding: int | tuple[int, int]) -> None:
+        super().__init__()
+        if isinstance(padding, int):
+            padding = (padding, padding)
+        self.padding = tuple(padding)
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pad
+        return pad(x, self.padding, mode="replicate")
+
+
+class ReplicationPad2d(Module):
+    def __init__(self, padding: int | tuple[int, int] | tuple[int, int, int, int]) -> None:
+        super().__init__()
+        if isinstance(padding, int):
+            padding = (padding, padding, padding, padding)
+        self.padding = tuple(padding)
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pad
+        return pad(x, self.padding, mode="replicate")
+
+
+class ReflectionPad1d(Module):
+    def __init__(self, padding: int | tuple[int, int]) -> None:
+        super().__init__()
+        if isinstance(padding, int):
+            padding = (padding, padding)
+        self.padding = tuple(padding)
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pad
+        return pad(x, self.padding, mode="reflect")
+
+
+class ReflectionPad2d(Module):
+    def __init__(self, padding: int | tuple[int, int] | tuple[int, int, int, int]) -> None:
+        super().__init__()
+        if isinstance(padding, int):
+            padding = (padding, padding, padding, padding)
+        self.padding = tuple(padding)
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pad
+        return pad(x, self.padding, mode="reflect")
+
+
+class CircularPad1d(Module):
+    def __init__(self, padding: int | tuple[int, int]) -> None:
+        super().__init__()
+        if isinstance(padding, int):
+            padding = (padding, padding)
+        self.padding = tuple(padding)
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pad
+        return pad(x, self.padding, mode="circular")
+
+
+class CircularPad2d(Module):
+    def __init__(self, padding: int | tuple[int, int] | tuple[int, int, int, int]) -> None:
+        super().__init__()
+        if isinstance(padding, int):
+            padding = (padding, padding, padding, padding)
+        self.padding = tuple(padding)
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pad
+        return pad(x, self.padding, mode="circular")
+
+
+class ConstantPad1d(Module):
+    def __init__(self, padding: int | tuple[int, int], value: float = 0.0) -> None:
+        super().__init__()
+        if isinstance(padding, int):
+            padding = (padding, padding)
+        self.padding = tuple(padding)
+        self.value = value
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pad
+        return pad(x, self.padding, mode="constant", value=self.value)
+
+
+class ConstantPad2d(Module):
+    def __init__(self, padding: int | tuple[int, int] | tuple[int, int, int, int], value: float = 0.0) -> None:
+        super().__init__()
+        if isinstance(padding, int):
+            padding = (padding, padding, padding, padding)
+        self.padding = tuple(padding)
+        self.value = value
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pad
+        return pad(x, self.padding, mode="constant", value=self.value)
+
+
+class ZeroPad2d(Module):
+    def __init__(self, padding: int | tuple[int, int] | tuple[int, int, int, int]) -> None:
+        super().__init__()
+        if isinstance(padding, int):
+            padding = (padding, padding, padding, padding)
+        self.padding = tuple(padding)
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pad
+        return pad(x, self.padding, mode="constant", value=0.0)
+
+
 class AdaptiveAvgPool1d(Module):
     def __init__(self, output_size: int) -> None:
         super().__init__()

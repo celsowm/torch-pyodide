@@ -22,6 +22,98 @@ def cholesky_from_tensor(tensor: "Tensor") -> "Tensor":
     return _mk_tensor(meta)
 
 
+def replication_pad_from_tensor(
+    tensor: "Tensor",
+    left: int,
+    right: int,
+    top: int,
+    bottom: int,
+) -> "Tensor":
+    """Replication (edge) padding backed by the dedicated GPU shader.
+
+    Pads the last and second-to-last spatial dimensions with the replication
+    of their edge values. Returns a tensor whose shape has the padded spatial
+    dims grown by ``left+right`` / ``top+bottom``.
+    """
+    meta = _run_js_awaitable(
+        _get_runtime().replicationPad(tensor._id, int(left), int(right), int(top), int(bottom))
+    )
+    result = _mk_tensor(meta)
+    # The runtime returns a 4D (N, C, H, W) tensor; reshape back to the
+    # expected (possibly lower-rank) output shape.
+    shape = list(tensor._shape)
+    out_shape = list(shape)
+    out_shape[-1] = out_shape[-1] + left + right
+    if top or bottom:
+        out_shape[-2] = out_shape[-2] + top + bottom
+    return result.reshape(out_shape)
+
+
+def _pad2d_from_tensor(
+    tensor: "Tensor",
+    left: int,
+    right: int,
+    top: int,
+    bottom: int,
+    runtime_method: str,
+    value: float = 0.0,
+) -> "Tensor":
+    """Shared bridge for the reflection / circular / constant GPU pad shaders.
+
+    Pads the last and second-to-last spatial dimensions; returns a tensor whose
+    shape has the padded spatial dims grown by ``left+right`` / ``top+bottom``.
+    """
+    meta = _run_js_awaitable(
+        getattr(_get_runtime(), runtime_method)(
+            tensor._id, int(left), int(right), int(top), int(bottom), float(value)
+        )
+    )
+    result = _mk_tensor(meta)
+    shape = list(tensor._shape)
+    out_shape = list(shape)
+    out_shape[-1] = out_shape[-1] + left + right
+    if top or bottom:
+        out_shape[-2] = out_shape[-2] + top + bottom
+    return result.reshape(out_shape)
+
+
+def reflection_pad_from_tensor(
+    tensor: "Tensor", left: int, right: int, top: int, bottom: int
+) -> "Tensor":
+    return _pad2d_from_tensor(tensor, left, right, top, bottom, "reflectionPad")
+
+
+def circular_pad_from_tensor(
+    tensor: "Tensor", left: int, right: int, top: int, bottom: int
+) -> "Tensor":
+    return _pad2d_from_tensor(tensor, left, right, top, bottom, "circularPad")
+
+
+def constant_pad_from_tensor(
+    tensor: "Tensor", left: int, right: int, top: int, bottom: int, value: float = 0.0
+) -> "Tensor":
+    return _pad2d_from_tensor(tensor, left, right, top, bottom, "constantPad", value)
+
+
+def upsample2d_from_tensor(
+    tensor: "Tensor",
+    out_h: int,
+    out_w: int,
+    mode: str,
+    align_corners: bool,
+) -> "Tensor":
+    """2D upsample (nearest / bilinear) backed by the dedicated GPU shader.
+
+    `mode` is ``"nearest"`` or ``"bilinear"``; ``align_corners`` matches the
+    PyTorch coordinate mapping.
+    """
+    mode_id = 1 if mode == "bilinear" else 0
+    meta = _run_js_awaitable(
+        _get_runtime().upsample2d(tensor._id, int(out_h), int(out_w), mode_id, 1 if align_corners else 0)
+    )
+    return _mk_tensor(meta)
+
+
 def lu_from_tensor(tensor: "Tensor") -> tuple["Tensor", "Tensor"]:
     result = _run_js_awaitable(_get_runtime().lu(tensor._id))
     return _mk_tensor(result[0]), _mk_tensor(result[1])

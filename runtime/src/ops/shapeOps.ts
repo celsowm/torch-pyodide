@@ -21,6 +21,11 @@ import {
   TRIU_SHADER,
   FLIP_SHADER,
   REPEAT_SHADER,
+  REPLICATION_PAD2D_SHADER,
+  REFLECTION_PAD2D_SHADER,
+  CIRCULAR_PAD2D_SHADER,
+  CONSTANT_PAD2D_SHADER,
+  UPSAMPLE2D_SHADER,
   SORT_SHADER,
   SORT_BACKWARD_SHADER,
   TOPK_BACKWARD_SHADER,
@@ -392,6 +397,176 @@ export class ShapeOps {
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
+  }
+
+  async replicationPad(
+    tensorId: number,
+    padLeft: number,
+    padRight: number,
+    padTop: number,
+    padBottom: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const [batch, channels, inH, inW] = padShapeTo4(meta.shape);
+    const outH = inH + padTop + padBottom;
+    const outW = inW + padLeft + padRight;
+    const total = batch * channels * outH * outW;
+
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
+
+    const params = new Uint32Array([
+      batch, channels, inH, inW,
+      outH, outW,
+      padTop, padBottom, padLeft, padRight,
+    ]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+
+    const pipeline = await getOrCreatePipeline(REPLICATION_PAD2D_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(total));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [batch, channels, outH, outW], meta.dtype as SupportedDType, total);
+  }
+
+  async reflectionPad(
+    tensorId: number,
+    padLeft: number,
+    padRight: number,
+    padTop: number,
+    padBottom: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const [batch, channels, inH, inW] = padShapeTo4(meta.shape);
+    const outH = inH + padTop + padBottom;
+    const outW = inW + padLeft + padRight;
+    const total = batch * channels * outH * outW;
+
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
+
+    const params = new Uint32Array([
+      batch, channels, inH, inW,
+      outH, outW,
+      padTop, padBottom, padLeft, padRight,
+    ]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+
+    const pipeline = await getOrCreatePipeline(REFLECTION_PAD2D_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(total));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [batch, channels, outH, outW], meta.dtype as SupportedDType, total);
+  }
+
+  async circularPad(
+    tensorId: number,
+    padLeft: number,
+    padRight: number,
+    padTop: number,
+    padBottom: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const [batch, channels, inH, inW] = padShapeTo4(meta.shape);
+    const outH = inH + padTop + padBottom;
+    const outW = inW + padLeft + padRight;
+    const total = batch * channels * outH * outW;
+
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
+
+    const params = new Uint32Array([
+      batch, channels, inH, inW,
+      outH, outW,
+      padTop, padBottom, padLeft, padRight,
+    ]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+
+    const pipeline = await getOrCreatePipeline(CIRCULAR_PAD2D_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(total));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [batch, channels, outH, outW], meta.dtype as SupportedDType, total);
+  }
+
+  async constantPad(
+    tensorId: number,
+    padLeft: number,
+    padRight: number,
+    padTop: number,
+    padBottom: number,
+    value: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const [batch, channels, inH, inW] = padShapeTo4(meta.shape);
+    const outH = inH + padTop + padBottom;
+    const outW = inW + padLeft + padRight;
+    const total = batch * channels * outH * outW;
+
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
+
+    const params = new Uint32Array([
+      batch, channels, inH, inW,
+      outH, outW,
+      padTop, padBottom, padLeft, padRight,
+      new Uint32Array(new Float32Array([value]).buffer)[0]!,
+    ]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+
+    const pipeline = await getOrCreatePipeline(CONSTANT_PAD2D_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(total));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [batch, channels, outH, outW], meta.dtype as SupportedDType, total);
+  }
+
+  async upsample2d(
+    tensorId: number,
+    outH: number,
+    outW: number,
+    mode: number,
+    alignCorners: number,
+  ): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const [batch, channels, inH, inW] = padShapeTo4(meta.shape);
+    const total = batch * channels * outH * outW;
+
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, total * 4));
+
+    const params = new Uint32Array([
+      batch, channels, inH, inW,
+      outH, outW,
+      mode, alignCorners,
+    ]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+
+    const pipeline = await getOrCreatePipeline(UPSAMPLE2D_SHADER, "main");
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(total));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [batch, channels, outH, outW], meta.dtype as SupportedDType, total);
   }
 
   async repeat(tensorId: number, sizes: number[]): Promise<TensorHandle> {

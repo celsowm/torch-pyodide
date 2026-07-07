@@ -95,7 +95,9 @@ def dropout2d(x: Tensor, p: float = 0.5, training: bool = True) -> Tensor:
 def linear(x: Tensor, weight: Tensor, bias: Tensor | None = None) -> Tensor:
     result = x.matmul(weight.T)
     if bias is not None:
-        result = result + bias
+        # Broadcast the (out_features,) bias over the leading batch dims.
+        bias_view = bias.reshape([1] * (result.ndim - 1) + [result.shape[-1]])
+        result = result + bias_view
     return result
 
 
@@ -133,7 +135,8 @@ def bilinear(
     result = (x1_flat[:, None, :] * wx2).sum(dim=2)
 
     if bias is not None:
-        result = result + bias
+        bias_view = bias.reshape([1] * (result.ndim - 1) + [result.shape[-1]])
+        result = result + bias_view
 
     return result.reshape(*orig_shape)
 
@@ -185,6 +188,10 @@ def group_norm(x: Tensor, num_groups: int, weight: Tensor | None = None, bias: T
 def pad(x: Tensor, pad: Sequence[int], mode: str = "constant", value: float = 0.0) -> Tensor:
     if len(pad) == 0 or len(pad) > 8 or len(pad) % 2 != 0:
         raise ValueError(f"invalid pad tuple: {pad}")
+    if mode in ("constant", "replicate", "reflect", "circular"):
+        gpu = _gpu_pad(x, pad, mode, value)
+        if gpu is not None:
+            return gpu
     result = x
     for i in range(0, len(pad), 2):
         dim = -(i // 2 + 1)
@@ -208,6 +215,37 @@ def pad(x: Tensor, pad: Sequence[int], mode: str = "constant", value: float = 0.
         else:
             raise NotImplementedError(f"padding mode '{mode}' not yet implemented")
     return result
+
+
+def _gpu_pad(x: Tensor, pad: Sequence[int], mode: str, value: float = 0.0) -> "Tensor | None":
+    """Route standard 1D/2D padding through the dedicated GPU shaders.
+
+    Returns the GPU-padded tensor for padding the last 1 or 2 spatial dims,
+    or ``None`` to signal the caller to fall back to the per-dimension
+    emulation (e.g. for 3D padding or non-trailing dims).
+    """
+    if len(pad) not in (2, 4):
+        return None
+    from torch._tensor_runtime_bridge import (
+        circular_pad_from_tensor,
+        constant_pad_from_tensor,
+        reflection_pad_from_tensor,
+        replication_pad_from_tensor,
+    )
+
+    left, right = pad[0], pad[1]
+    top = bottom = 0
+    if len(pad) == 4:
+        top, bottom = pad[2], pad[3]
+    if mode == "replicate":
+        return replication_pad_from_tensor(x, left, right, top, bottom)
+    if mode == "reflect":
+        return reflection_pad_from_tensor(x, left, right, top, bottom)
+    if mode == "circular":
+        return circular_pad_from_tensor(x, left, right, top, bottom)
+    if mode == "constant":
+        return constant_pad_from_tensor(x, left, right, top, bottom, value)
+    return None
 
 
 def _pad_reflect(x: Tensor, dim: int, left: int, right: int) -> Tensor:
@@ -473,13 +511,28 @@ def interpolate(
     in_h, in_w = x.shape[2], x.shape[3]
 
     if mode == "nearest":
-        return _interpolate_nearest(x, out_h, out_w)
+        return _interpolate_gpu(x, out_h, out_w, "nearest", align_corners)
     elif mode == "bilinear":
-        return _interpolate_bilinear(x, out_h, out_w, align_corners)
+        return _interpolate_gpu(x, out_h, out_w, "bilinear", align_corners)
     elif mode == "bicubic":
-        return _interpolate_bicubic(x, out_h, out_w, align_corners)
+        # No dedicated bicubic shader yet; fall back to bilinear (existing behavior).
+        return _interpolate_bilinear(x, out_h, out_w, align_corners)
     else:
         raise ValueError(f"Unknown interpolation mode: {mode}")
+
+
+def _interpolate_gpu(x: Tensor, out_h: int, out_w: int, mode: str, align_corners: bool | None) -> Tensor:
+    """Route nearest/bilinear upsampling through the dedicated GPU shader.
+
+    Falls back to the Python emulation for non-4D inputs.
+    """
+    if x.ndim == 4:
+        from torch._tensor_runtime_bridge import upsample2d_from_tensor
+
+        return upsample2d_from_tensor(x, out_h, out_w, mode, bool(align_corners))
+    if mode == "nearest":
+        return _interpolate_nearest(x, out_h, out_w)
+    return _interpolate_bilinear(x, out_h, out_w, align_corners)
 
 
 def _interpolate_nearest(x: Tensor, out_h: int, out_w: int) -> Tensor:
