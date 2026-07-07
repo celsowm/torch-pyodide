@@ -76,6 +76,7 @@ import CONSTANT_PAD2D_SHADER from './constant_pad2d.wgsl';
 import UPSAMPLE2D_SHADER from './upsample2d.wgsl';
 import GATHER_SHADER from './gather.wgsl';
 import SCATTER_SHADER from './scatter.wgsl';
+import SCATTER_ADD_SHADER from './scatter_add.wgsl';
 import SORT_SHADER from './sort.wgsl';
 import SORT_BACKWARD_SHADER from './sort_backward.wgsl';
 import TOPK_BACKWARD_SHADER from './topk_backward.wgsl';
@@ -164,6 +165,7 @@ export {
   UPSAMPLE2D_SHADER,
   GATHER_SHADER,
   SCATTER_SHADER,
+  SCATTER_ADD_SHADER,
   SORT_SHADER,
   SORT_BACKWARD_SHADER,
   TOPK_BACKWARD_SHADER,

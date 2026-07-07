@@ -357,6 +357,22 @@ def _grad_select(grad_output: Tensor, input_tensor: Tensor, dim: int, index: int
     """d/dinput select(input, dim, index) = zeros_like(input); result[dim, index] = grad_output"""
     if not input_tensor._requires_grad:
         return None
+    from ._tensor import slice_backward_from_tensors
+    try:
+        # Use slice_backward with unsqueezed grad and single-element slice.
+        d = dim if dim >= 0 else dim + input_tensor.ndim
+        grad_unsqueezed = grad_output.unsqueeze(d)
+        sliced_shape = list(grad_unsqueezed.shape)
+        return slice_backward_from_tensors(
+            grad_unsqueezed,
+            list(input_tensor.shape),
+            sliced_shape,
+            d,
+            index,
+            1,
+        )
+    except Exception:
+        pass
     from .tensor_factories_ops import tensor_from_data
     from .tensor_shape_utils import _flatten
     d = dim if dim >= 0 else dim + input_tensor.ndim
@@ -730,6 +746,24 @@ def _grad_gather(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Ten
     """d/dinput gather(input, dim, index) = zeros_like(input); result[index[i,...], ...] += grad_output[i,...]"""
     if not input_tensor._requires_grad:
         return None
+    from .tensor_factories_ops import zeros_like_from_tensor
+    from .tensor_ops import scatter_add_from_tensor, gather_from_tensor
+    from ._api_creation import arange
+    import math
+    try:
+        # GPU approach: compute flat positions via arange -> gather -> flat scatter_add.
+        in_len = math.prod(input_tensor._shape)
+        flat_positions = gather_from_tensor(
+            arange(0, in_len, 1, dtype="int64").reshape(input_tensor._shape),
+            dim, index,
+        )
+        grad_input = scatter_add_from_tensor(
+            zeros_like_from_tensor(input_tensor),
+            0, flat_positions.reshape(-1), grad_output.reshape(-1),
+        )
+        return grad_input
+    except Exception:
+        pass
     from .tensor_factories_ops import tensor_from_data
     from .tensor_shape_utils import _flatten
     in_shape = list(input_tensor._shape)
@@ -773,6 +807,35 @@ def _grad_embedding(
 ) -> Tensor | None:
     if not weight._requires_grad:
         return None
+    import math
+    from .tensor_factories_ops import zeros_like_from_tensor
+    from .tensor_ops import scatter_add_from_tensor
+    from ._api_creation import arange
+    try:
+        # GPU approach: compute flat positions, then scatter_add into zeros.
+        # flat_pos = indices * embedding_dim + arange(embedding_dim)
+        emb_arange = arange(0, embedding_dim, 1, dtype="int64")
+        for _ in range(len(indices.shape) - 1):
+            emb_arange = emb_arange.unsqueeze(0)
+        offset = indices.mul(embedding_dim).to(dtype="int64")
+        for _ in range(len(grad_output.shape) - len(indices.shape)):
+            offset = offset.unsqueeze(-1)
+        flat_pos = offset.add(emb_arange).reshape(-1).to(dtype="int64")
+        # Zero out grads for padding tokens
+        if padding_idx >= 0:
+            mask = indices.ne(padding_idx).to(dtype=grad_output.dtype)
+            for _ in range(len(grad_output.shape) - len(indices.shape)):
+                mask = mask.unsqueeze(-1)
+            flat_grad = grad_output.mul(mask).reshape(-1)
+        else:
+            flat_grad = grad_output.reshape(-1)
+        grad_weight = scatter_add_from_tensor(
+            zeros_like_from_tensor(weight),
+            0, flat_pos, flat_grad,
+        )
+        return grad_weight
+    except Exception:
+        pass
     from .tensor_factories_ops import tensor_from_data
     from .tensor_shape_utils import _flatten
 

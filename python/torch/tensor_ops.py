@@ -569,6 +569,19 @@ def scatter_from_tensor(tensor: "Tensor", dim: int, index: "Tensor", src: "Tenso
     return out
 
 
+def scatter_add_from_tensor(
+    tensor: "Tensor", dim: int, index: "Tensor", src: "Tensor"
+) -> "Tensor":
+    """Flat scatter_add: accumulate src values at flat index positions into output."""
+    from ._tensor import Tensor
+    from ._runtime import _get_runtime, _run_js_awaitable
+
+    runtime = _get_runtime()
+    meta = _run_js_awaitable(runtime.scatterAdd(tensor._id, int(dim), index._id, src._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    return Tensor(tensor_id, list(out_shape), out_dtype)
+
+
 def cat_from_tensors(tensors: Sequence["Tensor"], dim: int = 0) -> "Tensor":
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_cat
