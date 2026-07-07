@@ -16,6 +16,7 @@ import {
   EXPAND_SHADER,
   EXPAND_BROADCAST_SHADER,
   GATHER_SHADER,
+  SCATTER_SHADER,
   INDEX_SELECT_SHADER,
   TRIL_SHADER,
   TRIU_SHADER,
@@ -659,6 +660,28 @@ export class ShapeOps {
     await syncDevice();
     paramBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, [...indices.shape], meta.dtype, outLength);
+  }
+
+  async scatter(tensorId: number, _dim: number, indexId: number, srcId: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    const indices = this.deviceMgr.getTensorMeta(indexId);
+    const srcMeta = this.deviceMgr.getTensorMeta(srcId);
+    const indexLen = indices.length;
+
+    // Clone input to output, then scatter writes override at flat index positions.
+    const out = createStorageBuffer(this.deviceMgr.device!, meta.bytes);
+    const encoder = this.deviceMgr.device!.createCommandEncoder();
+    encoder.copyBufferToBuffer(meta.buffer, 0, out, 0, meta.bytes);
+    this.deviceMgr.device!.queue.submit([encoder.finish()]);
+
+    const params = new Uint32Array([indexLen, meta.length, srcMeta.length, 0]);
+    const paramBuffer = createUniformParamBuffer(this.deviceMgr, params, 16);
+    const pipeline = await getOrCreatePipeline(SCATTER_SHADER, "main");
+    dispatchCompute(pipeline, [out, indices.buffer, srcMeta.buffer, paramBuffer], calculateWorkgroups(indexLen));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [...meta.shape], meta.dtype, meta.length);
   }
 
   private async transpose2dImpl(meta: TensorMeta): Promise<TensorHandle> {

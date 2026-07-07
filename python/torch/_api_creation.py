@@ -232,12 +232,24 @@ def multinomial(
     if len(input.shape) not in (1, 2):
         raise RuntimeError("prob_dist must be 1 or 2 dim")
 
-    values = input.tolist()
-    if len(input.shape) == 1:
-        return tensor(_sample_multinomial_row(values, int(num_samples), replacement), dtype="int64")
+    if not replacement:
+        # Without replacement — fall back to legacy CPU path.
+        values = input.tolist()
+        if len(input.shape) == 1:
+            return tensor(_sample_multinomial_row(values, int(num_samples), False), dtype="int64")
+        rows = [_sample_multinomial_row(row, int(num_samples), False) for row in values]
+        return tensor(rows, dtype="int64")
 
-    rows = [_sample_multinomial_row(row, int(num_samples), replacement) for row in values]
-    return tensor(rows, dtype="int64")
+    # With replacement — GPU path via inverse CDF.
+    # Draw uniform samples, then compare against the cumulative distribution.
+    # cdf shape: (..., in); uni shape: (..., num_samples)
+    cdf = input.cumsum(dim=-1)
+    batch_shape = list(input.shape[:-1])
+    in_size = input.shape[-1]
+    uni = torch.rand(batch_shape + [int(num_samples)], dtype=input.dtype)
+    # Expand for broadcasting: cdf (..., 1, in), uni (..., num_samples, 1)
+    mask = cdf.unsqueeze(-2) > uni.unsqueeze(-1)  # (..., num_samples, in)
+    return mask.argmax(dim=-1).to(dtype=torch.int64)
 
 
 def linspace(start: float, end: float, steps: int, dtype: str = "float32", device: object = None) -> Tensor:
@@ -305,20 +317,11 @@ def bernoulli(
     _normalize_device(device)
     from ._tensor import Tensor
     if isinstance(input, Tensor):
-        # Per-element Bernoulli from a probability tensor.
-        probs = input.tolist()
-        # Flatten arbitrarily nested lists.
-        def _flatten_probs(values):
-            if isinstance(values, (list, tuple)):
-                out = []
-                for v in values:
-                    out.extend(_flatten_probs(v))
-                return out
-            return [float(values)]
-        flat_probs = _flatten_probs(probs)
-        flat = [1.0 if (p > 0) and ((p >= 1.0) or (_random.random() < p)) else 0.0 for p in flat_probs]
-        from .tensor_factories_ops import tensor_from_data
-        return tensor_from_data(flat, shape=list(input.shape), dtype=dtype)
+        # Per-element Bernoulli from a probability tensor using GPU.
+        # mask = rand(shape) < prob_tensor → all GPU ops.
+        from .tensor_factories_ops import rand_from_shape
+        r = rand_from_shape(list(input.shape), dtype=input.dtype)
+        return (r < input).to(dtype)
     p = float(input)
     if size is None:
         size = [1]

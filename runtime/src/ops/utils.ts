@@ -57,6 +57,7 @@ import {
   LOG_SOFTMAX_SHADER,
   REPEAT_SHADER,
   GATHER_SHADER,
+  SCATTER_SHADER,
   SORT_SHADER,
   CHOLESKY_SHADER,
   LU_SHADER,
@@ -96,6 +97,9 @@ import {
   dispatchCompute,
   calculateWorkgroups,
   syncDevice,
+  makeStorageReadLayoutEntry,
+  makeStorageReadWriteLayoutEntry,
+  makeUniformLayoutEntry,
 } from "../vendor/torchjs/index.js";
 
 export {
@@ -136,6 +140,7 @@ export {
   LOG_SOFTMAX_SHADER,
   REPEAT_SHADER,
   GATHER_SHADER,
+  SCATTER_SHADER,
   SORT_SHADER,
   CHOLESKY_SHADER,
   LU_SHADER,

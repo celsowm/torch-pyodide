@@ -912,6 +912,10 @@ export class TorchPyodideRuntime {
     return this.shapeOps.gather(tensorId, dim, indicesId);
   }
 
+  async scatter(tensorId: number, dim: number, indexId: number, srcId: number): Promise<TensorHandle> {
+    return this.shapeOps.scatter(tensorId, dim, indexId, srcId);
+  }
+
   async sort(tensorId: number, dim: number): Promise<TensorHandle[]> {
     return this.shapeOps.sort(tensorId, dim);
   }

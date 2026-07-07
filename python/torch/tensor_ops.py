@@ -546,29 +546,19 @@ def gather_from_tensor(tensor: "Tensor", dim: int, index: "Tensor") -> "Tensor":
 
 def scatter_from_tensor(tensor: "Tensor", dim: int, index: "Tensor", src: "Tensor | float") -> "Tensor":
     from ._tensor import Tensor
+    from ._runtime import _get_runtime, _run_js_awaitable
     from .autograd import _Node, is_grad_enabled, _grad_scatter
-    from .tensor_shape_utils import _flatten_out
-    from .tensor_factories_ops import tensor_from_data
+    from .tensor_factories_ops import full_like_from_tensor
 
-    result = tensor.clone()
-    flat = result.tolist()
-    flat_list: list[float] = _flatten_out(flat)
-    idx = index.tolist()
-    idx_flat: list[float] = _flatten_out(idx)
-    out_len = len(flat_list)
+    runtime = _get_runtime()
+    # Ensure src is a tensor with the same shape as index.
     if isinstance(src, (int, float)):
-        val = float(src)
-        for i in range(len(idx_flat)):
-            pos = int(idx_flat[i])
-            if 0 <= pos < out_len:
-                flat_list[pos] = val
+        src_tensor = full_like_from_tensor(index, float(src), dtype="float32")
     else:
-        src_flat = _flatten_out(src.tolist())
-        for i in range(min(len(idx_flat), len(src_flat))):
-            pos = int(idx_flat[i])
-            if 0 <= pos < out_len:
-                flat_list[pos] = src_flat[i]
-    out = tensor_from_data(flat_list, list(tensor._shape), tensor._dtype)
+        src_tensor = src
+    meta = _run_js_awaitable(runtime.scatter(tensor._id, int(dim), index._id, src_tensor._id))
+    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    out = Tensor(tensor_id, list(out_shape), out_dtype)
 
     if is_grad_enabled() and (tensor._requires_grad or (not isinstance(src, (int, float)) and src._requires_grad)):
         out._requires_grad = True
