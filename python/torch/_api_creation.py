@@ -160,11 +160,9 @@ def eye(n: int, m: int | None = None, dtype: str = "float32", device: object = N
     _normalize_device(device)
     rows = n
     cols = m if m is not None else n
-    result = zeros([rows, cols], dtype=dtype)
-    min_dim = min(rows, cols)
-    for i in range(min_dim):
-        result[i, i] = 1.0
-    return result
+    rows_grid = arange(0, rows, 1, dtype=dtype).reshape([rows, 1])
+    cols_grid = arange(0, cols, 1, dtype=dtype).reshape([1, cols])
+    return rows_grid.eq(cols_grid).to(dtype)
 
 
 def randint(

@@ -561,56 +561,56 @@ def _interpolate_nearest(x: Tensor, out_h: int, out_w: int) -> Tensor:
 
 
 def _interpolate_bilinear(x: Tensor, out_h: int, out_w: int, align_corners: bool | None) -> Tensor:
-    """Bilinear interpolation using tensor operations (efficient)."""
+    """Bilinear interpolation using tensor operations (no tolist)."""
     import torch
     in_h, in_w = x.shape[2], x.shape[3]
     batch_size, channels = x.shape[0], x.shape[1]
 
     if align_corners:
-        h_scale = (in_h - 1) / (out_h - 1) if out_h > 1 else 0
-        w_scale = (in_w - 1) / (out_w - 1) if out_w > 1 else 0
+        h_scale = (in_h - 1) / (out_h - 1) if out_h > 1 else 0.0
+        w_scale = (in_w - 1) / (out_w - 1) if out_w > 1 else 0.0
     else:
         h_scale = in_h / out_h
         w_scale = in_w / out_w
 
-    # Create coordinate grids
-    h_coords = [(i * h_scale) for i in range(out_h)]
-    w_coords = [(j * w_scale) for j in range(out_w)]
+    # Build coordinate grids as tensors.
+    h_grid = torch.arange(0, out_h, 1, dtype=x.dtype).mul(h_scale)
+    w_grid = torch.arange(0, out_w, 1, dtype=x.dtype).mul(w_scale)
 
-    # For each output coordinate, interpolate from 4 nearest input pixels
-    out = torch.zeros((batch_size, channels, out_h, out_w), dtype=x.dtype)
+    # Floor coordinates (clamped so ih1/iw1 is always valid).
+    ih0 = h_grid.floor().to(dtype="int64").clamp(0, in_h - 2)
+    ih1 = ih0.add(1)
+    iw0 = w_grid.floor().to(dtype="int64").clamp(0, in_w - 2)
+    iw1 = iw0.add(1)
 
-    for oh in range(out_h):
-        ih_f = h_coords[oh]
-        ih0 = int(ih_f)
-        ih1 = min(in_h - 1, ih0 + 1)
-        di = ih_f - ih0
+    # Fractional parts.
+    di = h_grid.sub(ih0.to(dtype=x.dtype)).reshape([1, 1, out_h, 1])
+    dj = w_grid.sub(iw0.to(dtype=x.dtype)).reshape([1, 1, 1, out_w])
 
-        for ow in range(out_w):
-            iw_f = w_coords[ow]
-            iw0 = int(iw_f)
-            iw1 = min(in_w - 1, iw0 + 1)
-            dj = iw_f - iw0
+    # Flatten x to [B, C, H*W] for gather.
+    x_flat = x.reshape(batch_size, channels, -1)
 
-            # Bilinear: v = (1-di)(1-dj)*v00 + (1-di)*dj*v01 + di*(1-dj)*v10 + di*dj*v11
-            v00 = x.select(2, ih0).select(2, iw0)
-            v01 = x.select(2, ih0).select(2, iw1)
-            v10 = x.select(2, ih1).select(2, iw0)
-            v11 = x.select(2, ih1).select(2, iw1)
+    # Flat indices: [oh, ow] -> ih * W + iw, broadcast to [B, C, out_h, out_w].
+    def _gather_weights(hi, wi):
+        flat_idx = (
+            hi.reshape([1, 1, out_h, 1]).mul(in_w)
+            .add(wi.reshape([1, 1, 1, out_w]))
+            .expand([batch_size, channels, out_h, out_w])
+            .reshape(batch_size, channels, -1)
+        )
+        return x_flat.gather(2, flat_idx).reshape(batch_size, channels, out_h, out_w)
 
-            v = (
-                v00.mul((1 - di) * (1 - dj))
-                .add(v01.mul((1 - di) * dj))
-                .add(v10.mul(di * (1 - dj)))
-                .add(v11.mul(di * dj))
-            )
+    v00 = _gather_weights(ih0, iw0)
+    v01 = _gather_weights(ih0, iw1)
+    v10 = _gather_weights(ih1, iw0)
+    v11 = _gather_weights(ih1, iw1)
 
-            # Use index assignment
-            out_data = out.tolist()
-            for n in range(batch_size):
-                for c in range(channels):
-                    out_data[n][c][oh][ow] = v.tolist()[n][c]
-            out = torch.tensor(out_data, dtype=x.dtype)
+    out = (
+        v00.mul((1 - di) * (1 - dj))
+        .add(v01.mul((1 - di) * dj))
+        .add(v10.mul(di * (1 - dj)))
+        .add(v11.mul(di * dj))
+    )
     return out
 
 

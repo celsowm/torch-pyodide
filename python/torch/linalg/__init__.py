@@ -130,17 +130,16 @@ def solve(A: Tensor, B: Tensor) -> Tensor:
     n = A.shape[-1]
     A_lu, pivot = A.lu()
     l_part = torch.tril(A_lu, diagonal=-1)
-    eye_data = [0.0] * (n * n)
-    for i in range(n):
-        eye_data[i * n + i] = 1.0
-    l_full = tensor_from_data(eye_data, A.dtype).reshape([n, n]) + l_part
+    l_full = torch.eye(n, dtype=A.dtype) + l_part
     u_full = torch.triu(A_lu, diagonal=0)
-    m = B.shape[-1] if len(B.shape) > 1 else 1
-    col_list = B.tolist()
-    col_flat = _flatten(col_list)
+    if len(B.shape) == 1:
+        col = B.reshape([n, 1])
+        y = l_full.triangular_solve(col, upper=False)
+        return u_full.triangular_solve(y, upper=True).reshape([n])
+    m = B.shape[-1]
     result_cols = []
     for j in range(m):
-        col = tensor_from_data([col_flat[i * m + j] for i in range(n)], A.dtype).reshape([n, 1])
+        col = B.select(dim=1, index=j).reshape([n, 1])
         y = l_full.triangular_solve(col, upper=False)
         x = u_full.triangular_solve(y, upper=True)
         result_cols.append(x)
