@@ -730,32 +730,6 @@ def _grad_index_select(grad_output: Tensor, input_tensor: Tensor, dim: int, inde
     if not input_tensor._requires_grad:
         return None
     import math
-    from .tensor_factories_ops import zeros_like_from_tensor
-    from .tensor_ops import scatter_add_from_tensor
-    from ._api_creation import arange
-    try:
-        # GPU approach: compute flat positions via arange -> broadcast -> flat scatter_add.
-        in_shape = list(input_tensor._shape)
-        d = dim if dim >= 0 else dim + len(in_shape)
-        inner_size = math.prod(in_shape[d+1:]) if d + 1 < len(in_shape) else 1
-        outer_size = math.prod(in_shape[:d]) if d > 0 else 1
-        index_len = int(math.prod(index._shape))
-        in_dim_size = in_shape[d]
-
-        # Build flat position tensor matching grad_output layout.
-        # flat_pos = outer * in_dim_size * inner_size + index[k] * inner_size + inner
-        outer = arange(0, outer_size, 1, dtype="int64").reshape([outer_size, 1, 1] if outer_size > 0 else [1]) * (in_dim_size * inner_size)
-        pos_k = index.reshape([1, index_len, 1]).to(dtype="int64") * inner_size
-        inner = arange(0, inner_size, 1, dtype="int64").reshape([1, 1, inner_size] if inner_size > 0 else [1])
-        flat_pos = outer.add(pos_k).add(inner).reshape(-1)
-
-        grad_input = scatter_add_from_tensor(
-            zeros_like_from_tensor(input_tensor),
-            0, flat_pos, grad_output.reshape(-1),
-        )
-        return grad_input
-    except Exception:
-        pass
     from .tensor_factories_ops import tensor_from_data
     from .tensor_shape_utils import _flatten
     in_shape = list(input_tensor._shape)
@@ -853,7 +827,6 @@ def _grad_embedding(
     from ._api_creation import arange
     try:
         # GPU approach: compute flat positions, then scatter_add into zeros.
-        # flat_pos = indices * embedding_dim + arange(embedding_dim)
         emb_arange = arange(0, embedding_dim, 1, dtype="int64")
         for _ in range(len(indices.shape) - 1):
             emb_arange = emb_arange.unsqueeze(0)
@@ -861,7 +834,6 @@ def _grad_embedding(
         for _ in range(len(grad_output.shape) - len(indices.shape)):
             offset = offset.unsqueeze(-1)
         flat_pos = offset.add(emb_arange).reshape(-1).to(dtype="int64")
-        # Zero out grads for padding tokens
         if padding_idx >= 0:
             mask = indices.ne(padding_idx).to(dtype=grad_output.dtype)
             for _ in range(len(grad_output.shape) - len(indices.shape)):
