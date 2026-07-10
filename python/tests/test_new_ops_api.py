@@ -64,6 +64,14 @@ class _FakeRuntime:
     def bitwiseXor(self, a, b): return self._record("bitwiseXor", a, b)
     def bitwiseNot(self, a): return self._record("bitwiseNot", a)
 
+    # Comparison ops
+    def eq(self, a, b): return self._record("eq", a, b)
+    def ne(self, a, b): return self._record("ne", a, b)
+    def lt(self, a, b): return self._record("lt", a, b)
+    def le(self, a, b): return self._record("le", a, b)
+    def gt(self, a, b): return self._record("gt", a, b)
+    def ge(self, a, b): return self._record("ge", a, b)
+
     # Ternary/scalar helpers
     def add(self, a, b): return self._record("add", a, b)
     def sub(self, a, b): return self._record("sub", a, b)
@@ -109,6 +117,7 @@ class _FakeRuntime:
     def exponential(self, shape, dtype, rate): return self._record("exponential", shape, dtype, rate)
     def logNormal(self, shape, dtype, mean, std): return self._record("logNormal", shape, dtype, mean, std)
     def randn(self, shape, dtype): return self._record("randn", shape, dtype)
+    def rand(self, shape, dtype): return self._record("rand", shape, dtype)
 
 
 @pytest.fixture

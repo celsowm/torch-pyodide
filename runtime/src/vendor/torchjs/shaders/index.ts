@@ -93,6 +93,7 @@ import TERNARY_SHADER from './ternary.wgsl';
 import EXTENDED_STEP_SHADER from './extended_step.wgsl';
 import NONZERO_SHADER from './nonzero.wgsl';
 import ROLL_SHADER from './roll.wgsl';
+import JACOBI_SHADER from './jacobi.wgsl';
 
 export {
   ELEMENTWISE_SHADER,
@@ -184,4 +185,5 @@ export {
   EXTENDED_STEP_SHADER,
   NONZERO_SHADER,
   ROLL_SHADER,
+  JACOBI_SHADER,
 };

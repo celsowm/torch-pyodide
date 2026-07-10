@@ -1190,6 +1190,17 @@ export class TorchPyodideRuntime {
   async triangularSolve(aId: number, bId: number, upper: boolean): Promise<TensorHandle> {
     return this.linalgOps.triangularSolve(aId, bId, upper);
   }
+
+  async jacobiRotate(
+    aId: number,
+    vId: number,
+    p: number,
+    q: number,
+    c: number,
+    s: number,
+  ): Promise<TensorHandle[]> {
+    return this.linalgOps.jacobiRotate(aId, vId, p, q, c, s);
+  }
 }
 
 export function installTorchRuntime(target: typeof globalThis = globalThis): TorchPyodideRuntime {

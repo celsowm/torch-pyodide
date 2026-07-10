@@ -761,17 +761,18 @@ def _grad_gather(grad_output: Tensor, input_tensor: Tensor, dim: int, index: Ten
     if not input_tensor._requires_grad:
         return None
     from .tensor_factories_ops import zeros_like_from_tensor
-    from .tensor_ops import scatter_add_from_tensor, gather_from_tensor
+    from .tensor_ops import scatter_add_safe_from_tensor, gather_from_tensor
     from ._api_creation import arange
     import math
     try:
-        # GPU approach: compute flat positions via arange -> gather -> flat scatter_add.
+        # GPU approach (atomic-free, safe for duplicate indices):
+        # compute flat positions via arange -> gather -> segmented scatter_add.
         in_len = math.prod(input_tensor._shape)
         flat_positions = gather_from_tensor(
             arange(0, in_len, 1, dtype="int64").reshape(input_tensor._shape),
             dim, index,
         )
-        grad_input = scatter_add_from_tensor(
+        grad_input = scatter_add_safe_from_tensor(
             zeros_like_from_tensor(input_tensor),
             0, flat_positions.reshape(-1), grad_output.reshape(-1),
         )
@@ -823,10 +824,11 @@ def _grad_embedding(
         return None
     import math
     from .tensor_factories_ops import zeros_like_from_tensor
-    from .tensor_ops import scatter_add_from_tensor
+    from .tensor_ops import scatter_add_safe_from_tensor
     from ._api_creation import arange
     try:
-        # GPU approach: compute flat positions, then scatter_add into zeros.
+        # GPU approach (atomic-free, safe for duplicate token indices):
+        # compute flat positions, then segmented scatter_add into zeros.
         emb_arange = arange(0, embedding_dim, 1, dtype="int64")
         for _ in range(len(indices.shape) - 1):
             emb_arange = emb_arange.unsqueeze(0)
@@ -841,7 +843,7 @@ def _grad_embedding(
             flat_grad = grad_output.mul(mask).reshape(-1)
         else:
             flat_grad = grad_output.reshape(-1)
-        grad_weight = scatter_add_from_tensor(
+        grad_weight = scatter_add_safe_from_tensor(
             zeros_like_from_tensor(weight),
             0, flat_pos, flat_grad,
         )

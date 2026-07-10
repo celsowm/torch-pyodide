@@ -8,6 +8,7 @@ import {
   CHOLESKY_SHADER,
   LU_SHADER,
   TRIANGULAR_SOLVE_SHADER,
+  JACOBI_SHADER,
   createStorageBuffer,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
@@ -131,5 +132,60 @@ export class LinalgOps {
     }
 
     return this.deviceMgr.registerTensorAsHandle(bBuf, bMeta.shape, bMeta.dtype, product(bMeta.shape));
+  }
+
+  async jacobiRotate(
+    aId: number,
+    vId: number,
+    p: number,
+    q: number,
+    c: number,
+    s: number,
+  ): Promise<[TensorHandle, TensorHandle]> {
+    await this.deviceMgr.ensureReady();
+    const aMeta = this.deviceMgr.getTensorMeta(aId);
+    const vMeta = this.deviceMgr.getTensorMeta(vId);
+    const aShape = aMeta.shape;
+    const vShape = vMeta.shape;
+    const n = aShape[aShape.length - 1];
+
+    const aOut = createStorageBuffer(this.deviceMgr.device!, aMeta.bytes);
+    const vOut = createStorageBuffer(this.deviceMgr.device!, vMeta.bytes);
+
+    const pipeline = await getOrCreatePipeline(JACOBI_SHADER, "main");
+    const ab = new ArrayBuffer(32);
+    const u32 = new Uint32Array(ab);
+    const f32 = new Float32Array(ab);
+    u32[0] = n;
+    u32[1] = p;
+    u32[2] = q;
+    f32[3] = c;
+    f32[4] = s;
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: ab.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, ab);
+    dispatchCompute(
+      pipeline,
+      [aMeta.buffer, aOut, vMeta.buffer, vOut, paramBuffer],
+      calculateWorkgroups(n, 64),
+    );
+    await syncDevice();
+    paramBuffer.destroy();
+
+    const aHandle = this.deviceMgr.registerTensorAsHandle(
+      aOut,
+      aShape,
+      aMeta.dtype,
+      product(aShape),
+    );
+    const vHandle = this.deviceMgr.registerTensorAsHandle(
+      vOut,
+      vShape,
+      vMeta.dtype,
+      product(vShape),
+    );
+    return [aHandle, vHandle];
   }
 }

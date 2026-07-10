@@ -390,8 +390,39 @@ def cumsum_from_tensor(tensor: "Tensor", dim: int = 0) -> "Tensor":
     from .autograd import _Node, is_grad_enabled, _grad_cumsum
 
     runtime = _get_runtime()
-    meta = _run_js_awaitable(runtime.cumsum(tensor._id))
-    tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    shape = list(tensor._shape)
+    ndim = len(shape)
+    if dim < 0:
+        dim += ndim
+
+    if ndim == 1:
+        meta = _run_js_awaitable(runtime.cumsum(tensor._id))
+        tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
+    else:
+        # runtime cumsum is flat; make it dim-aware by moving the target dim
+        # last, flattening, computing the flat scan, then resetting each row
+        # boundary so the scan does not cross slices.
+        perm = [i for i in range(ndim) if i != dim] + [dim]
+        t = tensor.permute(perm)
+        outer = 1
+        for s in t._shape[:-1]:
+            outer *= s
+        L = t._shape[-1]
+        flat = t.reshape([outer * L])
+        meta = _run_js_awaitable(runtime.cumsum(flat._id))
+        fid, _, fdtype = _js_meta_to_tuple(meta)
+        flat_cum = Tensor(fid, [outer * L], fdtype)
+        flat_cum_r = flat_cum.reshape([outer, L])
+        if outer > 1:
+            from .tensor_factories_ops import zeros_from_shape
+            last_col = flat_cum_r.select(1, L - 1)
+            prev_end = slice_from_tensor(last_col, 0, 0, outer - 1).reshape([outer - 1, 1])
+            offset = cat_multi_from_tensors([zeros_from_shape([1, 1], fdtype), prev_end], 0)
+            result_r = flat_cum_r - offset
+        else:
+            result_r = flat_cum_r
+        result_t = result_r.reshape(list(t._shape)).permute([perm.index(i) for i in range(ndim)])
+        tensor_id, out_shape, out_dtype = result_t._id, result_t._shape, result_t._dtype
 
     if is_grad_enabled() and tensor._requires_grad:
         result = Tensor(tensor_id, out_shape, out_dtype, _requires_grad=True)
@@ -480,14 +511,18 @@ def topk_from_tensor(tensor: "Tensor", k: int, dim: int = -1, largest: bool = Tr
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_topk
     from .tensor_shape_utils import _flatten_out
-    from .tensor_factories_ops import tensor_from_data
+    from .tensor_factories_ops import tensor_from_data, arange_from_values
 
     if k <= 0:
         raise ValueError(f"k must be positive, got {k}")
     d = dim if dim >= 0 else dim + len(tensor._shape)
     size = tensor._shape[d]
     if k >= size:
-        return tensor, tensor_from_data(list(range(size)), list(tensor._shape), "int64")
+        idx = arange_from_values(0, size, 1)
+        idx_shape = [1] * len(tensor._shape)
+        idx_shape[d] = size
+        idx = idx.reshape(idx_shape).expand(list(tensor._shape))
+        return tensor, idx
     descending = largest
     values, indices = sort_from_tensor(tensor, d, descending)
     shape = list(values._shape)
@@ -582,6 +617,231 @@ def scatter_add_from_tensor(
     return Tensor(tensor_id, list(out_shape), out_dtype)
 
 
+def scatter_add_safe_from_tensor(
+    out: "Tensor", dim: int, index: "Tensor", src: "Tensor"
+) -> "Tensor":
+    """Atomic-free scatter_add.
+
+    WGSL has no atomic float add and the flat ``scatter``/``scatterAdd``
+    runtime shaders run one thread per source element in parallel, so when
+    several ``index`` entries map to the same output position the writes race
+    (the lower source index wins, discarding the others).
+
+    To stay correct under that race we guarantee that every thread targeting
+    the same output position writes the *identical* value:
+
+      1. sort ``(index, src)`` by ``index`` (equal indices become contiguous),
+      2. assign a unique group id to each contiguous block of equal indices,
+      3. cumulative-sum ``src`` within the global order,
+      4. keep the running sum only at each group's last position (``carry``),
+      5. scatter that unique ``carry`` into a 1-slot-per-group buffer -- a
+         1-to-1 write, so it is race-free,
+      6. gather the per-group total back to every source element, so all
+         elements of a group now carry the same total,
+      7. overwrite-scatter those totals into a zero buffer and add to ``out``.
+         Duplicates now write the same value, so the race is harmless.
+
+    Equivalent to PyTorch ``out.scatter_add_(dim, index, src)``.
+    """
+    from .tensor_factories_ops import (
+        zeros_like_from_tensor,
+        zeros_from_shape,
+        arange_from_values,
+    )
+
+    flat_out = out.reshape(-1)
+    flat_index = index.reshape(-1).to(dtype="int64")
+    flat_src = src.reshape(-1)
+    n = flat_index._shape[0]
+    if n == 0:
+        return out
+
+    sorted_idx, order = sort_from_tensor(flat_index, 0, descending=False)
+    sorted_val = gather_from_tensor(flat_src, 0, order)
+
+    ar = arange_from_values(0, n, 1)
+    z = zeros_from_shape([n], flat_out._dtype)
+    ar_first = ar.eq(z)
+    ar_last = ar.ge(z.add(n - 1))
+
+    is_first = ne_from_tensors(sorted_idx, roll_from_tensor(sorted_idx, 1)).logical_or(ar_first)
+    group_id = cumsum_from_tensor(is_first.to(flat_out._dtype), 0)  # 1..G contiguous, unique per group
+    G = int(group_id.select(0, n - 1).item())
+
+    # Per-group cumulative sum. The flat ``scatter`` shader runs in parallel and
+    # races on duplicate positions, so every write below is either 1-to-1 (unique
+    # index) or writes the identical value for all duplicates of a group.
+    running = cumsum_from_tensor(sorted_val, 0)
+    is_last = ne_from_tensors(sorted_idx, roll_from_tensor(sorted_idx, -1)).logical_or(ar_last)
+
+    # Cumulative sum just *before* each group starts (running[i-1] at group starts).
+    prev_cum = roll_from_tensor(running, 1)
+    prev_cum0 = where_from_tensors(ar_first, zeros_like_from_tensor(running), prev_cum)
+    group_prev = scatter_from_tensor(
+        zeros_from_shape([G], flat_out._dtype),
+        0,
+        where_from_tensors(is_first, (group_id - 1), zeros_from_shape([n], flat_out._dtype).add(float(G))),
+        prev_cum0,
+    )
+    prev_cum_per_elem = gather_from_tensor(group_prev, 0, (group_id - 1).to("int64"))
+
+    # Group total = cumsum at the group's last element minus the cumsum before it.
+    group_total_at_last = running - where_from_tensors(is_last, prev_cum_per_elem, zeros_like_from_tensor(running))
+    carry = where_from_tensors(is_last, group_total_at_last, zeros_like_from_tensor(running))
+
+    group_totals = scatter_from_tensor(
+        zeros_from_shape([G], flat_out._dtype),
+        0,
+        where_from_tensors(is_last, (group_id - 1), zeros_from_shape([n], flat_out._dtype).add(float(G))),
+        carry,
+    )
+    total_per_elem = gather_from_tensor(group_totals, 0, (group_id - 1).to("int64"))
+
+    added = scatter_from_tensor(zeros_like_from_tensor(flat_out), 0, sorted_idx, total_per_elem)
+    return (flat_out + added).reshape(list(out._shape))
+
+
+def _scatter_flat_positions(input_shape: list[int], dim: int, index: "Tensor") -> "Tensor":
+    """Flat output positions for a multi-dim scatter.
+
+    The runtime ``scatter`` is a flat 1-D kernel writing ``output[pos] = src[q]``
+    where ``pos = flat_positions[q]``. For a scatter along ``dim`` with a 1-D
+    ``index`` (length ``input_shape[dim]``), the flat position for source element
+    at multi-index ``m`` is ``ravel(m)`` with ``m[dim]`` replaced by ``index[m[dim]]``.
+    """
+    from ._api_creation import arange
+
+    ndim = len(input_shape)
+    d = dim if dim >= 0 else dim + ndim
+    total = 1
+    for s in input_shape:
+        total *= s
+    stride_d = 1
+    for s in reversed(input_shape[d + 1:]):
+        stride_d *= s
+    flat_q = arange(0, total, 1, dtype="int64")
+    q_d = flat_q.floor_divide(stride_d)
+    # Modulo without `remainder` (the runtime remainder shader is buggy for odds);
+    # coord_d = q_d - k * (q_d // k).
+    coord_d = q_d - input_shape[d] * q_d.floor_divide(input_shape[d])
+    substituted = index.to(dtype="int64").gather(0, coord_d)
+    return flat_q - coord_d * stride_d + substituted * stride_d
+
+
+def index_copy_from_tensor(input: "Tensor", dim: int, index: "Tensor", source: "Tensor") -> "Tensor":
+    """out = input; out.index_copy_(dim, index, source) — overwrite scatter (race-free)."""
+    from .autograd import _Node, is_grad_enabled, _grad_scatter
+
+    out_pos = _scatter_flat_positions(input._shape, dim, index)
+    out = scatter_from_tensor(input.reshape(-1), 0, out_pos, source.reshape(-1))
+    out = out.reshape(list(input._shape))
+    if is_grad_enabled() and (input._requires_grad or source._requires_grad):
+        out._requires_grad = True
+        parents = [input, source]
+        out._node = _Node(out, lambda g: _grad_scatter(g, input, dim, index, source), parents)
+    return out
+
+
+def index_fill_from_tensor(input: "Tensor", dim: int, index: "Tensor", value: "Tensor | float") -> "Tensor":
+    """out = input; out.index_fill_(dim, index, value) — overwrite scatter (race-free)."""
+    from .autograd import _Node, is_grad_enabled, _grad_scatter
+    from .tensor_factories_ops import full_like_from_tensor
+
+    source = value if isinstance(value, (int, float)) else value
+    if isinstance(value, (int, float)):
+        source = full_like_from_tensor(input, float(value))
+    out_pos = _scatter_flat_positions(input._shape, dim, index)
+    out = scatter_from_tensor(input.reshape(-1), 0, out_pos, source.reshape(-1))
+    out = out.reshape(list(input._shape))
+    if is_grad_enabled() and input._requires_grad:
+        out._requires_grad = True
+        parents = [input]
+        out._node = _Node(out, lambda g: _grad_scatter(g, input, dim, index, source), parents)
+    return out
+
+
+def index_add_from_tensor(input: "Tensor", dim: int, index: "Tensor", source: "Tensor") -> "Tensor":
+    """out = input; out.index_add_(dim, index, source) — accumulate scatter.
+
+    Uses the GPU ``scatterAdd`` runtime op. For duplicate ``index`` entries this
+    relies on the runtime's (racy) accumulation, matching the pre-existing
+    scatter behaviour; the race-free variant is used by the autograd backward
+    rules via ``scatter_add_safe_from_tensor``.
+    """
+    from .autograd import _Node, is_grad_enabled, _grad_scatter
+
+    out_pos = _scatter_flat_positions(input._shape, dim, index)
+    out = scatter_add_from_tensor(input.reshape(-1), 0, out_pos, source.reshape(-1))
+    out = out.reshape(list(input._shape))
+    if is_grad_enabled() and (input._requires_grad or source._requires_grad):
+        out._requires_grad = True
+        parents = [input, source]
+        out._node = _Node(out, lambda g: _grad_scatter(g, input, dim, index, source), parents)
+    return out
+
+
+def take_from_tensor(input: "Tensor", index: "Tensor") -> "Tensor":
+    """Flatten ``input`` then gather at ``index`` (equivalent to torch.take)."""
+    from .autograd import _Node, is_grad_enabled, _grad_gather
+
+    out = gather_from_tensor(input.reshape(-1), 0, index.reshape(-1))
+    if is_grad_enabled() and input._requires_grad:
+        out._requires_grad = True
+        out._node = _Node(out, lambda g: (_grad_gather(g, input, 0, index.reshape(-1)),), [input])
+    return out
+
+
+def unfold_from_tensor(input: "Tensor", dimension: int, size: int, step: int = 1) -> "Tensor":
+    """Sliding-window view along ``dimension`` (equivalent to torch.Tensor.unfold).
+
+    Each window is extracted with ``narrow`` (GPU) and stacked; the window axis is
+    inserted immediately after ``dimension``.
+    """
+    d = dimension if dimension >= 0 else dimension + len(input._shape)
+    L = input._shape[d]
+    num = 0 if L < size else (L - size) // step + 1
+    if num == 0:
+        new_shape = list(input._shape)
+        new_shape[d] = size
+        new_shape.insert(d + 1, 0)
+        from .tensor_factories_ops import zeros_from_shape
+
+        return zeros_from_shape(new_shape, input._dtype)
+    windows = [input.narrow(d, w * step, size).unsqueeze(d) for w in range(num)]
+    return cat_multi_from_tensors(windows, dim=d)
+
+
+def cdist_from_tensor(x1: "Tensor", x2: "Tensor", p: float = 2.0) -> "Tensor":
+    """Pairwise distance matrix between rows of x1 and x2 (equivalent to torch.cdist)."""
+    x1_2d = len(x1._shape) == 2
+    x2_2d = len(x2._shape) == 2
+    a = x1.unsqueeze(0) if x1_2d else x1
+    b = x2.unsqueeze(0) if x2_2d else x2
+    diff = a.unsqueeze(2) - b.unsqueeze(1)  # [B, N, M, D]
+    if p == 2.0 or p == 2:
+        dist = diff.pow(2).sum(-1).sqrt()
+    else:
+        dist = diff.abs().pow(p).sum(-1).pow(1.0 / p)
+    if x1_2d and x2_2d:
+        dist = dist.squeeze(0)
+    return dist
+
+
+def pdist_from_tensor(input: "Tensor", p: float = 2.0) -> "Tensor":
+    """Pairwise distances of a single set, returned as the upper-triangular vector."""
+    from ._api_creation import arange
+    from .tensor_factories_ops import tensor_from_data
+
+    n = input._shape[0]
+    d = cdist_from_tensor(input, input, p)  # [n, n]
+    out: list[float] = []
+    for i in range(n):
+        row = d.select(0, i)
+        for j in range(i + 1, n):
+            out.append(float(row.select(0, j).item()))
+    return tensor_from_data(out, [n * (n - 1) // 2], input._dtype)
+
+
 def cat_from_tensors(tensors: Sequence["Tensor"], dim: int = 0) -> "Tensor":
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_cat
@@ -599,12 +859,178 @@ def cat_from_tensors(tensors: Sequence["Tensor"], dim: int = 0) -> "Tensor":
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
+def cat_multi_from_tensors(tensors: Sequence["Tensor"], dim: int = 0) -> "Tensor":
+    """Concatenate any number of tensors (the runtime cat supports two at a time)."""
+    result = tensors[0]
+    for t in tensors[1:]:
+        result = cat_from_tensors([result, t], dim=dim)
+    return result
+
+
 def stack_from_tensors(tensors: Sequence["Tensor"], dim: int = 0) -> "Tensor":
     if len(tensors) == 0:
         raise ValueError("stack requires at least one tensor")
     from .__init__ import cat
     unsqueezed = [t.unsqueeze(dim) for t in tensors]
     return cat(unsqueezed, dim=dim)
+
+
+def searchsorted_from_tensor(
+    sorted_sequence: "Tensor", values: "Tensor", right: bool = False
+) -> "Tensor":
+    """Return insertion indices of ``values`` into ``sorted_sequence`` (1-D)."""
+    s = sorted_sequence.reshape(-1)
+    v = values.reshape(-1)
+    s_exp = s.unsqueeze(1)
+    v_exp = v.unsqueeze(0)
+    cmp = s_exp.le(v_exp) if right else s_exp.lt(v_exp)
+    res = cmp.to(s._dtype).sum(0)
+    return res.reshape(values._shape) if len(values._shape) > 1 else res
+
+
+def kthvalue_from_tensor(x: "Tensor", k: int, dim: int = -1):
+    from ._tensor import Tensor
+    d = dim if dim >= 0 else dim + len(x._shape)
+    vals, idx = sort_from_tensor(x, d, descending=False)
+    out_val = vals.select(d, k - 1)
+    out_idx = idx.select(d, k - 1)
+    return out_val, out_idx
+
+
+def median_from_tensor(x: "Tensor", dim=None):
+    if dim is None:
+        flat = x.reshape(-1)
+        n = flat._shape[0]
+        k = (n + 1) // 2
+        out, _ = kthvalue_from_tensor(flat, k, dim=0)
+        return out
+    d = dim if dim >= 0 else dim + len(x._shape)
+    n = x._shape[d]
+    k = (n + 1) // 2
+    out, _ = kthvalue_from_tensor(x, k, dim=d)
+    return out
+
+
+def quantile_from_tensor(x: "Tensor", q, dim: int = -1):
+    from .__init__ import tensor as _tensor
+    d = dim if dim >= 0 else dim + len(x._shape)
+    vals, _ = sort_from_tensor(x, d, descending=False)
+    n = x._shape[d]
+    qs = q.tolist() if hasattr(q, "tolist") else (q if isinstance(q, (list, tuple)) else [q])
+    results = []
+    for qval in qs:
+        pos = (n - 1) * qval
+        k0 = int(_tensor([pos]).floor().item())
+        k0 = max(0, min(n - 1, k0))
+        k1 = min(n - 1, k0 + 1)
+        w = pos - k0
+        v0 = vals.select(d, k0)
+        v1 = vals.select(d, k1)
+        if k0 == k1:
+            results.append(v0)
+        else:
+            results.append(v0.lerp(v1, w))
+    if len(results) == 1:
+        return results[0]
+    from .__init__ import stack
+    return stack(results)
+
+
+def _mode_2d(xt: "Tensor"):
+    """Mode per row of a 2-D tensor [rows, n]; returns (mode_values, counts)."""
+    from ._tensor import Tensor
+    from .tensor_factories_ops import arange_from_values, zeros_from_shape, ones_from_shape
+    n = xt._shape[1]
+    rows = xt._shape[0]
+    vals, _ = sort_from_tensor(xt, 1, descending=False)
+    shifted = roll_from_tensor(vals, 1, 1)
+    is_first = vals.ne(shifted)
+    first_col = arange_from_values(0, n, 1).unsqueeze(0).expand([rows, n])
+    first_col = first_col.eq(zeros_from_shape([rows, n], first_col._dtype))
+    is_first = is_first.logical_or(first_col)
+    group_id = cumsum_from_tensor(is_first.to(vals._dtype), 1)
+    last_gid = group_id.select(1, n - 1)
+    ng = int(last_gid.max().item())
+    row_ids = arange_from_values(0, rows, 1).unsqueeze(1).expand_as(group_id)
+    global_gid = (row_ids * ng + (group_id - 1)).to("int64")
+    ones = ones_from_shape([rows, n], vals._dtype)
+    sizes = scatter_add_safe_from_tensor(
+        zeros_from_shape([rows * ng], vals._dtype),
+        0,
+        global_gid.reshape(-1).to("int64"),
+        ones.reshape(-1),
+    )
+    sizes = sizes.reshape([rows, ng])
+    mode_g = sizes.argmax(1)
+    cs = sizes.cumsum(1)
+    end_pos = cs.gather(1, mode_g.unsqueeze(1))
+    start_pos = end_pos - sizes.gather(1, mode_g.unsqueeze(1))
+    mode_vals = vals.gather(1, start_pos.to("int64")).squeeze(1)
+    mode_cnt = sizes.gather(1, mode_g.unsqueeze(1)).squeeze(1)
+    return mode_vals, mode_cnt
+
+
+def mode_from_tensor(x: "Tensor", dim=None):
+    if dim is None:
+        flat = x.reshape(-1)
+        return _mode_2d(flat.unsqueeze(0))
+    d = dim if dim >= 0 else dim + len(x._shape)
+    perm = [i for i in range(len(x._shape)) if i != d] + [d]
+    xt = x.permute(perm)
+    other = 1
+    for s in xt._shape[:-1]:
+        other *= s
+    rows = other if other > 0 else 1
+    xt2 = xt.reshape([rows, x._shape[d]])
+    vals, cnts = _mode_2d(xt2)
+    out_shape = [s for i, s in enumerate(x._shape) if i != d]
+    return vals.reshape(out_shape), cnts.reshape(out_shape)
+
+
+def unique_from_tensor(x: "Tensor", return_counts: bool = False, sorted: bool = True, dim=None):
+    if dim is not None:
+        raise NotImplementedError("unique along a dimension is not supported yet")
+    flat = x.reshape(-1)
+    n = flat._shape[0]
+    from .tensor_factories_ops import arange_from_values, zeros_from_shape, ones_from_shape
+    vals, _ = sort_from_tensor(flat, 0, descending=False)
+    shifted = roll_from_tensor(vals, 1, 0)
+    is_first = vals.ne(shifted)
+    first_pos = arange_from_values(0, n, 1)
+    first_pos = first_pos.eq(zeros_from_shape([n], first_pos._dtype))
+    is_first = is_first.logical_or(first_pos)
+    uniq = vals.masked_select(is_first)
+    if return_counts:
+        group_id = is_first.cumsum(0)
+        ng = int(group_id.select(0, n - 1).item())
+        ones = ones_from_shape([n], vals._dtype)
+        counts = scatter_add_safe_from_tensor(
+            zeros_from_shape([ng], vals._dtype),
+            0,
+            (group_id - 1).to("int64"),
+            ones,
+        )
+        return uniq, counts
+    return uniq
+
+
+def histogram_from_tensor(x: "Tensor", bins: int, range=None):
+    from ._tensor import Tensor
+    from .tensor_factories_ops import arange_from_values, zeros_from_shape, ones_from_shape
+    flat = x.reshape(-1)
+    if range is None:
+        lo = flat.min()
+        hi = flat.max()
+    else:
+        lo, hi = range[0], range[1]
+    width = (hi - lo) / bins
+    idx = ((flat - lo) / width).floor().clamp(0, bins - 1).to("int64")
+    ones = ones_from_shape([flat._shape[0]], flat._dtype)
+    counts = scatter_add_safe_from_tensor(
+        zeros_from_shape([bins], flat._dtype), 0, idx, ones
+    )
+    edges = arange_from_values(0, bins + 1, 1).mul(width).add(lo)
+    return counts, edges
 
 
 def expand_from_tensor(tensor: "Tensor", shape: int | Sequence[int]) -> "Tensor":

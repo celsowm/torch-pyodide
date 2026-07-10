@@ -119,6 +119,20 @@ def lu_from_tensor(tensor: "Tensor") -> tuple["Tensor", "Tensor"]:
     return _mk_tensor(result[0]), _mk_tensor(result[1])
 
 
+def jacobi_rotate_from_tensors(
+    a: "Tensor", v: "Tensor", p: int, q: int, c: float, s: float
+) -> tuple["Tensor", "Tensor"]:
+    """Apply one Jacobi rotation to (A, V) on the GPU.
+
+    Returns the updated ``(A', V')`` where ``A' = Gᵀ A G`` and ``V' = V G`` for
+    the rotation ``G`` defined by ``(p, q, c, s)``.
+    """
+    result = _run_js_awaitable(
+        _get_runtime().jacobiRotate(a._id, v._id, int(p), int(q), float(c), float(s))
+    )
+    return _mk_tensor(result[0]), _mk_tensor(result[1])
+
+
 def triangular_solve_from_tensors(a: "Tensor", b: "Tensor", upper: bool = False) -> "Tensor":
     meta = _run_js_awaitable(_get_runtime().triangularSolve(a._id, b._id, upper))
     return _mk_tensor(meta)

@@ -66,6 +66,21 @@ from .tensor_ops import (
     cat_from_tensors,
     expand_from_tensor,
     index_select_from_tensor,
+    index_add_from_tensor,
+    index_copy_from_tensor,
+    index_fill_from_tensor,
+    take_from_tensor,
+    unfold_from_tensor,
+    cdist_from_tensor,
+    pdist_from_tensor,
+    scatter_add_safe_from_tensor,
+    searchsorted_from_tensor,
+    kthvalue_from_tensor,
+    median_from_tensor,
+    quantile_from_tensor,
+    mode_from_tensor,
+    unique_from_tensor,
+    histogram_from_tensor,
     stack_from_tensors,
     where_from_tensors,
     sigmoid_from_tensor,
@@ -254,6 +269,20 @@ __all__ = [
     "stack",
     "expand",
     "index_select",
+    "index_add",
+    "index_copy",
+    "index_fill",
+    "take",
+    "unfold",
+    "cdist",
+    "pdist",
+    "searchsorted",
+    "kthvalue",
+    "median",
+    "quantile",
+    "mode",
+    "unique",
+    "histogram",
     "sigmoid",
     "tanh",
     "sin",
@@ -532,6 +561,62 @@ def expand(input: Tensor, shape: int | Sequence[int]) -> Tensor:
 
 def index_select(input: Tensor, dim: int, index: Tensor) -> Tensor:
     return index_select_from_tensor(input, dim=dim, index=index)
+
+
+def index_add(input: Tensor, dim: int, index: Tensor, source: Tensor) -> Tensor:
+    return index_add_from_tensor(input, dim=dim, index=index, source=source)
+
+
+def index_copy(input: Tensor, dim: int, index: Tensor, source: Tensor) -> Tensor:
+    return index_copy_from_tensor(input, dim=dim, index=index, source=source)
+
+
+def index_fill(input: Tensor, dim: int, index: Tensor, value: Tensor | float) -> Tensor:
+    return index_fill_from_tensor(input, dim=dim, index=index, value=value)
+
+
+def take(input: Tensor, index: Tensor) -> Tensor:
+    return take_from_tensor(input, index=index)
+
+
+def unfold(input: Tensor, dimension: int, size: int, step: int = 1) -> Tensor:
+    return unfold_from_tensor(input, dimension=dimension, size=size, step=step)
+
+
+def cdist(x1: Tensor, x2: Tensor, p: float = 2.0) -> Tensor:
+    return cdist_from_tensor(x1, x2, p=p)
+
+
+def pdist(input: Tensor, p: float = 2.0) -> Tensor:
+    return pdist_from_tensor(input, p=p)
+
+
+def searchsorted(sorted_sequence: Tensor, values: Tensor, right: bool = False) -> Tensor:
+    return searchsorted_from_tensor(sorted_sequence, values, right=right)
+
+
+def kthvalue(input: Tensor, k: int, dim: int = -1):
+    return kthvalue_from_tensor(input, k, dim=dim)
+
+
+def median(input: Tensor, dim=None):
+    return median_from_tensor(input, dim)
+
+
+def quantile(input, q, dim: int = -1):
+    return quantile_from_tensor(input, q, dim=dim)
+
+
+def mode(input: Tensor, dim=None):
+    return mode_from_tensor(input, dim)
+
+
+def unique(input: Tensor, return_counts: bool = False, sorted: bool = True, dim=None):
+    return unique_from_tensor(input, return_counts=return_counts, sorted=sorted, dim=dim)
+
+
+def histogram(input: Tensor, bins: int, range=None):
+    return histogram_from_tensor(input, bins, range=range)
 
 
 def embedding(input: Tensor, weight: Tensor, padding_idx: int = -1) -> Tensor:

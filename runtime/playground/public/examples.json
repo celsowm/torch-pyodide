@@ -79,6 +79,10 @@
     { "id": "optimizer_state_dict", "label": "optim state_dict save/load roundtrip", "file": "examples/optimizer_state_dict.py" },
     { "id": "save_load_interop", "label": "torch.save / torch.load cross-runtime interop", "file": "examples/save_load_interop.py" },
     { "id": "real_model_pretrained_tiny_cnn", "label": "Real pretrained model: load + infer a real-PyTorch state_dict", "file": "examples/real_model_pretrained_tiny_cnn.py" },
-    { "id": "real_model_pretrained_vgg", "label": "Real pretrained model: MiniVGG with BatchNorm2d + Dropout", "file": "examples/real_model_pretrained_vgg.py" }
+    { "id": "real_model_pretrained_vgg", "label": "Real pretrained model: MiniVGG with BatchNorm2d + Dropout", "file": "examples/real_model_pretrained_vgg.py" },
+    { "id": "scatter_atomic_safe", "label": "Scatter-add: duplicate-index correctness (race-free)", "file": "examples/scatter_atomic_safe.py" },
+    { "id": "ops_batch_5b", "label": "Batch 5B ops: index_add/copy/fill, take, unfold, cdist, pdist, qr", "file": "examples/ops_batch_5b.py" },
+    { "id": "ops_batch_5c", "label": "Batch 5C ops: searchsorted, kthvalue, median, quantile, mode, unique, histogram", "file": "examples/ops_batch_5c.py" },
+    { "id": "ops_batch_5d", "label": "Batch 5D ops: svd, eigh, eig (Jacobi)", "file": "examples/ops_batch_5d.py" }
   ]
 }

@@ -9,8 +9,8 @@ from torch.tensor_factories_ops import tensor_from_data
 from torch.tensor_shape_utils import _flatten, _infer_shape
 
 
-def _eigh_jacobi(x: Tensor) -> tuple[Tensor, Tensor]:
-    """Eigen-decomposition for symmetric matrices via Jacobi iteration."""
+def _eigh_jacobi_cpu(x: Tensor) -> tuple[Tensor, Tensor]:
+    """Eigen-decomposition for symmetric matrices via Jacobi iteration (CPU)."""
     n = x.shape[-1]
     A = x.tolist()
     A_flat = _flatten(A)
@@ -66,55 +66,95 @@ def _eigh_jacobi(x: Tensor) -> tuple[Tensor, Tensor]:
     return ev, evect
 
 
+def _eigh_jacobi(x: Tensor) -> tuple[Tensor, Tensor]:
+    """Eigen-decomposition for symmetric matrices via GPU-backed Jacobi iteration.
+
+    Each Jacobi rotation is a single WebGPU kernel (``jacobi.wgsl``); the Python
+    side keeps only the control flow (picking the rotation and computing ``c,s``
+    from a few scalar reads), so no ``.tolist()`` of the full matrix is needed.
+    """
+    try:
+        from .._tensor_runtime_bridge import jacobi_rotate_from_tensors
+
+        n = x.shape[-1]
+        A = x
+        V = torch.eye(n, dtype=x.dtype)
+        eye_mask = 1.0 - torch.eye(n, dtype=x.dtype)
+        eps = 1e-10
+        for _sweep in range(100):
+            max_off = float((A * eye_mask).abs().max().item())
+            if max_off < eps:
+                break
+            diag_list = A.diag().tolist()
+            for i in range(n):
+                for j in range(i + 1, n):
+                    apq = float(A[i, j].item())
+                    if abs(apq) < eps:
+                        continue
+                    ap = diag_list[i]
+                    aq = diag_list[j]
+                    theta = 0.5 * math.atan2(2.0 * apq, aq - ap)
+                    c = math.cos(theta)
+                    s = math.sin(theta)
+                    A, V = jacobi_rotate_from_tensors(A, V, i, j, c, s)
+        eigvals = A.diag()
+        return eigvals, V
+    except Exception:
+        return _eigh_jacobi_cpu(x)
+
+
 def svd(x: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    from ..tensor_ops import reciprocal_from_tensor
+
     m, n = x.shape
     if m >= n:
-        xtx = x.T.matmul(x)
+        xtx = x.permute([1, 0]).matmul(x)
         eigvals, V = _eigh_jacobi(xtx)
         idx = eigvals.argsort(descending=True)
-        eigvals = eigvals.gather(0, idx)
-        V = V.gather(1, idx)
+        eigvals = eigvals.index_select(0, idx)
+        V = V.index_select(1, idx)
         s = eigvals.clamp(0.0).sqrt()
-        S_inv = tensor_from_data([0.0 if sv == 0.0 else 1.0 / sv for sv in s.tolist()], s.dtype).reshape(1, n)
+        S_inv = reciprocal_from_tensor(s.clamp(min=1e-12)).reshape(1, n)
         U = x.matmul(V).mul(S_inv)
-        return U, s, V.T
+        return U, s, V.permute([1, 0])
     else:
-        xxt = x.matmul(x.T)
+        xxt = x.matmul(x.permute([1, 0]))
         eigvals, U = _eigh_jacobi(xxt)
         idx = eigvals.argsort(descending=True)
-        eigvals = eigvals.gather(0, idx)
-        U = U.gather(1, idx)
+        eigvals = eigvals.index_select(0, idx)
+        U = U.index_select(1, idx)
         s = eigvals.clamp(0.0).sqrt()
-        S_inv = tensor_from_data([0.0 if sv == 0.0 else 1.0 / sv for sv in s.tolist()], s.dtype).reshape(m, 1)
-        V = x.T.matmul(U).mul(S_inv)
-        return U, s, V.T
+        S_inv = reciprocal_from_tensor(s.clamp(min=1e-12)).reshape(m, 1)
+        V = x.permute([1, 0]).matmul(U).mul(S_inv)
+        return U, s, V.permute([1, 0])
 
 
 def qr(x: Tensor, mode: str = "reduced") -> tuple[Tensor, Tensor]:
     m, n = x.shape
-    A = x.tolist()
-    A_flat = _flatten(A)
-    Q_list: list[float] = [0.0] * (m * n)
-    R_list: list[float] = [0.0] * (n * n)
+    cols: list[Tensor] = []
+    R_list: list[list[float]] = [[0.0] * n for _ in range(n)]
+    # Gram-Schmidt on the GPU: each column op (dot, subtract, norm) is a GPU op,
+    # removing the previous pure-Python loop over x.tolist().
     for j in range(n):
-        v = [A_flat[i * n + j] for i in range(m)]
+        v = x.select(1, j)
         for i in range(j):
-            dot = 0.0
-            for k in range(m):
-                dot += Q_list[k * n + i] * A_flat[k * n + j]
-            R_list[i * n + j] = dot
-            for k in range(m):
-                v[k] -= dot * Q_list[k * n + i]
-        norm = math.sqrt(sum(vk * vk for vk in v))
-        R_list[j * n + j] = norm
+            qi = cols[i]
+            dot = (qi * v).sum()
+            R_list[i][j] = float(dot)
+            v = v - qi * dot
+        norm = float((v * v).sum().sqrt())
+        R_list[j][j] = norm
         if norm > 1e-12:
-            for k in range(m):
-                Q_list[k * n + j] = v[k] / norm
+            qj = v / norm
         else:
-            for k in range(m):
-                Q_list[k * n + j] = 0.0
-    Q = tensor_from_data(Q_list, [m, n], x.dtype)
-    R = tensor_from_data(R_list, [n, n], x.dtype)
+            qj = v * 0.0
+        cols.append(qj)
+    from ..tensor_ops import cat_multi_from_tensors
+
+    Q = cat_multi_from_tensors([c.unsqueeze(1) for c in cols], dim=1)
+    R = tensor_from_data(
+        [R_list[i][j] for i in range(n) for j in range(n)], [n, n], x.dtype
+    )
     return Q, R
 
 
@@ -147,14 +187,17 @@ def solve(A: Tensor, B: Tensor) -> Tensor:
 
 
 def pinv(x: Tensor, rcond: float = 1e-15) -> Tensor:
+    from ..tensor_ops import reciprocal_from_tensor, where_from_tensors, zeros_from_shape
+
     U, s, Vt = svd(x)
-    sv_list = s.tolist()
-    tol = rcond * max(sv_list) if max(sv_list) > 0 else rcond
-    s_inv = tensor_from_data(
-        [1.0 / sv if sv > tol else 0.0 for sv in sv_list],
-        s.dtype
+    smax = float(s.max().item())
+    tol = rcond * smax if smax > 0 else rcond
+    s_inv = where_from_tensors(
+        s > tol,
+        reciprocal_from_tensor(s.clamp(min=1e-12)),
+        zeros_from_shape(s._shape, s._dtype),
     )
-    return Vt.T.matmul(torch.diag(s_inv)).matmul(U.T)
+    return Vt.permute([1, 0]).matmul(torch.diag(s_inv)).matmul(U.permute([1, 0]))
 
 
 def matrix_power(x: Tensor, n: int) -> Tensor:

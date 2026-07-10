@@ -493,11 +493,11 @@ class Tensor:
 
     def cumsum(self, dim: int = 0) -> "Tensor":
         from .tensor_ops import cumsum_from_tensor
-        return cumsum_from_tensor(self)
+        return cumsum_from_tensor(self, dim)
 
     def cumprod(self, dim: int = 0) -> "Tensor":
         from .tensor_ops import cumprod_from_tensor
-        return cumprod_from_tensor(self)
+        return cumprod_from_tensor(self, dim)
 
     def tril(self, diagonal: int = 0) -> "Tensor":
         from .tensor_ops import tril_from_tensor
@@ -526,6 +526,26 @@ class Tensor:
     def index_select(self, dim: int, index: "Tensor") -> "Tensor":
         from .tensor_ops import index_select_from_tensor
         return index_select_from_tensor(self, dim, index)
+
+    def index_add_(self, dim: int, index: "Tensor", source: "Tensor") -> "Tensor":
+        from .tensor_ops import index_add_from_tensor
+        return index_add_from_tensor(self, dim, index, source)
+
+    def index_copy_(self, dim: int, index: "Tensor", source: "Tensor") -> "Tensor":
+        from .tensor_ops import index_copy_from_tensor
+        return index_copy_from_tensor(self, dim, index, source)
+
+    def index_fill_(self, dim: int, index: "Tensor", value: "Tensor | float") -> "Tensor":
+        from .tensor_ops import index_fill_from_tensor
+        return index_fill_from_tensor(self, dim, index, value)
+
+    def take(self, index: "Tensor") -> "Tensor":
+        from .tensor_ops import take_from_tensor
+        return take_from_tensor(self, index)
+
+    def unfold(self, dimension: int, size: int, step: int = 1) -> "Tensor":
+        from .tensor_ops import unfold_from_tensor
+        return unfold_from_tensor(self, dimension, size, step)
 
     def empty_like(self) -> "Tensor":
         from .tensor_factories_ops import empty_like_from_tensor
@@ -936,6 +956,22 @@ class Tensor:
     def roll(self, shifts: int | list[int], dims: int | list[int] | None = None) -> "Tensor":
         from .tensor_ops import roll_from_tensor
         return roll_from_tensor(self, shifts, dims)
+
+    def kthvalue(self, k: int, dim: int = -1):
+        from .tensor_ops import kthvalue_from_tensor
+        return kthvalue_from_tensor(self, k, dim)
+
+    def median(self, dim=None):
+        from .tensor_ops import median_from_tensor
+        return median_from_tensor(self, dim)
+
+    def mode(self, dim=None):
+        from .tensor_ops import mode_from_tensor
+        return mode_from_tensor(self, dim)
+
+    def quantile(self, q, dim: int = -1):
+        from .tensor_ops import quantile_from_tensor
+        return quantile_from_tensor(self, q, dim)
 
     def equal(self, other: "Tensor") -> "Tensor":
         from .tensor_ops import equal_from_tensors

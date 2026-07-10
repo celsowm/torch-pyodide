@@ -1563,4 +1563,48 @@ test.describe.serial("playground examples @webgpu", () => {
 
     expect(consoleFailures).toEqual([]);
   });
+
+  test("scatter-add is race-free with duplicate indices", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("scatter_atomic_safe");
+    await expect(page.locator("#example-select")).toHaveValue("scatter_atomic_safe");
+    const { output } = await runSelectedExample(page, "scatter_atomic_safe", 60000);
+    const actual = parseJsonOutput<{ ok: boolean; max_diff: number }>(output);
+    expect(actual.ok).toBe(true);
+    expect(actual.max_diff).toBeLessThan(1e-4);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("batch 5B ops parity (index_add/copy/fill, take, unfold, cdist, pdist, qr)", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("ops_batch_5b");
+    await expect(page.locator("#example-select")).toHaveValue("ops_batch_5b");
+    const { output } = await runSelectedExample(page, "ops_batch_5b", 60000);
+    const actual = parseJsonOutput<{ ok: boolean; max_diff: number }>(output);
+    expect(actual.ok).toBe(true);
+    expect(actual.max_diff).toBeLessThan(1e-3);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("batch 5C ops parity (searchsorted, kthvalue, median, quantile, mode, unique, histogram)", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("ops_batch_5c");
+    await expect(page.locator("#example-select")).toHaveValue("ops_batch_5c");
+    const { output } = await runSelectedExample(page, "ops_batch_5c", 60000);
+    const actual = parseJsonOutput<{ ok: boolean; max_diff: number }>(output);
+    expect(actual.ok).toBe(true);
+    expect(actual.max_diff).toBeLessThan(1e-3);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("batch 5D ops parity (svd, eigh, eig via Jacobi)", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("ops_batch_5d");
+    await expect(page.locator("#example-select")).toHaveValue("ops_batch_5d");
+    const { output } = await runSelectedExample(page, "ops_batch_5d", 90000);
+    const actual = parseJsonOutput<{ ok: boolean; max_diff: number }>(output);
+    expect(actual.ok).toBe(true);
+    expect(actual.max_diff).toBeLessThan(1e-2);
+    expect(consoleFailures).toEqual([]);
+  });
 });
