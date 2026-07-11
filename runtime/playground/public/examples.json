@@ -88,6 +88,7 @@
     { "id": "fft_complex_ops", "label": "torch.fft + complex dtype", "file": "examples/fft_complex_ops.py" },
     { "id": "tensor_reduction_shape_ops", "label": "Reductions + shape/math ops (amax, var, tensordot...)", "file": "examples/tensor_reduction_shape_ops.py" },
     { "id": "tensor_ops_batch2", "label": "Ops batch 2 (addmm, meshgrid, block_diag, cross, rot90...)", "file": "examples/tensor_ops_batch2.py" },
-    { "id": "functional_batch", "label": "nn.functional batch (SDPA, activations, losses, distances)", "file": "examples/functional_batch.py" }
+    { "id": "functional_batch", "label": "nn.functional batch (SDPA, activations, losses, distances)", "file": "examples/functional_batch.py" },
+    { "id": "nn_modules_batch", "label": "nn.Module batch (activations, losses, distances, pixel shuffle)", "file": "examples/nn_modules_batch.py" }
   ]
 }

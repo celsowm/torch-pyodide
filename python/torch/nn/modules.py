@@ -1239,3 +1239,300 @@ class HuberLoss(Module):
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
         from .functional import smooth_l1_loss
         return smooth_l1_loss(input, target, reduction=self.reduction, beta=self.delta)
+
+
+# ── Extra activations ─────────────────────────────────────────────
+
+class LogSigmoid(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import logsigmoid
+        return logsigmoid(x)
+
+
+class Softmin(Module):
+    def __init__(self, dim: int = -1) -> None:
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import softmin
+        return softmin(x, self.dim)
+
+
+class Softmax2d(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        return softmax_from_tensor(x, -3)
+
+
+class Hardtanh(Module):
+    def __init__(self, min_val: float = -1.0, max_val: float = 1.0) -> None:
+        super().__init__()
+        self.min_val = min_val
+        self.max_val = max_val
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import hardtanh
+        return hardtanh(x, self.min_val, self.max_val)
+
+
+class ReLU6(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import relu6
+        return relu6(x)
+
+
+class Hardshrink(Module):
+    def __init__(self, lambd: float = 0.5) -> None:
+        super().__init__()
+        self.lambd = lambd
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import hardshrink
+        return hardshrink(x, self.lambd)
+
+
+class Softshrink(Module):
+    def __init__(self, lambd: float = 0.5) -> None:
+        super().__init__()
+        self.lambd = lambd
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import softshrink
+        return softshrink(x, self.lambd)
+
+
+class Tanhshrink(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import tanhshrink
+        return tanhshrink(x)
+
+
+class Threshold(Module):
+    def __init__(self, threshold: float, value: float) -> None:
+        super().__init__()
+        self.threshold = threshold
+        self.value = value
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import threshold as _threshold
+        return _threshold(x, self.threshold, self.value)
+
+
+class SELU(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import selu
+        return selu(x)
+
+
+class Softplus(Module):
+    def __init__(self, beta: float = 1.0, threshold: float = 20.0) -> None:
+        super().__init__()
+        self.beta = beta
+        self.threshold = threshold
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import softplus
+        return softplus(x, self.beta, self.threshold)
+
+
+class Softsign(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import softsign
+        return softsign(x)
+
+
+class Mish(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import mish
+        return mish(x)
+
+
+class Hardswish(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import hardswish
+        return hardswish(x)
+
+
+class Hardsigmoid(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import hardsigmoid
+        return hardsigmoid(x)
+
+
+# ── Distances / normalization ─────────────────────────────────────
+
+class CosineSimilarity(Module):
+    def __init__(self, dim: int = 1, eps: float = 1e-8) -> None:
+        super().__init__()
+        self.dim = dim
+        self.eps = eps
+
+    def forward(self, x1: Tensor, x2: Tensor) -> Tensor:
+        from .functional import cosine_similarity
+        return cosine_similarity(x1, x2, self.dim, self.eps)
+
+
+class PairwiseDistance(Module):
+    def __init__(self, p: float = 2.0, eps: float = 1e-6, keepdim: bool = False) -> None:
+        super().__init__()
+        self.p = p
+        self.eps = eps
+        self.keepdim = keepdim
+
+    def forward(self, x1: Tensor, x2: Tensor) -> Tensor:
+        from .functional import pairwise_distance
+        return pairwise_distance(x1, x2, self.p, self.eps, self.keepdim)
+
+
+class RMSNorm(Module):
+    def __init__(self, normalized_shape, eps: float | None = None, elementwise_affine: bool = True) -> None:
+        super().__init__()
+        if isinstance(normalized_shape, int):
+            normalized_shape = (normalized_shape,)
+        self.normalized_shape = tuple(normalized_shape)
+        self.eps = eps
+        self.elementwise_affine = elementwise_affine
+        if elementwise_affine:
+            self.weight = Parameter(torch.ones(list(self.normalized_shape)))
+        else:
+            self.weight = None
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import rms_norm
+        return rms_norm(x, self.normalized_shape, self.weight, self.eps)
+
+
+# ── Pixel shuffle ─────────────────────────────────────────────────
+
+class PixelShuffle(Module):
+    def __init__(self, upscale_factor: int) -> None:
+        super().__init__()
+        self.upscale_factor = upscale_factor
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pixel_shuffle
+        return pixel_shuffle(x, self.upscale_factor)
+
+
+class PixelUnshuffle(Module):
+    def __init__(self, downscale_factor: int) -> None:
+        super().__init__()
+        self.downscale_factor = downscale_factor
+
+    def forward(self, x: Tensor) -> Tensor:
+        from .functional import pixel_unshuffle
+        return pixel_unshuffle(x, self.downscale_factor)
+
+
+# ── Upsampling aliases ────────────────────────────────────────────
+
+class UpsamplingNearest2d(Upsample):
+    def __init__(self, size=None, scale_factor=None) -> None:
+        super().__init__(size=size, scale_factor=scale_factor, mode="nearest")
+
+
+class UpsamplingBilinear2d(Upsample):
+    def __init__(self, size=None, scale_factor=None) -> None:
+        super().__init__(size=size, scale_factor=scale_factor, mode="bilinear", align_corners=True)
+
+
+# ── Extra losses ──────────────────────────────────────────────────
+
+class NLLLoss(Module):
+    def __init__(self, reduction: str = "mean") -> None:
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import nll_loss
+        return nll_loss(input, target, self.reduction)
+
+
+class BCELoss(Module):
+    def __init__(self, reduction: str = "mean") -> None:
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import binary_cross_entropy
+        return binary_cross_entropy(input, target, self.reduction)
+
+
+class KLDivLoss(Module):
+    def __init__(self, reduction: str = "mean", log_target: bool = False) -> None:
+        super().__init__()
+        self.reduction = reduction
+        self.log_target = log_target
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import kl_div
+        return kl_div(input, target, reduction=self.reduction, log_target=self.log_target)
+
+
+class SoftMarginLoss(Module):
+    def __init__(self, reduction: str = "mean") -> None:
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import soft_margin_loss
+        return soft_margin_loss(input, target, reduction=self.reduction)
+
+
+class HingeEmbeddingLoss(Module):
+    def __init__(self, margin: float = 1.0, reduction: str = "mean") -> None:
+        super().__init__()
+        self.margin = margin
+        self.reduction = reduction
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        from .functional import hinge_embedding_loss
+        return hinge_embedding_loss(input, target, margin=self.margin, reduction=self.reduction)
+
+
+class MarginRankingLoss(Module):
+    def __init__(self, margin: float = 0.0, reduction: str = "mean") -> None:
+        super().__init__()
+        self.margin = margin
+        self.reduction = reduction
+
+    def forward(self, input1: Tensor, input2: Tensor, target: Tensor) -> Tensor:
+        from .functional import margin_ranking_loss
+        return margin_ranking_loss(input1, input2, target, margin=self.margin, reduction=self.reduction)
+
+
+class CosineEmbeddingLoss(Module):
+    def __init__(self, margin: float = 0.0, reduction: str = "mean") -> None:
+        super().__init__()
+        self.margin = margin
+        self.reduction = reduction
+
+    def forward(self, input1: Tensor, input2: Tensor, target: Tensor) -> Tensor:
+        from .functional import cosine_embedding_loss
+        return cosine_embedding_loss(input1, input2, target, margin=self.margin, reduction=self.reduction)
+
+
+class PoissonNLLLoss(Module):
+    def __init__(self, log_input: bool = True, full: bool = False, eps: float = 1e-8, reduction: str = "mean") -> None:
+        super().__init__()
+        self.log_input = log_input
+        self.full = full
+        self.eps = eps
+        self.reduction = reduction
+
+    def forward(self, log_input: Tensor, target: Tensor) -> Tensor:
+        from .functional import poisson_nll_loss
+        return poisson_nll_loss(log_input, target, log_input=self.log_input, full=self.full, eps=self.eps, reduction=self.reduction)
+
+
+class TripletMarginLoss(Module):
+    def __init__(self, margin: float = 1.0, p: float = 2.0, eps: float = 1e-6, reduction: str = "mean") -> None:
+        super().__init__()
+        self.margin = margin
+        self.p = p
+        self.eps = eps
+        self.reduction = reduction
+
+    def forward(self, anchor: Tensor, positive: Tensor, negative: Tensor) -> Tensor:
+        from .functional import triplet_margin_loss
+        return triplet_margin_loss(anchor, positive, negative, margin=self.margin, p=self.p, eps=self.eps, reduction=self.reduction)
