@@ -18,6 +18,9 @@ def _format_tensor_values(value: object) -> str:
         return str(value)
     if isinstance(value, float):
         return f"{value:.4f}"
+    if isinstance(value, complex):
+        sign = "+" if value.imag >= 0 else "-"
+        return f"{value.real:.4f}{sign}{abs(value.imag):.4f}j"
     return repr(value)
 
 
@@ -298,6 +301,9 @@ class Tensor:
 
     def matmul(self, other: "Tensor") -> "Tensor":
         from .tensor_ops import matmul_from_tensors
+        from ._complex import is_complex, matmul as _cmatmul
+        if is_complex(self) or is_complex(other):
+            return _cmatmul(self, other)
         return matmul_from_tensors(self, other)
 
     def mm(self, other: "Tensor") -> "Tensor":
@@ -325,21 +331,33 @@ class Tensor:
 
     def add(self, other: "Tensor | float") -> "Tensor":
         from .tensor_ops import add_from_tensors, _scalar_to_tensor
+        from ._complex import is_complex, add as _cadd
+        if is_complex(self) or is_complex(other):
+            return _cadd(self, other)
         b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
         return add_from_tensors(self, b_tensor)
 
     def sub(self, other: "Tensor | float") -> "Tensor":
         from .tensor_ops import sub_from_tensors, _scalar_to_tensor
+        from ._complex import is_complex, sub as _csub
+        if is_complex(self) or is_complex(other):
+            return _csub(self, other)
         b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
         return sub_from_tensors(self, b_tensor)
 
     def mul(self, other: "Tensor | float") -> "Tensor":
         from .tensor_ops import mul_from_tensors, _scalar_to_tensor
+        from ._complex import is_complex, mul as _cmul
+        if is_complex(self) or is_complex(other):
+            return _cmul(self, other)
         b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
         return mul_from_tensors(self, b_tensor)
 
     def div(self, other: "Tensor | float") -> "Tensor":
         from .tensor_ops import div_from_tensors, _scalar_to_tensor
+        from ._complex import is_complex, div as _cdiv
+        if is_complex(self) or is_complex(other):
+            return _cdiv(self, other)
         b_tensor = other if isinstance(other, Tensor) else _scalar_to_tensor(float(other), self._dtype)
         return div_from_tensors(self, b_tensor)
 
@@ -353,6 +371,12 @@ class Tensor:
 
     def item(self) -> float:
         from ._tensor_runtime_bridge import item_from_tensor
+        from ._complex import is_complex, to_complex_list
+        if is_complex(self):
+            flat = to_complex_list(self)
+            while isinstance(flat, list):
+                flat = flat[0]
+            return flat
         return item_from_tensor(self)
 
     def det(self) -> "Tensor":
@@ -565,6 +589,9 @@ class Tensor:
 
     def abs(self) -> "Tensor":
         from .tensor_ops import abs_from_tensor
+        from ._complex import is_complex, abs as _cabs
+        if is_complex(self):
+            return _cabs(self)
         return abs_from_tensor(self)
 
     def sqrt(self) -> "Tensor":
@@ -581,7 +608,32 @@ class Tensor:
 
     def neg(self) -> "Tensor":
         from .tensor_ops import neg_from_tensor
+        from ._complex import is_complex, neg as _cneg
+        if is_complex(self):
+            return _cneg(self)
         return neg_from_tensor(self)
+
+    @property
+    def real(self) -> "Tensor":
+        from ._complex import real as _creal
+        return _creal(self)
+
+    @property
+    def imag(self) -> "Tensor":
+        from ._complex import imag as _cimag
+        return _cimag(self)
+
+    def conj(self) -> "Tensor":
+        from ._complex import conj as _cconj
+        return _cconj(self)
+
+    def angle(self) -> "Tensor":
+        from ._complex import angle as _cangle
+        return _cangle(self)
+
+    def is_complex(self) -> bool:
+        from ._complex import is_complex
+        return is_complex(self)
 
     def clamp(self, min: float | None = None, max: float | None = None) -> "Tensor":
         from ._tensor_runtime_bridge import clamp_from_tensor

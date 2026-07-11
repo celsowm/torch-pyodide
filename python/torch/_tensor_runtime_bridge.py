@@ -191,6 +191,10 @@ def t_from_tensor(tensor: "Tensor") -> "Tensor":
 
 
 def tolist_from_tensor(tensor: "Tensor") -> object:
+    from ._complex import is_complex, to_complex_list
+
+    if is_complex(tensor):
+        return to_complex_list(tensor)
     result = _run_js_awaitable(_get_runtime().toList(tensor._id))
     flat = list(result.to_py() if hasattr(result, "to_py") else result)
     return _reshape_flat_values(flat, tensor._shape, tensor._dtype)

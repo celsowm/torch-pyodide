@@ -5,6 +5,7 @@ import gradModePy from "../../python/torch/grad_mode.py?raw";
 import cudaPy from "../../python/torch/cuda.py?raw";
 import runtimePy from "../../python/torch/_runtime.py?raw";
 import tensorPy from "../../python/torch/_tensor.py?raw";
+import complexPy from "../../python/torch/_complex.py?raw";
 import savePy from "../../python/torch/_save.py?raw";
 import apiCreationPy from "../../python/torch/_api_creation.py?raw";
 import einsumImplPy from "../../python/torch/_einsum_impl.py?raw";
@@ -34,6 +35,8 @@ import optimLrSchedulerPy from "../../python/torch/optim/lr_scheduler.py?raw";
 import utilsInitPy from "../../python/torch/utils/__init__.py?raw";
 import utilsDataInitPy from "../../python/torch/utils/data/__init__.py?raw";
 import linalgInitPy from "../../python/torch/linalg/__init__.py?raw";
+import specialInitPy from "../../python/torch/special/__init__.py?raw";
+import fftInitPy from "../../python/torch/fft/__init__.py?raw";
 import distributionsInitPy from "../../python/torch/distributions/__init__.py?raw";
 import { installTorchRuntime } from "../src";
 
@@ -87,6 +90,7 @@ for name in list(sys.modules):
   pyodide.FS.writeFile("/home/pyodide/torch/cuda.py", cudaPy);
   pyodide.FS.writeFile("/home/pyodide/torch/_runtime.py", runtimePy);
   pyodide.FS.writeFile("/home/pyodide/torch/_tensor.py", tensorPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/_complex.py", complexPy);
   pyodide.FS.writeFile("/home/pyodide/torch/_save.py", savePy);
   pyodide.FS.writeFile("/home/pyodide/torch/_api_creation.py", apiCreationPy);
   pyodide.FS.writeFile("/home/pyodide/torch/_einsum_impl.py", einsumImplPy);
@@ -123,6 +127,10 @@ for name in list(sys.modules):
   pyodide.FS.writeFile("/home/pyodide/torch/utils/data/__init__.py", utilsDataInitPy);
   pyodide.FS.mkdirTree("/home/pyodide/torch/linalg");
   pyodide.FS.writeFile("/home/pyodide/torch/linalg/__init__.py", linalgInitPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/special");
+  pyodide.FS.writeFile("/home/pyodide/torch/special/__init__.py", specialInitPy);
+  pyodide.FS.mkdirTree("/home/pyodide/torch/fft");
+  pyodide.FS.writeFile("/home/pyodide/torch/fft/__init__.py", fftInitPy);
   pyodide.FS.mkdirTree("/home/pyodide/torch/distributions");
   pyodide.FS.writeFile("/home/pyodide/torch/distributions/__init__.py", distributionsInitPy);
   pyodide.runPython(`

@@ -250,8 +250,234 @@ def lstsq(A: Tensor, B: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor]:
     return X, residual, rank, S
 
 
+def cross(input: Tensor, other: Tensor, dim: int = -1) -> Tensor:
+    """3D cross product along ``dim`` (size-3 dimension)."""
+    a = input.transpose(dim, -1) if dim != -1 else input
+    b = other.transpose(dim, -1) if dim != -1 else other
+    a0 = a.select(-1, 0)
+    a1 = a.select(-1, 1)
+    a2 = a.select(-1, 2)
+    b0 = b.select(-1, 0)
+    b1 = b.select(-1, 1)
+    b2 = b.select(-1, 2)
+    c0 = a1 * b2 - a2 * b1
+    c1 = a2 * b0 - a0 * b2
+    c2 = a0 * b1 - a1 * b0
+    res = torch.stack([c0, c1, c2], dim=-1)
+    if dim != -1:
+        res = res.transpose(dim, -1)
+    return res
+
+
+def slogdet(x: Tensor) -> tuple[Tensor, Tensor]:
+    """Sign and log-absolute of the determinant (composed via ``det``)."""
+    d = det(x)
+    sign = torch.sign(d)
+    logabsdet = torch.log(torch.abs(d))
+    return sign, logabsdet
+
+
+def svdvals(x: Tensor) -> Tensor:
+    """Singular values only."""
+    _, s, _ = svd(x)
+    return s
+
+
+def diagonal(x: Tensor, offset: int = 0, dim1: int = -2, dim2: int = -1) -> Tensor:
+    nd = x.ndim
+    d1 = dim1 % nd
+    d2 = dim2 % nd
+    other = [i for i in range(nd) if i not in (d1, d2)]
+    x = x.permute(other + [d1, d2])
+    n = x.shape[-2]
+    m = x.shape[-1]
+    if offset >= 0:
+        s1, s2 = 0, offset
+    else:
+        s1, s2 = -offset, 0
+    length = min(n - s1, m - s2)
+    if length <= 0:
+        return torch.zeros(x.shape[:-2] + (0,), dtype=x.dtype)
+    rows = torch.arange(s1, s1 + length, dtype="int64")
+    cols = torch.arange(s2, s2 + length, dtype="int64")
+    lead = (1,) * (nd - 2)
+    idx_r = rows.reshape(list(lead) + [length, 1])
+    xr = torch.gather(x, -2, idx_r)
+    idx_c = cols.reshape(list(lead) + [1, length])
+    xc = torch.gather(xr, -1, idx_c)
+    idx_d = torch.arange(length, dtype="int64").reshape(list(lead) + [length, 1])
+    diag = torch.gather(xc, -1, idx_d)
+    return diag.squeeze(-1)
+
+
+def eigvals(x: Tensor) -> Tensor:
+    """Eigenvalues (real part; symmetric matrices)."""
+    vals, _ = eig(x)
+    return vals
+
+
+def eigvalsh(x: Tensor) -> Tensor:
+    """Eigenvalues of a symmetric matrix."""
+    vals, _ = eigh(x)
+    return vals
+
+
+def cond(x: Tensor, p: float | str | None = None) -> Tensor:
+    if p is None or p in (2, "fro"):
+        _, s, _ = svd(x)
+        return s.max(dim=-1)[0] / s.min(dim=-1)[0]
+    return vector_norm(x, p) * vector_norm(inv(x), p)
+
+
+def vector_norm(x: Tensor, ord: float | str = 2, dim=None, keepdim: bool = False) -> Tensor:
+    dims = list(range(x.ndim)) if dim is None else ([dim] if isinstance(dim, int) else list(dim))
+
+    def red(fn):
+        out = x
+        for d in dims:
+            out = fn(out, d)
+        if not keepdim:
+            for d in sorted(dims, reverse=True):
+                out = out.squeeze(d)
+        return out
+
+    if ord == 0:
+        return red(lambda t, d: (t != 0).to(x.dtype).sum(dim=d, keepdim=True))
+    if ord == float("inf"):
+        return red(lambda t, d: t.abs().max(dim=d, keepdim=True)[0])
+    if ord == float("-inf"):
+        return red(lambda t, d: t.abs().min(dim=d, keepdim=True)[0])
+    if ord == 1:
+        return red(lambda t, d: t.abs().sum(dim=d, keepdim=True))
+    if ord == 2:
+        return red(lambda t, d: t.pow(2).sum(dim=d, keepdim=True)).sqrt()
+    return red(lambda t, d: t.abs().pow(ord).sum(dim=d, keepdim=True)).pow(1.0 / ord)
+
+
+def matrix_norm(x: Tensor, ord: float | str = "fro", dim=(-2, -1), keepdim: bool = False) -> Tensor:
+    if isinstance(dim, int):
+        d1, d2 = dim, dim + 1
+    else:
+        d1, d2 = dim[0], dim[1]
+    if ord == "fro":
+        return vector_norm(x, 2, dim=(d1, d2), keepdim=keepdim)
+    if ord == "nuc":
+        _, s, _ = svd(x)
+        return s.sum(dim=-1, keepdim=keepdim)
+    if ord == 2:
+        _, s, _ = svd(x)
+        return s.max(dim=-1, keepdim=keepdim)[0]
+    if ord == -2:
+        _, s, _ = svd(x)
+        return s.min(dim=-1, keepdim=keepdim)[0]
+    if ord == float("inf"):
+        return vector_norm(x, float("inf"), dim=d2, keepdim=keepdim)
+    if ord == float("-inf"):
+        return vector_norm(x, float("-inf"), dim=d1, keepdim=keepdim)
+    raise ValueError(f"Unsupported ord {ord!r} for matrix_norm")
+
+
+def solve_triangular(A: Tensor, B: Tensor, upper: bool = False, left: bool = True,
+                     unitriangular: bool = False) -> Tensor:
+    from .._tensor_runtime_bridge import triangular_solve_from_tensors
+
+    if not left:
+        A_t = A.transpose(-1, -2)
+        B_t = B.transpose(-1, -2)
+        X_t = solve_triangular(A_t, B_t, upper=not upper, unitriangular=unitriangular)
+        return X_t.transpose(-1, -2)
+    if unitriangular:
+        n = A.shape[-1]
+        eye = torch.eye(n, dtype=A.dtype)
+        A = A * (1.0 - eye) + eye
+    return triangular_solve_from_tensors(A, B, upper)
+
+
+def lu_factor(x: Tensor, pivot: bool = True) -> tuple[Tensor, Tensor]:
+    """LU decomposition with partial pivoting (thin wrapper over ``lu``)."""
+    return lu(x)
+
+
+def _apply_pivot(B: Tensor, pivots: Tensor) -> Tensor:
+    n = B.shape[-2]
+    idx = pivots.to(dtype="int64")  # runtime lu() returns a 0-indexed permutation
+    lead = (1,) * (B.ndim - 2)
+    idx = idx.reshape(list(lead) + [n, 1])
+    idx = idx.expand(list(lead) + [n, B.shape[-1]])
+    return torch.gather(B, -2, idx)
+
+
+def lu_solve(LU: Tensor, pivots: Tensor, B: Tensor) -> Tensor:
+    from .._tensor_runtime_bridge import triangular_solve_from_tensors
+
+    n = LU.shape[-1]
+    L = torch.tril(LU, diagonal=-1) + torch.eye(n, dtype=LU.dtype)
+    U = torch.triu(LU, diagonal=0)
+    Bp = _apply_pivot(B, pivots)
+    Y = triangular_solve_from_tensors(L, Bp, upper=False)
+    X = triangular_solve_from_tensors(U, Y, upper=True)
+    return X
+
+
+def matrix_exp(x: Tensor) -> Tensor:
+    """Matrix exponential via scaling-and-squaring with a Taylor series.
+
+    Works for any square matrix; uses only GPU-backed matmul/add/div.
+    """
+    if x.ndim < 2 or x.shape[-1] != x.shape[-2]:
+        raise ValueError("matrix_exp expects square matrices")
+    leading = list(x.shape[:-2])
+    n = x.shape[-1]
+    flat = x.reshape([-1, n, n])
+    B = flat.shape[0]
+    out: list[Tensor] = []
+    for b in range(B):
+        A = flat.select(0, b)
+        norm = (A.abs().sum(0)).max()
+        s = max(0, int(torch.ceil(torch.log2(norm + 1e-12)).item()))
+        A1 = A / (2 ** s)
+        R = torch.eye(n, dtype=x.dtype) + A1
+        term = A1
+        for k in range(2, 10):
+            term = term.matmul(A1) / float(k)
+            R = R + term
+        for _ in range(s):
+            R = R.matmul(R)
+        out.append(R)
+    return torch.stack(out, dim=0).reshape(leading + [n, n])
+
+
+def multi_dot(tensors: list[Tensor]) -> Tensor:
+    if len(tensors) < 2:
+        raise ValueError("multi_dot expects at least 2 tensors")
+    result = tensors[0]
+    for t in tensors[1:]:
+        result = result.matmul(t)
+    return result
+
+
+def vander(x: Tensor, N: int | None = None, increasing: bool = False) -> Tensor:
+    if x.ndim != 1:
+        raise ValueError("vander expects a 1D input")
+    n = x.shape[0]
+    N = n if N is None else N
+    cols: list[Tensor] = []
+    for i in range(N):
+        if i == 0:
+            cols.append(torch.ones(n, dtype=x.dtype))
+        else:
+            cols.append(x ** i)
+    M = torch.stack(cols, dim=-1)
+    if not increasing:
+        M = M.flip([-1])
+    return M
+
+
 __all__ = [
     "svd", "qr", "eig", "eigh", "solve", "pinv", "inv",
     "det", "cholesky", "lu", "matrix_power", "matrix_rank",
-    "norm", "lstsq",
+    "norm", "lstsq", "cross", "slogdet", "svdvals", "diagonal",
+    "eigvals", "eigvalsh", "cond", "vector_norm", "matrix_norm",
+    "solve_triangular", "lu_factor", "lu_solve", "matrix_exp",
+    "multi_dot", "vander",
 ]

@@ -465,6 +465,51 @@ def abs(x: Tensor) -> Tensor:
     return x.abs()
 
 
+def complex(real: Tensor, imag: Tensor) -> Tensor:
+    from ._complex import complex as _complex
+    return _complex(real, imag)
+
+
+def polar(abs: Tensor, angle: Tensor) -> Tensor:
+    from ._complex import polar as _polar
+    return _polar(abs, angle)
+
+
+def view_as_complex(x: Tensor) -> Tensor:
+    from ._complex import view_as_complex as _vac
+    return _vac(x)
+
+
+def view_as_real(x: Tensor) -> Tensor:
+    from ._complex import view_as_real as _var
+    return _var(x)
+
+
+def real(x: Tensor) -> Tensor:
+    from ._complex import real as _real
+    return _real(x)
+
+
+def imag(x: Tensor) -> Tensor:
+    from ._complex import imag as _imag
+    return _imag(x)
+
+
+def conj(x: Tensor) -> Tensor:
+    from ._complex import conj as _conj
+    return _conj(x)
+
+
+def angle(x: Tensor) -> Tensor:
+    from ._complex import angle as _angle
+    return _angle(x)
+
+
+def is_complex(x: Tensor) -> bool:
+    from ._complex import is_complex as _is_complex
+    return _is_complex(x)
+
+
 def sqrt(x: Tensor) -> Tensor:
     return x.sqrt()
 
@@ -1085,6 +1130,8 @@ from torch import jit as jit
 from torch import utils as utils
 from torch import distributions as distributions
 from torch import linalg as linalg
+from torch import special as special
+from torch import fft as fft
 
 # DataLoader utilities
 from torch.utils.data import (
@@ -1157,6 +1204,10 @@ uint16 = "uint16"
 uint32 = "uint32"
 uint64 = "uint64"
 bool_ = "bool"
+complex64 = "complex64"
+complex128 = "complex128"
+cfloat = complex64
+cdouble = complex128
 
 # PyTorch-style dtype aliases for compatibility.
 long = int64
