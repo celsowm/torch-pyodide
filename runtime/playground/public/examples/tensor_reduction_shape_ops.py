@@ -126,4 +126,6 @@ out = {
     "clip_match": clip_match,
     "status": "OK",
 }
+failed = [k for k, v in out.items() if k != "status" and not v]
+assert not failed, f"mismatches: {failed}"
 print(json.dumps(out, indent=2))

@@ -450,6 +450,35 @@ __all__ = [
     "vdot",
     "kron",
     "tensordot",
+    "signbit",
+    "positive",
+    "negative",
+    "nansum",
+    "nanmean",
+    "isreal",
+    "narrow",
+    "cross",
+    "rot90",
+    "renorm",
+    "broadcast_tensors",
+    "tensor_split",
+    "hsplit",
+    "vsplit",
+    "dsplit",
+    "addmm",
+    "addmv",
+    "baddbmm",
+    "addbmm",
+    "chain_matmul",
+    "meshgrid",
+    "cartesian_prod",
+    "diag_embed",
+    "block_diag",
+    "tril_indices",
+    "triu_indices",
+    "trapezoid",
+    "trapz",
+    "sinc",
 ]
 
 
@@ -1336,6 +1365,236 @@ def tensordot(a: Tensor, b: Tensor, dims=2) -> Tensor:
     out = a2.matmul(b2)
     out_shape = [a_shape[i] for i in a_free] + [b_shape[i] for i in b_free]
     return out.reshape(out_shape) if out_shape else out.reshape([])
+
+
+def signbit(input: Tensor) -> Tensor:
+    return input.signbit()
+
+
+def positive(input: Tensor) -> Tensor:
+    return input
+
+
+def negative(input: Tensor) -> Tensor:
+    return input.neg()
+
+
+def nansum(input: Tensor, dim=None, keepdim: bool = False) -> Tensor:
+    cleaned = input.nan_to_num(nan=0.0, posinf=None, neginf=None)
+    return cleaned.sum(dim=dim, keepdim=keepdim) if dim is not None else cleaned.sum()
+
+
+def nanmean(input: Tensor, dim=None, keepdim: bool = False) -> Tensor:
+    mask = input.isnan()
+    cleaned = input.nan_to_num(nan=0.0)
+    ones = mask.logical_not().to(input._dtype)
+    if dim is None:
+        return cleaned.sum().div(ones.sum())
+    return cleaned.sum(dim=dim, keepdim=keepdim).div(ones.sum(dim=dim, keepdim=keepdim))
+
+
+def isreal(input: Tensor) -> Tensor:
+    if input.is_complex():
+        return input.imag == 0
+    return ones(list(input._shape), dtype="bool") if input._shape else ones([], dtype="bool")
+
+
+def narrow(input: Tensor, dim: int, start: int, length: int) -> Tensor:
+    return input.narrow(dim, start, length)
+
+
+def cross(input: Tensor, other: Tensor, dim: int | None = None) -> Tensor:
+    if dim is None:
+        dim = next((i for i, s in enumerate(input._shape) if s == 3), -1)
+    from .linalg import cross as _lcross
+    return _lcross(input, other, dim=dim)
+
+
+def rot90(input: Tensor, k: int = 1, dims=(0, 1)) -> Tensor:
+    d0, d1 = dims[0], dims[1]
+    out = input
+    for _ in range(k % 4):
+        out = out.flip([d1]).transpose(d0, d1)
+    return out
+
+
+def renorm(input: Tensor, p: float, dim: int, maxnorm: float) -> Tensor:
+    nd = len(input._shape)
+    d = dim if dim >= 0 else dim + nd
+    reduce_dims = [i for i in range(nd) if i != d]
+    norms = input.abs().pow(p)
+    for rd in reduce_dims:
+        norms = norms.sum(dim=rd, keepdim=True)
+    norms = norms.pow(1.0 / p)
+    factor = norms.add(1e-7).pow(-1.0).mul(float(maxnorm)).clamp(max=1.0)
+    return input.mul(factor)
+
+
+def broadcast_tensors(*tensors):
+    ndim = _builtins.max(len(t._shape) for t in tensors)
+    shapes = []
+    for t in tensors:
+        s = [1] * (ndim - len(t._shape)) + list(t._shape)
+        shapes.append(s)
+    target = []
+    for i in range(ndim):
+        target.append(_builtins.max(s[i] for s in shapes))
+    return tuple(broadcast_to(t, target) for t in tensors)
+
+
+def tensor_split(input: Tensor, indices_or_sections, dim: int = 0):
+    d = dim if dim >= 0 else dim + len(input._shape)
+    size = input._shape[d]
+    if isinstance(indices_or_sections, int):
+        n = indices_or_sections
+        base = size // n
+        rem = size % n
+        result = []
+        start = 0
+        for i in range(n):
+            length = base + (1 if i < rem else 0)
+            result.append(input.narrow(d, start, length))
+            start += length
+        return tuple(result)
+    bounds = list(indices_or_sections)
+    result = []
+    prev = 0
+    for b in bounds:
+        b = _builtins.min(b, size)
+        result.append(input.narrow(d, prev, _builtins.max(0, b - prev)))
+        prev = b
+    result.append(input.narrow(d, prev, size - prev))
+    return tuple(result)
+
+
+def hsplit(input: Tensor, indices_or_sections):
+    dim = 0 if len(input._shape) == 1 else 1
+    return tensor_split(input, indices_or_sections, dim=dim)
+
+
+def vsplit(input: Tensor, indices_or_sections):
+    return tensor_split(input, indices_or_sections, dim=0)
+
+
+def dsplit(input: Tensor, indices_or_sections):
+    return tensor_split(input, indices_or_sections, dim=2)
+
+
+def addmm(input: Tensor, mat1: Tensor, mat2: Tensor, beta: float = 1, alpha: float = 1) -> Tensor:
+    return input.mul(beta).add(mat1.matmul(mat2).mul(alpha))
+
+
+def addmv(input: Tensor, mat: Tensor, vec: Tensor, beta: float = 1, alpha: float = 1) -> Tensor:
+    return input.mul(beta).add(mv(mat, vec).mul(alpha))
+
+
+def baddbmm(input: Tensor, batch1: Tensor, batch2: Tensor, beta: float = 1, alpha: float = 1) -> Tensor:
+    return input.mul(beta).add(bmm(batch1, batch2).mul(alpha))
+
+
+def addbmm(input: Tensor, batch1: Tensor, batch2: Tensor, beta: float = 1, alpha: float = 1) -> Tensor:
+    reduced = bmm(batch1, batch2).sum(dim=0)
+    return input.mul(beta).add(reduced.mul(alpha))
+
+
+def chain_matmul(*matrices) -> Tensor:
+    mats = list(matrices)
+    out = mats[0]
+    for m in mats[1:]:
+        out = out.matmul(m)
+    return out
+
+
+def meshgrid(*tensors, indexing: str = "ij"):
+    n = len(tensors)
+    sizes = [t._shape[0] for t in tensors]
+    outs = []
+    for i, t in enumerate(tensors):
+        shape = [1] * n
+        shape[i] = sizes[i]
+        outs.append(t.reshape(shape).expand(*sizes))
+    if indexing == "xy" and n >= 2:
+        outs = [o.transpose(0, 1) for o in outs]
+    return tuple(outs)
+
+
+def cartesian_prod(*tensors):
+    if len(tensors) == 1:
+        return tensors[0]
+    grids = meshgrid(*tensors, indexing="ij")
+    flat = [g.reshape([-1]) for g in grids]
+    return stack(flat, dim=1)
+
+
+def diag_embed(input: Tensor, offset: int = 0, dim1: int = -2, dim2: int = -1) -> Tensor:
+    n = input._shape[-1]
+    return input.unsqueeze(-1).mul(eye(n, dtype=input._dtype))
+
+
+def block_diag(*tensors) -> Tensor:
+    mats = [atleast_2d(t) for t in tensors]
+    total_c = _builtins.sum(m._shape[1] for m in mats)
+    rows = []
+    coffset = 0
+    for m in mats:
+        r, c = m._shape[0], m._shape[1]
+        parts = []
+        if coffset > 0:
+            parts.append(zeros([r, coffset], dtype=m._dtype))
+        parts.append(m)
+        right = total_c - coffset - c
+        if right > 0:
+            parts.append(zeros([r, right], dtype=m._dtype))
+        rows.append(parts[0] if len(parts) == 1 else cat(parts, dim=1))
+        coffset += c
+    return rows[0] if len(rows) == 1 else cat(rows, dim=0)
+
+
+def tril_indices(row: int, col: int, offset: int = 0, dtype: str = "int64", device=None) -> Tensor:
+    rs = []
+    cs = []
+    for i in range(row):
+        for j in range(col):
+            if j - i <= offset:
+                rs.append(i)
+                cs.append(j)
+    return tensor([rs, cs], dtype=dtype)
+
+
+def triu_indices(row: int, col: int, offset: int = 0, dtype: str = "int64", device=None) -> Tensor:
+    rs = []
+    cs = []
+    for i in range(row):
+        for j in range(col):
+            if j - i >= offset:
+                rs.append(i)
+                cs.append(j)
+    return tensor([rs, cs], dtype=dtype)
+
+
+def trapezoid(y: Tensor, x: Tensor | None = None, dx: float | None = None, dim: int = -1) -> Tensor:
+    d = dim if dim >= 0 else dim + len(y._shape)
+    n = y._shape[d]
+    left = y.narrow(d, 0, n - 1)
+    right = y.narrow(d, 1, n - 1)
+    avg = left.add(right).mul(0.5)
+    if x is not None:
+        xd = x.narrow(0, 1, x._shape[0] - 1).sub(x.narrow(0, 0, x._shape[0] - 1))
+        shape = [1] * len(y._shape)
+        shape[d] = xd._shape[0]
+        avg = avg.mul(xd.reshape(shape))
+        return avg.sum(dim=d)
+    spacing = 1.0 if dx is None else float(dx)
+    return avg.sum(dim=d).mul(spacing)
+
+
+def trapz(y: Tensor, x: Tensor | None = None, dx: float | None = None, dim: int = -1) -> Tensor:
+    return trapezoid(y, x=x, dx=dx, dim=dim)
+
+
+def sinc(input: Tensor) -> Tensor:
+    from .special import sinc as _sinc
+    return _sinc(input)
 
 
 def masked_select(input: Tensor, mask: Tensor) -> Tensor:

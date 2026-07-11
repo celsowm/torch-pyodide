@@ -1064,6 +1064,134 @@ class Tensor:
             return mask.sum()
         return mask.sum(dim=dim)
 
+    def signbit(self) -> "Tensor":
+        import torch as _torch
+        return self.lt(_torch.tensor(0, dtype=self._dtype))
+
+    def positive(self) -> "Tensor":
+        return self
+
+    def negative(self) -> "Tensor":
+        return self.neg()
+
+    def clamp_min(self, min) -> "Tensor":
+        return self.clamp(min=min)
+
+    def clamp_max(self, max) -> "Tensor":
+        return self.clamp(max=max)
+
+    def clip(self, min=None, max=None) -> "Tensor":
+        return self.clamp(min=min, max=max)
+
+    def float_power(self, exponent) -> "Tensor":
+        return self.pow(exponent)
+
+    def aminmax(self, dim=None, keepdim: bool = False):
+        return (self.amin(dim, keepdim), self.amax(dim, keepdim))
+
+    def diff(self, n: int = 1, dim: int = -1) -> "Tensor":
+        import torch as _torch
+        return _torch.diff(self, n=n, dim=dim)
+
+    def trace(self) -> "Tensor":
+        return self.diag().sum()
+
+    def diagflat(self, offset: int = 0) -> "Tensor":
+        return self.reshape([-1]).diag()
+
+    def dist(self, other: "Tensor", p: float = 2) -> "Tensor":
+        import torch as _torch
+        return _torch.dist(self, other, p=p)
+
+    def inner(self, other: "Tensor") -> "Tensor":
+        import torch as _torch
+        return _torch.inner(self, other)
+
+    def kron(self, other: "Tensor") -> "Tensor":
+        import torch as _torch
+        return _torch.kron(self, other)
+
+    def cross(self, other: "Tensor", dim: int | None = None) -> "Tensor":
+        import torch as _torch
+        return _torch.cross(self, other, dim=dim)
+
+    def vdot(self, other: "Tensor") -> "Tensor":
+        import torch as _torch
+        return _torch.vdot(self, other)
+
+    def take_along_dim(self, indices: "Tensor", dim: int) -> "Tensor":
+        return self.gather(dim, indices)
+
+    def flipud(self) -> "Tensor":
+        return self.flip([0])
+
+    def fliplr(self) -> "Tensor":
+        return self.flip([1])
+
+    def rot90(self, k: int = 1, dims=(0, 1)) -> "Tensor":
+        import torch as _torch
+        return _torch.rot90(self, k, dims)
+
+    def renorm(self, p: float, dim: int, maxnorm: float) -> "Tensor":
+        import torch as _torch
+        return _torch.renorm(self, p, dim, maxnorm)
+
+    def broadcast_to(self, shape) -> "Tensor":
+        import torch as _torch
+        return _torch.broadcast_to(self, shape)
+
+    def sinc(self) -> "Tensor":
+        import torch as _torch
+        return _torch.sinc(self)
+
+    def isreal(self) -> "Tensor":
+        import torch as _torch
+        return _torch.isreal(self)
+
+    def nansum(self, dim=None, keepdim: bool = False) -> "Tensor":
+        import torch as _torch
+        return _torch.nansum(self, dim=dim, keepdim=keepdim)
+
+    def nanmean(self, dim=None, keepdim: bool = False) -> "Tensor":
+        import torch as _torch
+        return _torch.nanmean(self, dim=dim, keepdim=keepdim)
+
+    def tensor_split(self, indices_or_sections, dim: int = 0):
+        import torch as _torch
+        return _torch.tensor_split(self, indices_or_sections, dim=dim)
+
+    def hsplit(self, indices_or_sections):
+        import torch as _torch
+        return _torch.hsplit(self, indices_or_sections)
+
+    def vsplit(self, indices_or_sections):
+        import torch as _torch
+        return _torch.vsplit(self, indices_or_sections)
+
+    def dsplit(self, indices_or_sections):
+        import torch as _torch
+        return _torch.dsplit(self, indices_or_sections)
+
+    def diag_embed(self, offset: int = 0, dim1: int = -2, dim2: int = -1) -> "Tensor":
+        import torch as _torch
+        return _torch.diag_embed(self, offset, dim1, dim2)
+
+    def addmm(self, mat1: "Tensor", mat2: "Tensor", beta: float = 1, alpha: float = 1) -> "Tensor":
+        import torch as _torch
+        return _torch.addmm(self, mat1, mat2, beta=beta, alpha=alpha)
+
+    def addmv(self, mat: "Tensor", vec: "Tensor", beta: float = 1, alpha: float = 1) -> "Tensor":
+        import torch as _torch
+        return _torch.addmv(self, mat, vec, beta=beta, alpha=alpha)
+
+    def baddbmm(self, batch1: "Tensor", batch2: "Tensor", beta: float = 1, alpha: float = 1) -> "Tensor":
+        import torch as _torch
+        return _torch.baddbmm(self, batch1, batch2, beta=beta, alpha=alpha)
+
+    def addbmm(self, batch1: "Tensor", batch2: "Tensor", beta: float = 1, alpha: float = 1) -> "Tensor":
+        import torch as _torch
+        return _torch.addbmm(self, batch1, batch2, beta=beta, alpha=alpha)
+
     def masked_select(self, mask: "Tensor") -> "Tensor":
         from .tensor_ops import masked_select_from_tensor
         return masked_select_from_tensor(self, mask)

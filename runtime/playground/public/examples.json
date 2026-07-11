@@ -86,6 +86,7 @@
     { "id": "ops_batch_5d", "label": "Batch 5D ops: svd, eigh, eig (Jacobi)", "file": "examples/ops_batch_5d.py" },
     { "id": "linalg_special_ops", "label": "linalg extensions + torch.special", "file": "examples/linalg_special_ops.py" },
     { "id": "fft_complex_ops", "label": "torch.fft + complex dtype", "file": "examples/fft_complex_ops.py" },
-    { "id": "tensor_reduction_shape_ops", "label": "Reductions + shape/math ops (amax, var, tensordot...)", "file": "examples/tensor_reduction_shape_ops.py" }
+    { "id": "tensor_reduction_shape_ops", "label": "Reductions + shape/math ops (amax, var, tensordot...)", "file": "examples/tensor_reduction_shape_ops.py" },
+    { "id": "tensor_ops_batch2", "label": "Ops batch 2 (addmm, meshgrid, block_diag, cross, rot90...)", "file": "examples/tensor_ops_batch2.py" }
   ]
 }
