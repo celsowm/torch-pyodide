@@ -23,9 +23,10 @@ fn sort_backward(@builtin(local_invocation_id) lid: vec3<u32>,
   let pos = lid.x;
   if (pos >= params.seg_size) { return; }
 
-  let src = seg * params.outer_stride + pos * params.seg_stride;
+  let seg_base = (seg / params.seg_stride) * params.outer_stride + (seg % params.seg_stride);
+  let src = seg_base + pos * params.seg_stride;
   let dst_pos = u32(max(0.0, indices[src]));
-  let dst = seg * params.outer_stride + dst_pos * params.seg_stride;
+  let dst = seg_base + dst_pos * params.seg_stride;
   grad_input[dst] = grad_output[src];
 }
 

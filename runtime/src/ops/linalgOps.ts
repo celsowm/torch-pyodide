@@ -59,9 +59,10 @@ export class LinalgOps {
     const pivotBytes = batch * n * 4;
     const pivotBuf = createStorageBuffer(this.deviceMgr.device!, pivotBytes);
 
-    // Initialize pivot buffer with identity permutation [0,1,2,...,n-1] per batch
+    // Initialize pivot buffer with identity permutation [0,1,2,...,n-1] per batch.
+    // Stored as f32 to match the runtime's f32 storage/readback convention.
     {
-      const tmp = new Uint32Array(batch * n);
+      const tmp = new Float32Array(batch * n);
       for (let b = 0; b < batch; b++) {
         for (let i = 0; i < n; i++) {
           tmp[b * n + i] = i;
@@ -69,10 +70,10 @@ export class LinalgOps {
       }
       const uploadBuf = this.deviceMgr.device!.createBuffer({
         size: tmp.byteLength,
-        usage: BufferUsage.COPY_DST,
+        usage: BufferUsage.COPY_SRC,
         mappedAtCreation: true,
       });
-      new Uint32Array(uploadBuf.getMappedRange()).set(tmp);
+      new Float32Array(uploadBuf.getMappedRange()).set(tmp);
       uploadBuf.unmap();
       const enc2 = this.deviceMgr.device!.createCommandEncoder();
       enc2.copyBufferToBuffer(uploadBuf, 0, pivotBuf, 0, tmp.byteLength);
@@ -80,8 +81,9 @@ export class LinalgOps {
       uploadBuf.destroy();
     }
 
-    const pivotPipeline = getOrCreatePipeline(LU_SHADER, "lu_pivot");
-    const updatePipeline = getOrCreatePipeline(LU_SHADER, "lu_update");
+    const pivotPipeline = await getOrCreatePipeline(LU_SHADER, "lu_pivot");
+    const scalePipeline = await getOrCreatePipeline(LU_SHADER, "lu_scale");
+    const updatePipeline = await getOrCreatePipeline(LU_SHADER, "lu_update");
 
     for (let k = 0; k < n - 1; k++) {
       const params = new Uint32Array([n, batch, k]);
@@ -92,7 +94,9 @@ export class LinalgOps {
       this.deviceMgr.writeBuffer(paramBuffer, 0, params);
       dispatchCompute(pivotPipeline, [aBuf, pivotBuf, paramBuffer], calculateWorkgroups(batch));
       await syncDevice();
-      dispatchCompute(updatePipeline, [aBuf, pivotBuf, paramBuffer], calculateWorkgroups(batch * n));
+      dispatchCompute(scalePipeline, [aBuf, pivotBuf, paramBuffer], calculateWorkgroups(batch * n));
+      await syncDevice();
+      dispatchCompute(updatePipeline, [aBuf, pivotBuf, paramBuffer], calculateWorkgroups(batch * n * n));
       await syncDevice();
       paramBuffer.destroy();
     }
@@ -120,7 +124,11 @@ export class LinalgOps {
     const entrypoint = upper ? "backward_sub_step" : "forward_sub_step";
     const pipeline = await getOrCreatePipeline(TRIANGULAR_SOLVE_SHADER, entrypoint);
 
-    for (let k = 0; k < n; k++) {
+    // Forward substitution (lower) processes rows 0..n-1; backward substitution
+    // (upper) must process rows n-1..0 so each step only depends on already
+    // solved rows.
+    for (let step = 0; step < n; step++) {
+      const k = upper ? n - 1 - step : step;
       const params = new Uint32Array([n, m, batch, k]);
       const paramBuffer = this.deviceMgr.device!.createBuffer({
         size: params.byteLength,

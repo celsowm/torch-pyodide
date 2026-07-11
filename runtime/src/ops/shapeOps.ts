@@ -113,9 +113,12 @@ export class ShapeOps {
   async transpose(tensorId: number, dim0: number, dim1: number): Promise<TensorHandle> {
     await this.deviceMgr.ensureReady();
     const meta = this.deviceMgr.getTensorMeta(tensorId);
-    if (meta.shape.length === 2) return this.transpose2dImpl(meta);
+    const rank = meta.shape.length;
+    const d0 = normalizeDim(dim0, rank);
+    const d1 = normalizeDim(dim1, rank);
+    if (rank === 2) return this.transpose2dImpl(meta);
     const dims = meta.shape.map((_, i) => i);
-    [dims[dim0], dims[dim1]] = [dims[dim1]!, dims[dim0]!];
+    [dims[d0], dims[d1]] = [dims[d1]!, dims[d0]!];
     return this.permute(tensorId, dims);
   }
 

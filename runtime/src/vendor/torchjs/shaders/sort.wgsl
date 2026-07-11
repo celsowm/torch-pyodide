@@ -38,6 +38,10 @@ fn main(@builtin(local_invocation_id) lid: vec3<u32>,
   let seg_size = params.seg_size;
   let seg_stride = params.seg_stride;
   let outer_stride = params.outer_stride;
+  // Base offset of this segment: decompose the segment index into the
+  // coordinates outside the sorted dimension. For the last dim this reduces
+  // to seg * outer_stride, but for inner dims the segments are interleaved.
+  let seg_base = (seg / seg_stride) * outer_stride + (seg % seg_stride);
   let pad_size = max(2u, next_pow2(seg_size));
   let tid = lid.x;
   let total_threads = 256u;
@@ -46,7 +50,7 @@ fn main(@builtin(local_invocation_id) lid: vec3<u32>,
   for (var i = 0u; i < work_per_thread; i += 1u) {
     let pos = tid * work_per_thread + i;
     if (pos < seg_size) {
-      let linear_idx = seg * outer_stride + pos * seg_stride;
+      let linear_idx = seg_base + pos * seg_stride;
       shared_vals[pos] = input[linear_idx];
       shared_idx[pos] = f32(pos);
     } else if (pos < pad_size) {
@@ -97,7 +101,7 @@ fn main(@builtin(local_invocation_id) lid: vec3<u32>,
   for (var i = 0u; i < work_per_thread; i += 1u) {
     let pos = tid * work_per_thread + i;
     if (pos < seg_size) {
-      let linear_idx = seg * outer_stride + pos * seg_stride;
+      let linear_idx = seg_base + pos * seg_stride;
       values[linear_idx] = shared_vals[pos];
       indices[linear_idx] = shared_idx[pos];
     }

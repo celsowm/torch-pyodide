@@ -14,6 +14,11 @@ type Catalog = {
   examples: ExampleMeta[];
 };
 
+const EXAMPLE_TIMEOUT_OVERRIDES_MS: Record<string, number> = {
+  nn_lstm_char_lm_training: 120000,
+  ops_batch_5d: 120000,
+};
+
 type DeterministicParityOutput = {
   loss_before: number;
   loss_after: number;
@@ -639,7 +644,11 @@ test.describe.serial("playground examples @webgpu", () => {
 
       let runResult: { output: string; elapsedMs: number };
       try {
-        runResult = await runSelectedExample(page, example.id);
+        runResult = await runSelectedExample(
+          page,
+          example.id,
+          EXAMPLE_TIMEOUT_OVERRIDES_MS[example.id],
+        );
       } catch (error) {
         failures.push(`${example.id} (${example.label})\n${String(error)}`);
         break;

@@ -24,9 +24,11 @@ fn topk_backward(@builtin(local_invocation_id) lid: vec3<u32>,
   let pos = lid.x;
   if (pos >= params.k) { return; }
 
-  let src = seg * params.outer_stride_out + pos * params.seg_stride;
+  let high = seg / params.seg_stride;
+  let low = seg % params.seg_stride;
+  let src = high * params.outer_stride_out + low + pos * params.seg_stride;
   let dst_pos = u32(max(0.0, indices[src]));
-  let dst = seg * params.outer_stride_in + dst_pos * params.seg_stride;
+  let dst = high * params.outer_stride_in + low + dst_pos * params.seg_stride;
   grad_input[dst] = grad_output[src];
 }
 

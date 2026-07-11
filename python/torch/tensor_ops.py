@@ -1577,9 +1577,9 @@ def nan_to_num_from_tensor(tensor: "Tensor", nan: float = 0.0, posinf=None, negi
     finfo_max = 3.4028234663852886e38
     pinf = finfo_max if posinf is None else float(posinf)
     ninf = -finfo_max if neginf is None else float(neginf)
-    nan_t = _torch.tensor(nan, dtype=dt)
-    pos_t = _torch.tensor(pinf, dtype=dt)
-    neg_t = _torch.tensor(ninf, dtype=dt)
+    nan_t = _torch.full_like(tensor, nan, dtype=dt)
+    pos_t = _torch.full_like(tensor, pinf, dtype=dt)
+    neg_t = _torch.full_like(tensor, ninf, dtype=dt)
     out = nan_t.where(tensor.isnan(), tensor)
     out = pos_t.where(tensor.isposinf(), out)
     out = neg_t.where(tensor.isneginf(), out)

@@ -96,5 +96,5 @@ failed = [k for k, v in checks.items() if not v]
 print("passed:", len(checks) - len(failed), "/", len(checks))
 if failed:
     print("FAILED:", failed)
-assert not failed
+assert not failed, "FAILED: " + str(failed)
 print("nn_modules_batch OK")

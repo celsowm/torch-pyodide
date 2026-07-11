@@ -793,10 +793,16 @@ def pixel_shuffle(input: Tensor, upscale_factor: int) -> Tensor:
     r = upscale_factor
     *batch, c, h, w = list(input.shape)
     oc = c // (r * r)
-    x = input.reshape(batch + [oc, r, r, h, w])
-    nd = len(batch)
-    perm = list(range(nd)) + [nd, nd + 3, nd + 1, nd + 4, nd + 2]
-    x = x.permute(perm)
+    b = 1
+    for d in batch:
+        b *= d
+    m = b * oc
+    # Implemented with <=4D reshape/permute only: the ND permute engine
+    # supports at most 4 dims, so the classic 6D formulation is avoided.
+    x = input.reshape([m * r, r, h, w])
+    x = x.permute([0, 2, 3, 1])
+    x = x.reshape([m, r, h, w * r])
+    x = x.permute([0, 2, 1, 3])
     return x.reshape(batch + [oc, h * r, w * r])
 
 
@@ -804,10 +810,14 @@ def pixel_unshuffle(input: Tensor, downscale_factor: int) -> Tensor:
     r = downscale_factor
     *batch, c, h, w = list(input.shape)
     oh, ow = h // r, w // r
-    x = input.reshape(batch + [c, oh, r, ow, r])
-    nd = len(batch)
-    perm = list(range(nd)) + [nd, nd + 2, nd + 4, nd + 1, nd + 3]
-    x = x.permute(perm)
+    b = 1
+    for d in batch:
+        b *= d
+    m = b * c
+    x = input.reshape([m, oh, r, ow * r])
+    x = x.permute([0, 2, 1, 3])
+    x = x.reshape([m * r, oh, ow, r])
+    x = x.permute([0, 3, 1, 2])
     return x.reshape(batch + [c * r * r, oh, ow])
 
 

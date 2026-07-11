@@ -1228,7 +1228,7 @@ def atleast_3d(*tensors):
 
 def hstack(tensors) -> Tensor:
     tensors = list(tensors)
-    if all(len(t._shape) == 1 for t in tensors):
+    if _builtins.all(len(t._shape) == 1 for t in tensors):
         return cat(tensors, dim=0)
     return cat(tensors, dim=1)
 
@@ -1341,7 +1341,7 @@ def tensordot(a: Tensor, b: Tensor, dims=2) -> Tensor:
     b_shape = list(b._shape)
     na = len(a_shape)
     nb = len(b_shape)
-    if isinstance(dims, int):
+    if isinstance(dims, _builtins.int):
         a_axes = list(range(na - dims, na))
         b_axes = list(range(dims))
     else:
@@ -1426,7 +1426,7 @@ def renorm(input: Tensor, p: float, dim: int, maxnorm: float) -> Tensor:
     for rd in reduce_dims:
         norms = norms.sum(dim=rd, keepdim=True)
     norms = norms.pow(1.0 / p)
-    factor = norms.add(1e-7).pow(-1.0).mul(float(maxnorm)).clamp(max=1.0)
+    factor = norms.add(1e-7).pow(-1.0).mul(_builtins.float(maxnorm)).clamp(max=1.0)
     return input.mul(factor)
 
 
@@ -1445,7 +1445,7 @@ def broadcast_tensors(*tensors):
 def tensor_split(input: Tensor, indices_or_sections, dim: int = 0):
     d = dim if dim >= 0 else dim + len(input._shape)
     size = input._shape[d]
-    if isinstance(indices_or_sections, int):
+    if isinstance(indices_or_sections, _builtins.int):
         n = indices_or_sections
         base = size // n
         rem = size % n
@@ -1584,7 +1584,7 @@ def trapezoid(y: Tensor, x: Tensor | None = None, dx: float | None = None, dim: 
         shape[d] = xd._shape[0]
         avg = avg.mul(xd.reshape(shape))
         return avg.sum(dim=d)
-    spacing = 1.0 if dx is None else float(dx)
+    spacing = 1.0 if dx is None else _builtins.float(dx)
     return avg.sum(dim=d).mul(spacing)
 
 

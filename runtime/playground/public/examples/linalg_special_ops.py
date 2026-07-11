@@ -83,6 +83,8 @@ out = {
     "ndtr_match": ndtr_match,
     "sinc_match": sinc_match,
     "logit_match": logit_match,
+    "lu_solve_ok": bool(lu_solve_resid < 1e-3),
     "status": "OK",
 }
 print(json.dumps(out, indent=2))
+assert lu_solve_resid < 1e-3, f"lu_solve residual too large: {lu_solve_resid}"

@@ -33,7 +33,7 @@ def norm_from_tensor(tensor: "Tensor", p: float | str = "fro") -> "Tensor":
 def radd_from_tensor(tensor: "Tensor", other: "Tensor | float") -> "Tensor":
     from .tensor_ops import _scalar_to_tensor
 
-    return tensor.add(other) if isinstance(other, Tensor) else _scalar_to_tensor(float(other), tensor._dtype).add(tensor)
+    return tensor.add(other) if isinstance(other, tensor.__class__) else _scalar_to_tensor(float(other), tensor._dtype).add(tensor)
 
 
 def rsub_from_tensor(tensor: "Tensor", other: "Tensor | float") -> "Tensor":

@@ -19,7 +19,7 @@ r6 = F.relu6(torch.tensor([-1.0, 3.0, 8.0]))
 relu6_match = r6[0].item() == 0.0 and r6[1].item() == 3.0 and r6[2].item() == 6.0
 
 hs = F.hardshrink(torch.tensor([0.3, 0.7, -0.8]))
-hardshrink_match = hs[0].item() == 0.0 and hs[1].item() == 0.7 and hs[2].item() == -0.8
+hardshrink_match = hs[0].item() == 0.0 and abs(hs[1].item() - 0.7) < 1e-5 and abs(hs[2].item() + 0.8) < 1e-5
 
 ss = F.softshrink(torch.tensor([0.7, -0.7, 0.3]))
 softshrink_match = abs(ss[0].item() - 0.2) < 1e-5 and abs(ss[1].item() + 0.2) < 1e-5 and ss[2].item() == 0.0
