@@ -661,3 +661,228 @@ def avg_pool1d(x: Tensor, kernel_size: int, stride: int | None = None, padding: 
 def embedding(input: Tensor, weight: Tensor, padding_idx: int = -1) -> Tensor:
     from torch.tensor_nn_ops import embedding_from_tensor
     return embedding_from_tensor(weight, input, padding_idx)
+
+
+# ── Additional activations ────────────────────────────────────────
+
+def _reduce(loss: Tensor, reduction: str) -> Tensor:
+    if reduction == "none":
+        return loss
+    if reduction == "sum":
+        return loss.sum()
+    return loss.mean()
+
+
+def logsigmoid(x: Tensor) -> Tensor:
+    return x.neg().softplus().neg()
+
+
+def softmin(x: Tensor, dim: int = -1) -> Tensor:
+    return x.neg().softmax(dim)
+
+
+def hardtanh(x: Tensor, min_val: float = -1.0, max_val: float = 1.0) -> Tensor:
+    return x.clamp(min=min_val, max=max_val)
+
+
+def relu6(x: Tensor) -> Tensor:
+    return x.clamp(min=0.0, max=6.0)
+
+
+def hardshrink(x: Tensor, lambd: float = 0.5) -> Tensor:
+    return torch.where(x.abs() > lambd, x, 0.0)
+
+
+def softshrink(x: Tensor, lambd: float = 0.5) -> Tensor:
+    pos = torch.where(x > lambd, x - lambd, 0.0)
+    neg = torch.where(x < -lambd, x + lambd, 0.0)
+    return pos + neg
+
+
+def threshold(x: Tensor, threshold: float, value: float) -> Tensor:
+    return torch.where(x > threshold, x, value)
+
+
+def selu(x: Tensor) -> Tensor:
+    alpha = 1.6732632423543772848170429916717
+    scale = 1.0507009873554804934193349852946
+    return torch.where(x > 0.0, x, alpha * (x.exp() - 1.0)) * scale
+
+
+def gumbel_softmax(logits: Tensor, tau: float = 1.0, hard: bool = False, dim: int = -1) -> Tensor:
+    import torch as _torch
+    u = _torch.rand(list(logits.shape), dtype=logits.dtype)
+    gumbel = u.log().neg().log().neg()
+    y = ((logits + gumbel) / tau).softmax(dim)
+    if hard:
+        index = y.argmax(dim=dim, keepdim=True)
+        y_hard = _torch.scatter(_torch.zeros(list(y.shape), dtype=y.dtype), dim, index, 1.0)
+        return (y_hard - y).add(y)
+    return y
+
+
+# ── Distances ─────────────────────────────────────────────────────
+
+def cosine_similarity(x1: Tensor, x2: Tensor, dim: int = 1, eps: float = 1e-8) -> Tensor:
+    dot = (x1 * x2).sum(dim=dim)
+    n1 = x1.mul(x1).sum(dim=dim).sqrt()
+    n2 = x2.mul(x2).sum(dim=dim).sqrt()
+    return dot.div((n1 * n2).clamp(min=eps))
+
+
+def pairwise_distance(x1: Tensor, x2: Tensor, p: float = 2.0, eps: float = 1e-6, keepdim: bool = False) -> Tensor:
+    diff = (x1 - x2).abs().add(eps)
+    return diff.pow(p).sum(dim=-1, keepdim=keepdim).pow(1.0 / p)
+
+
+def pdist(input: Tensor, p: float = 2.0) -> Tensor:
+    return torch.pdist(input, p=p)
+
+
+# ── Normalization ─────────────────────────────────────────────────
+
+def rms_norm(x: Tensor, normalized_shape, weight: Tensor | None = None, eps: float | None = None) -> Tensor:
+    n = len(normalized_shape)
+    ndim = len(x.shape)
+    ms = x.mul(x)
+    for i in range(n):
+        ms = ms.mean(dim=ndim - 1 - i, keepdim=True)
+    e = 1e-6 if eps is None else float(eps)
+    out = x.mul(ms.add(e).rsqrt())
+    if weight is not None:
+        out = out.mul(weight)
+    return out
+
+
+# ── Scaled dot-product attention ──────────────────────────────────
+
+def scaled_dot_product_attention(
+    query: Tensor,
+    key: Tensor,
+    value: Tensor,
+    attn_mask: Tensor | None = None,
+    dropout_p: float = 0.0,
+    is_causal: bool = False,
+    scale: float | None = None,
+) -> Tensor:
+    import math
+    import torch as _torch
+    e = query.shape[-1]
+    scale_factor = (1.0 / math.sqrt(e)) if scale is None else float(scale)
+    scores = query.matmul(key.transpose(-2, -1)).mul(scale_factor)
+    if is_causal:
+        lq = query.shape[-2]
+        lk = key.shape[-2]
+        mask = _torch.ones([lq, lk], dtype="float32").tril()
+        neg = (1.0 - mask).mul(-1e9)
+        scores = scores.add(neg)
+    if attn_mask is not None:
+        if attn_mask._dtype == "bool":
+            scores = scores.add(attn_mask.logical_not().to("float32").mul(-1e9))
+        else:
+            scores = scores.add(attn_mask)
+    attn = scores.softmax(-1)
+    if dropout_p > 0.0:
+        attn = dropout(attn, p=dropout_p, training=True)
+    return attn.matmul(value)
+
+
+# ── Pixel shuffle ─────────────────────────────────────────────────
+
+def pixel_shuffle(input: Tensor, upscale_factor: int) -> Tensor:
+    r = upscale_factor
+    *batch, c, h, w = list(input.shape)
+    oc = c // (r * r)
+    x = input.reshape(batch + [oc, r, r, h, w])
+    nd = len(batch)
+    perm = list(range(nd)) + [nd, nd + 3, nd + 1, nd + 4, nd + 2]
+    x = x.permute(perm)
+    return x.reshape(batch + [oc, h * r, w * r])
+
+
+def pixel_unshuffle(input: Tensor, downscale_factor: int) -> Tensor:
+    r = downscale_factor
+    *batch, c, h, w = list(input.shape)
+    oh, ow = h // r, w // r
+    x = input.reshape(batch + [c, oh, r, ow, r])
+    nd = len(batch)
+    perm = list(range(nd)) + [nd, nd + 2, nd + 4, nd + 1, nd + 3]
+    x = x.permute(perm)
+    return x.reshape(batch + [c * r * r, oh, ow])
+
+
+# ── Additional losses ─────────────────────────────────────────────
+
+def kl_div(input: Tensor, target: Tensor, reduction: str = "mean", log_target: bool = False) -> Tensor:
+    if log_target:
+        loss = target.exp().mul(target - input)
+    else:
+        loss = target.mul(target.add(1e-12).log() - input)
+    if reduction == "batchmean":
+        return loss.sum().div(input.shape[0])
+    return _reduce(loss, reduction)
+
+
+def soft_margin_loss(input: Tensor, target: Tensor, reduction: str = "mean") -> Tensor:
+    loss = target.neg().mul(input).softplus()
+    return _reduce(loss, reduction)
+
+
+def hinge_embedding_loss(input: Tensor, target: Tensor, margin: float = 1.0, reduction: str = "mean") -> Tensor:
+    pos = input
+    neg = (margin - input).clamp(min=0.0)
+    loss = torch.where(target > 0.0, pos, neg)
+    return _reduce(loss, reduction)
+
+
+def margin_ranking_loss(input1: Tensor, input2: Tensor, target: Tensor, margin: float = 0.0, reduction: str = "mean") -> Tensor:
+    loss = (target.neg().mul(input1 - input2) + margin).clamp(min=0.0)
+    return _reduce(loss, reduction)
+
+
+def cosine_embedding_loss(input1: Tensor, input2: Tensor, target: Tensor, margin: float = 0.0, reduction: str = "mean") -> Tensor:
+    cos = cosine_similarity(input1, input2, dim=1)
+    pos = 1.0 - cos
+    neg = (cos - margin).clamp(min=0.0)
+    loss = torch.where(target > 0.0, pos, neg)
+    return _reduce(loss, reduction)
+
+
+def poisson_nll_loss(input: Tensor, target: Tensor, log_input: bool = True, full: bool = False, eps: float = 1e-8, reduction: str = "mean") -> Tensor:
+    if log_input:
+        loss = input.exp() - target.mul(input)
+    else:
+        loss = input - target.mul(input.add(eps).log())
+    return _reduce(loss, reduction)
+
+
+def triplet_margin_loss(anchor: Tensor, positive: Tensor, negative: Tensor, margin: float = 1.0, p: float = 2.0, eps: float = 1e-6, reduction: str = "mean") -> Tensor:
+    dpos = pairwise_distance(anchor, positive, p=p, eps=eps)
+    dneg = pairwise_distance(anchor, negative, p=p, eps=eps)
+    loss = (dpos - dneg + margin).clamp(min=0.0)
+    return _reduce(loss, reduction)
+
+
+# ── Aliases / additional pooling ──────────────────────────────────
+
+def adaptive_avg_pool1d(x: Tensor, output_size: int) -> Tensor:
+    L = x.shape[-1]
+    if L == output_size:
+        return x
+    if output_size == 1:
+        return x.mean(dim=-1, keepdim=True)
+    stride = L // output_size
+    kernel = L - (output_size - 1) * stride
+    return avg_pool1d(x, kernel, stride, 0)
+
+
+def upsample(input: Tensor, size=None, scale_factor=None, mode: str = "nearest", align_corners=None) -> Tensor:
+    return interpolate(input, size=size, scale_factor=scale_factor, mode=mode, align_corners=align_corners)
+
+
+def upsample_nearest(input: Tensor, size=None, scale_factor=None) -> Tensor:
+    return interpolate(input, size=size, scale_factor=scale_factor, mode="nearest")
+
+
+def upsample_bilinear(input: Tensor, size=None, scale_factor=None) -> Tensor:
+    return interpolate(input, size=size, scale_factor=scale_factor, mode="bilinear", align_corners=True)
