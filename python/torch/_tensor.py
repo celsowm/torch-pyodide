@@ -985,13 +985,84 @@ class Tensor:
         from .tensor_ops import prod_from_tensor
         return prod_from_tensor(self)
 
-    def min(self) -> "Tensor":
+    def min(self, dim: int | None = None, keepdim: bool = False):
+        if dim is not None:
+            from .tensor_ops import min_dim_from_tensor
+            return min_dim_from_tensor(self, dim, keepdim)
         from .tensor_ops import min_from_tensor
         return min_from_tensor(self)
 
-    def max(self) -> "Tensor":
+    def max(self, dim: int | None = None, keepdim: bool = False):
+        if dim is not None:
+            from .tensor_ops import max_dim_from_tensor
+            return max_dim_from_tensor(self, dim, keepdim)
         from .tensor_ops import max_from_tensor
         return max_from_tensor(self)
+
+    def amax(self, dim=None, keepdim: bool = False) -> "Tensor":
+        from .tensor_ops import amax_from_tensor
+        return amax_from_tensor(self, dim, keepdim)
+
+    def amin(self, dim=None, keepdim: bool = False) -> "Tensor":
+        from .tensor_ops import amin_from_tensor
+        return amin_from_tensor(self, dim, keepdim)
+
+    def logsumexp(self, dim, keepdim: bool = False) -> "Tensor":
+        from .tensor_ops import amax_from_tensor
+        ndim = len(self._shape)
+        dims = [dim] if isinstance(dim, int) else list(dim)
+        dims = sorted((d if d >= 0 else d + ndim) for d in dims)
+        m = amax_from_tensor(self, dims, keepdim=True)
+        m_fixed = m.nan_to_num(posinf=0.0, neginf=0.0)
+        out = (self - m_fixed).exp()
+        for d in dims:
+            out = out.sum(dim=d, keepdim=True)
+        out = out.log() + m_fixed
+        if not keepdim:
+            for d in reversed(dims):
+                out = out.squeeze(d)
+        return out
+
+    def var(self, dim=None, keepdim: bool = False, correction: int = 1, unbiased: bool | None = None) -> "Tensor":
+        from .tensor_ops import var_from_tensor
+        if unbiased is not None:
+            correction = 1 if unbiased else 0
+        return var_from_tensor(self, dim, keepdim, correction)
+
+    def std(self, dim=None, keepdim: bool = False, correction: int = 1, unbiased: bool | None = None) -> "Tensor":
+        return self.var(dim=dim, keepdim=keepdim, correction=correction, unbiased=unbiased).sqrt()
+
+    def nan_to_num(self, nan: float = 0.0, posinf: float | None = None, neginf: float | None = None) -> "Tensor":
+        from .tensor_ops import nan_to_num_from_tensor
+        return nan_to_num_from_tensor(self, nan, posinf, neginf)
+
+    def unbind(self, dim: int = 0) -> tuple["Tensor", ...]:
+        d = dim if dim >= 0 else dim + len(self._shape)
+        return tuple(self.select(d, i) for i in range(self._shape[d]))
+
+    def movedim(self, source, destination) -> "Tensor":
+        from .tensor_ops import movedim_from_tensor
+        return movedim_from_tensor(self, source, destination)
+
+    def moveaxis(self, source, destination) -> "Tensor":
+        from .tensor_ops import movedim_from_tensor
+        return movedim_from_tensor(self, source, destination)
+
+    def swapaxes(self, axis0: int, axis1: int) -> "Tensor":
+        return self.transpose(axis0, axis1)
+
+    def swapdims(self, dim0: int, dim1: int) -> "Tensor":
+        return self.transpose(dim0, dim1)
+
+    def ravel(self) -> "Tensor":
+        return self.reshape([-1])
+
+    def count_nonzero(self, dim=None) -> "Tensor":
+        import torch as _torch
+        mask = self.ne(_torch.tensor(0, dtype=self._dtype)).to("int64")
+        if dim is None:
+            return mask.sum()
+        return mask.sum(dim=dim)
 
     def masked_select(self, mask: "Tensor") -> "Tensor":
         from .tensor_ops import masked_select_from_tensor

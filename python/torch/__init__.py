@@ -410,6 +410,46 @@ __all__ = [
     "short",
     "char",
     "byte",
+    "amax",
+    "amin",
+    "aminmax",
+    "logsumexp",
+    "var",
+    "std",
+    "var_mean",
+    "std_mean",
+    "nan_to_num",
+    "count_nonzero",
+    "unbind",
+    "movedim",
+    "moveaxis",
+    "swapaxes",
+    "swapdims",
+    "ravel",
+    "broadcast_to",
+    "atleast_1d",
+    "atleast_2d",
+    "atleast_3d",
+    "hstack",
+    "vstack",
+    "row_stack",
+    "dstack",
+    "column_stack",
+    "flipud",
+    "fliplr",
+    "diff",
+    "trace",
+    "diagflat",
+    "dist",
+    "float_power",
+    "clamp_min",
+    "clamp_max",
+    "clip",
+    "take_along_dim",
+    "inner",
+    "vdot",
+    "kron",
+    "tensordot",
 ]
 
 
@@ -1041,12 +1081,261 @@ def prod(x: Tensor) -> Tensor:
     return x.prod()
 
 
-def min(x: Tensor) -> Tensor:
+def min(x: Tensor, dim: int | None = None, keepdim: bool = False):
+    if dim is not None:
+        return x.min(dim=dim, keepdim=keepdim)
     return x.min()
 
 
-def max(x: Tensor) -> Tensor:
+def max(x: Tensor, dim: int | None = None, keepdim: bool = False):
+    if dim is not None:
+        return x.max(dim=dim, keepdim=keepdim)
     return x.max()
+
+
+def amax(input: Tensor, dim=None, keepdim: bool = False) -> Tensor:
+    return input.amax(dim, keepdim)
+
+
+def amin(input: Tensor, dim=None, keepdim: bool = False) -> Tensor:
+    return input.amin(dim, keepdim)
+
+
+def aminmax(input: Tensor, dim=None, keepdim: bool = False):
+    return (input.amin(dim, keepdim), input.amax(dim, keepdim))
+
+
+def logsumexp(input: Tensor, dim, keepdim: bool = False) -> Tensor:
+    return input.logsumexp(dim, keepdim)
+
+
+def var(input: Tensor, dim=None, keepdim: bool = False, correction: int = 1, unbiased: bool | None = None) -> Tensor:
+    return input.var(dim=dim, keepdim=keepdim, correction=correction, unbiased=unbiased)
+
+
+def std(input: Tensor, dim=None, keepdim: bool = False, correction: int = 1, unbiased: bool | None = None) -> Tensor:
+    return input.std(dim=dim, keepdim=keepdim, correction=correction, unbiased=unbiased)
+
+
+def var_mean(input: Tensor, dim=None, keepdim: bool = False, correction: int = 1, unbiased: bool | None = None):
+    return (input.var(dim=dim, keepdim=keepdim, correction=correction, unbiased=unbiased), input.mean(dim=dim, keepdim=keepdim) if dim is not None else input.mean())
+
+
+def std_mean(input: Tensor, dim=None, keepdim: bool = False, correction: int = 1, unbiased: bool | None = None):
+    return (input.std(dim=dim, keepdim=keepdim, correction=correction, unbiased=unbiased), input.mean(dim=dim, keepdim=keepdim) if dim is not None else input.mean())
+
+
+def nan_to_num(input: Tensor, nan: float = 0.0, posinf=None, neginf=None) -> Tensor:
+    return input.nan_to_num(nan=nan, posinf=posinf, neginf=neginf)
+
+
+def count_nonzero(input: Tensor, dim=None) -> Tensor:
+    return input.count_nonzero(dim)
+
+
+def unbind(input: Tensor, dim: int = 0):
+    return input.unbind(dim)
+
+
+def movedim(input: Tensor, source, destination) -> Tensor:
+    return input.movedim(source, destination)
+
+
+def moveaxis(input: Tensor, source, destination) -> Tensor:
+    return input.movedim(source, destination)
+
+
+def swapaxes(input: Tensor, axis0: int, axis1: int) -> Tensor:
+    return input.transpose(axis0, axis1)
+
+
+def swapdims(input: Tensor, dim0: int, dim1: int) -> Tensor:
+    return input.transpose(dim0, dim1)
+
+
+def ravel(input: Tensor) -> Tensor:
+    return input.reshape([-1])
+
+
+def broadcast_to(input: Tensor, shape) -> Tensor:
+    shape = list(shape)
+    while len(input._shape) < len(shape):
+        input = input.unsqueeze(0)
+    return input.expand(*shape)
+
+
+def atleast_1d(*tensors):
+    def fix(t):
+        return t.reshape([1]) if len(t._shape) == 0 else t
+    res = [fix(t) for t in tensors]
+    return res[0] if len(res) == 1 else tuple(res)
+
+
+def atleast_2d(*tensors):
+    def fix(t):
+        nd = len(t._shape)
+        if nd == 0:
+            return t.reshape([1, 1])
+        if nd == 1:
+            return t.reshape([1, t._shape[0]])
+        return t
+    res = [fix(t) for t in tensors]
+    return res[0] if len(res) == 1 else tuple(res)
+
+
+def atleast_3d(*tensors):
+    def fix(t):
+        nd = len(t._shape)
+        if nd == 0:
+            return t.reshape([1, 1, 1])
+        if nd == 1:
+            return t.reshape([1, t._shape[0], 1])
+        if nd == 2:
+            return t.reshape([t._shape[0], t._shape[1], 1])
+        return t
+    res = [fix(t) for t in tensors]
+    return res[0] if len(res) == 1 else tuple(res)
+
+
+def hstack(tensors) -> Tensor:
+    tensors = list(tensors)
+    if all(len(t._shape) == 1 for t in tensors):
+        return cat(tensors, dim=0)
+    return cat(tensors, dim=1)
+
+
+def vstack(tensors) -> Tensor:
+    return cat([atleast_2d(t) for t in tensors], dim=0)
+
+
+def row_stack(tensors) -> Tensor:
+    return vstack(tensors)
+
+
+def dstack(tensors) -> Tensor:
+    return cat([atleast_3d(t) for t in tensors], dim=2)
+
+
+def column_stack(tensors) -> Tensor:
+    cols = []
+    for t in tensors:
+        if len(t._shape) == 1:
+            cols.append(t.reshape([t._shape[0], 1]))
+        else:
+            cols.append(t)
+    return cat(cols, dim=1)
+
+
+def flipud(input: Tensor) -> Tensor:
+    return input.flip([0])
+
+
+def fliplr(input: Tensor) -> Tensor:
+    return input.flip([1])
+
+
+def diff(input: Tensor, n: int = 1, dim: int = -1) -> Tensor:
+    d = dim if dim >= 0 else dim + len(input._shape)
+    out = input
+    for _ in range(n):
+        size = out._shape[d]
+        a = out.narrow(d, 1, size - 1)
+        b = out.narrow(d, 0, size - 1)
+        out = a.sub(b)
+    return out
+
+
+def trace(input: Tensor) -> Tensor:
+    return input.diag().sum()
+
+
+def diagflat(input: Tensor, offset: int = 0) -> Tensor:
+    return input.reshape([-1]).diag()
+
+
+def dist(input: Tensor, other: Tensor, p: float = 2) -> Tensor:
+    return norm(input.sub(other), p=p)
+
+
+def float_power(input: Tensor, exponent) -> Tensor:
+    return input.pow(exponent)
+
+
+def clamp_min(input: Tensor, min) -> Tensor:
+    return input.clamp(min=min)
+
+
+def clamp_max(input: Tensor, max) -> Tensor:
+    return input.clamp(max=max)
+
+
+def clip(input: Tensor, min=None, max=None) -> Tensor:
+    return input.clamp(min=min, max=max)
+
+
+def take_along_dim(input: Tensor, indices: Tensor, dim: int) -> Tensor:
+    return input.gather(dim, indices)
+
+
+def inner(input: Tensor, other: Tensor) -> Tensor:
+    if len(input._shape) == 1 and len(other._shape) == 1:
+        return input.mul(other).sum()
+    return tensordot(input, other, dims=([len(input._shape) - 1], [len(other._shape) - 1]))
+
+
+def vdot(input: Tensor, other: Tensor) -> Tensor:
+    return input.reshape([-1]).mul(other.reshape([-1])).sum()
+
+
+def kron(input: Tensor, other: Tensor) -> Tensor:
+    a = input
+    b = other
+    while len(a._shape) < len(b._shape):
+        a = a.unsqueeze(0)
+    while len(b._shape) < len(a._shape):
+        b = b.unsqueeze(0)
+    nd = len(a._shape)
+    a_exp_shape = []
+    b_exp_shape = []
+    out_shape = []
+    for i in range(nd):
+        a_exp_shape += [a._shape[i], 1]
+        b_exp_shape += [1, b._shape[i]]
+        out_shape.append(a._shape[i] * b._shape[i])
+    a2 = a.reshape(a_exp_shape)
+    b2 = b.reshape(b_exp_shape)
+    return a2.mul(b2).reshape(out_shape)
+
+
+def tensordot(a: Tensor, b: Tensor, dims=2) -> Tensor:
+    a_shape = list(a._shape)
+    b_shape = list(b._shape)
+    na = len(a_shape)
+    nb = len(b_shape)
+    if isinstance(dims, int):
+        a_axes = list(range(na - dims, na))
+        b_axes = list(range(dims))
+    else:
+        a_axes = [d if d >= 0 else d + na for d in dims[0]]
+        b_axes = [d if d >= 0 else d + nb for d in dims[1]]
+    a_free = [i for i in range(na) if i not in a_axes]
+    b_free = [i for i in range(nb) if i not in b_axes]
+    a_perm = a.permute(a_free + a_axes)
+    b_perm = b.permute(b_axes + b_free)
+    a_free_size = 1
+    for i in a_free:
+        a_free_size *= a_shape[i]
+    b_free_size = 1
+    for i in b_free:
+        b_free_size *= b_shape[i]
+    k = 1
+    for i in a_axes:
+        k *= a_shape[i]
+    a2 = a_perm.reshape([a_free_size, k])
+    b2 = b_perm.reshape([k, b_free_size])
+    out = a2.matmul(b2)
+    out_shape = [a_shape[i] for i in a_free] + [b_shape[i] for i in b_free]
+    return out.reshape(out_shape) if out_shape else out.reshape([])
 
 
 def masked_select(input: Tensor, mask: Tensor) -> Tensor:

@@ -1496,6 +1496,108 @@ def max_from_tensor(tensor: "Tensor") -> "Tensor":
     return Tensor(tensor_id, out_shape, out_dtype)
 
 
+def max_dim_from_tensor(tensor: "Tensor", dim: int, keepdim: bool = False) -> tuple["Tensor", "Tensor"]:
+    d = dim if dim >= 0 else dim + len(tensor._shape)
+    values, indices = topk_from_tensor(tensor, 1, dim=d, largest=True)
+    if not keepdim:
+        values = values.squeeze(d)
+        indices = indices.squeeze(d)
+    return values, indices
+
+
+def min_dim_from_tensor(tensor: "Tensor", dim: int, keepdim: bool = False) -> tuple["Tensor", "Tensor"]:
+    d = dim if dim >= 0 else dim + len(tensor._shape)
+    values, indices = topk_from_tensor(tensor, 1, dim=d, largest=False)
+    if not keepdim:
+        values = values.squeeze(d)
+        indices = indices.squeeze(d)
+    return values, indices
+
+
+def _amax_amin_from_tensor(tensor: "Tensor", dim, keepdim: bool, largest: bool) -> "Tensor":
+    ndim = len(tensor._shape)
+    if dim is None:
+        dims = list(range(ndim))
+    elif isinstance(dim, int):
+        dims = [dim]
+    else:
+        dims = list(dim)
+    dims = sorted((d if d >= 0 else d + ndim) for d in dims)
+    result = tensor
+    for d in reversed(dims):
+        if largest:
+            result, _ = max_dim_from_tensor(result, d, keepdim=True)
+        else:
+            result, _ = min_dim_from_tensor(result, d, keepdim=True)
+    if not keepdim:
+        for d in reversed(dims):
+            result = result.squeeze(d)
+    return result
+
+
+def amax_from_tensor(tensor: "Tensor", dim=None, keepdim: bool = False) -> "Tensor":
+    return _amax_amin_from_tensor(tensor, dim, keepdim, largest=True)
+
+
+def amin_from_tensor(tensor: "Tensor", dim=None, keepdim: bool = False) -> "Tensor":
+    return _amax_amin_from_tensor(tensor, dim, keepdim, largest=False)
+
+
+def var_from_tensor(tensor: "Tensor", dim=None, keepdim: bool = False, correction: int = 1) -> "Tensor":
+    ndim = len(tensor._shape)
+    if dim is None:
+        dims = list(range(ndim))
+    elif isinstance(dim, int):
+        dims = [dim]
+    else:
+        dims = list(dim)
+    dims = sorted((d if d >= 0 else d + ndim) for d in dims)
+    n = 1
+    for d in dims:
+        n *= tensor._shape[d]
+    mu = tensor
+    for d in dims:
+        mu = mean_dim_from_tensor(mu, d, keepdim=True)
+    centered = tensor.sub(mu)
+    s = centered.mul(centered)
+    for d in dims:
+        s = sum_dim_from_tensor(s, d, keepdim=True)
+    denom = n - correction
+    result = s.mul(1.0 / denom) if denom > 0 else s.mul(float("inf"))
+    if not keepdim:
+        for d in reversed(dims):
+            result = result.squeeze(d)
+    return result
+
+
+def nan_to_num_from_tensor(tensor: "Tensor", nan: float = 0.0, posinf=None, neginf=None) -> "Tensor":
+    import torch as _torch
+
+    dt = tensor._dtype
+    finfo_max = 3.4028234663852886e38
+    pinf = finfo_max if posinf is None else float(posinf)
+    ninf = -finfo_max if neginf is None else float(neginf)
+    nan_t = _torch.tensor(nan, dtype=dt)
+    pos_t = _torch.tensor(pinf, dtype=dt)
+    neg_t = _torch.tensor(ninf, dtype=dt)
+    out = nan_t.where(tensor.isnan(), tensor)
+    out = pos_t.where(tensor.isposinf(), out)
+    out = neg_t.where(tensor.isneginf(), out)
+    return out
+
+
+def movedim_from_tensor(tensor: "Tensor", source, destination) -> "Tensor":
+    ndim = len(tensor._shape)
+    srcs = [source] if isinstance(source, int) else list(source)
+    dsts = [destination] if isinstance(destination, int) else list(destination)
+    srcs = [s if s >= 0 else s + ndim for s in srcs]
+    dsts = [d if d >= 0 else d + ndim for d in dsts]
+    order = [d for d in range(ndim) if d not in srcs]
+    for dst, src in sorted(zip(dsts, srcs)):
+        order.insert(dst, src)
+    return tensor.permute(order)
+
+
 def masked_select_from_tensor(tensor: "Tensor", mask: "Tensor") -> "Tensor":
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_masked_select
