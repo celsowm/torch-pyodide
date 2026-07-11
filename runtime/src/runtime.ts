@@ -1201,6 +1201,14 @@ export class TorchPyodideRuntime {
   ): Promise<TensorHandle[]> {
     return this.linalgOps.jacobiRotate(aId, vId, p, q, c, s);
   }
+
+  async gramSchmidt(tensorId: number): Promise<TensorHandle> {
+    return this.linalgOps.gramSchmidt(tensorId);
+  }
+
+  async pdist(tensorId: number, p: number): Promise<TensorHandle> {
+    return this.reductionOps.pdist(tensorId, p);
+  }
 }
 
 export function installTorchRuntime(target: typeof globalThis = globalThis): TorchPyodideRuntime {

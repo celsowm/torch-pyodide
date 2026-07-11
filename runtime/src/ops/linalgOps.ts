@@ -9,6 +9,7 @@ import {
   LU_SHADER,
   TRIANGULAR_SOLVE_SHADER,
   JACOBI_SHADER,
+  GRAM_SCHMIDT_SHADER,
   createStorageBuffer,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
@@ -187,5 +188,29 @@ export class LinalgOps {
       product(vShape),
     );
     return [aHandle, vHandle];
+  }
+
+  async gramSchmidt(tensorId: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    if (meta.shape.length !== 2) {
+      throw new Error(`gramSchmidt expects a 2D input, got rank ${meta.shape.length}`);
+    }
+    const rows = meta.shape[0]!;
+    const cols = meta.shape[1]!;
+    const length = product(meta.shape);
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+
+    const pipeline = await getOrCreatePipeline(GRAM_SCHMIDT_SHADER, "main");
+    const params = new Uint32Array([rows, cols, 0, 0]);
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: params.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(1));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype, length);
   }
 }

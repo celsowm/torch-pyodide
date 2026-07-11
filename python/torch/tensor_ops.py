@@ -828,18 +828,13 @@ def cdist_from_tensor(x1: "Tensor", x2: "Tensor", p: float = 2.0) -> "Tensor":
 
 
 def pdist_from_tensor(input: "Tensor", p: float = 2.0) -> "Tensor":
-    """Pairwise distances of a single set, returned as the upper-triangular vector."""
-    from ._api_creation import arange
-    from .tensor_factories_ops import tensor_from_data
+    """Pairwise distances of a single set, returned as the upper-triangular vector.
 
-    n = input._shape[0]
-    d = cdist_from_tensor(input, input, p)  # [n, n]
-    out: list[float] = []
-    for i in range(n):
-        row = d.select(0, i)
-        for j in range(i + 1, n):
-            out.append(float(row.select(0, j).item()))
-    return tensor_from_data(out, [n * (n - 1) // 2], input._dtype)
+    Computed on the GPU via the dedicated ``pdist`` shader (no CPU readback).
+    """
+    from ._tensor_runtime_bridge import pdist_from_tensor as _gpu_pdist
+
+    return _gpu_pdist(input, p=p)
 
 
 def cat_from_tensors(tensors: Sequence["Tensor"], dim: int = 0) -> "Tensor":

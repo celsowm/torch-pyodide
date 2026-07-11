@@ -130,11 +130,12 @@ class Categorical(Distribution):
         row_count = 1
         for size in out_shape:
             row_count *= size
-        rows = samples.reshape([row_count, self.logits.shape[-1]]).tolist()
-        argmax_rows = [max(range(len(row)), key=lambda i: row[i]) for row in rows]
+        samples_2d = samples.reshape([row_count, self.logits.shape[-1]])
+        # argmax runs entirely on the GPU (argmax.wgsl); no CPU readback.
+        indices = samples_2d.argmax(dim=-1)
         if len(out_shape) == 0:
-            return tensor_from_data(argmax_rows[0], [], dtype="int64")
-        return tensor_from_data(argmax_rows, out_shape, dtype="int64")
+            return indices.reshape([]).to(dtype="int64")
+        return indices.reshape(out_shape).to(dtype="int64")
 
     def log_prob(self, value: Tensor) -> Tensor:
         return -torch.nn.functional.nll_loss(self.logits.log_softmax(dim=-1), value, reduction="none")

@@ -280,3 +280,16 @@ def permute_from_tensor(tensor: "Tensor", dims: list[int] | tuple[int, ...]) -> 
         result._requires_grad = True
         result._node = _Node(result, lambda g: (_grad_permute(g, tensor, normalized),), [tensor])
     return result
+
+
+def pdist_from_tensor(tensor: "Tensor", p: float = 2.0) -> "Tensor":
+    """Pairwise p-norm distances (torch.pdist) computed on the GPU."""
+    meta = _run_js_awaitable(_get_runtime().pdist(tensor._id, float(p)))
+    return _mk_tensor(meta)
+
+
+def gram_schmidt_from_tensor(tensor: "Tensor") -> "Tensor":
+    """GPU Gram-Schmidt orthonormalization of the rows of a 2D tensor."""
+    meta = _run_js_awaitable(_get_runtime().gramSchmidt(tensor._id))
+    return _mk_tensor(meta)
+

@@ -94,6 +94,8 @@ import EXTENDED_STEP_SHADER from './extended_step.wgsl';
 import NONZERO_SHADER from './nonzero.wgsl';
 import ROLL_SHADER from './roll.wgsl';
 import JACOBI_SHADER from './jacobi.wgsl';
+import PDIST_SHADER from './pdist.wgsl';
+import GRAM_SCHMIDT_SHADER from './gram_schmidt.wgsl';
 
 export {
   ELEMENTWISE_SHADER,
@@ -186,4 +188,6 @@ export {
   NONZERO_SHADER,
   ROLL_SHADER,
   JACOBI_SHADER,
+  PDIST_SHADER,
+  GRAM_SCHMIDT_SHADER,
 };

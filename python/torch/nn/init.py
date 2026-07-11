@@ -101,34 +101,28 @@ def kaiming_normal_(tensor: object, a: float = 0.0, mode: str = "fan_in", nonlin
 
 def orthogonal_(tensor: object, gain: float = 1.0) -> object:
     import torch as _torch
+    from torch._tensor_runtime_bridge import gram_schmidt_from_tensor
+
     if tensor.ndim < 2:
         raise ValueError("orthogonal_ requires at least 2 dimensions")
-    rows, cols = tensor.shape[0], tensor.shape[1]
+    shape = list(tensor.shape)
+    if tensor.ndim == 2:
+        rows, cols = shape[0], shape[1]
+        raw = _randn_gpu([rows, cols], tensor.dtype)
+        q = gram_schmidt_from_tensor(raw)
+        result = q * gain
+        tensor._set(result)
+        return tensor
+    # ndim > 2: merge the trailing dims into the column dimension, orthonormalize
+    # the rows on the GPU, then reshape back to the original shape.
+    rows = shape[0]
+    cols = 1
+    for s in shape[1:]:
+        cols *= s
     raw = _randn_gpu([rows, cols], tensor.dtype)
-    flat = raw.flatten().tolist()
-    n = len(flat)
-    # Gram-Schmidt orthogonalization (CPU, unavoidable without QR GPU)
-    q_rows: list[list[float]] = []
-    for i in range(rows):
-        v = flat[i * cols:(i + 1) * cols]
-        for j in range(len(q_rows)):
-            q = q_rows[j]
-            dot_vq = sum(a * b for a, b in zip(v, q))
-            dot_qq = sum(a * a for a in q)
-            if dot_qq > 1e-10:
-                factor = dot_vq / dot_qq
-                v = [a - factor * b for a, b in zip(v, q)]
-        norm_v = math.sqrt(sum(a * a for a in v))
-        if norm_v > 1e-10:
-            v = [a / norm_v for a in v]
-        q_rows.append(v)
-    out: list[float] = []
-    for row in q_rows:
-        out.extend(row)
-    while len(out) < n:
-        out.append(0.0)
-    out = [gain * v for v in out]
-    _assign_flat(tensor, out)
+    q = gram_schmidt_from_tensor(raw)
+    result = q.reshape(shape) * gain
+    tensor._set(result)
     return tensor
 
 

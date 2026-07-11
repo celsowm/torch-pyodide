@@ -214,11 +214,12 @@ def matrix_power(x: Tensor, n: int) -> Tensor:
 
 def matrix_rank(x: Tensor, tol: float | None = None) -> Tensor:
     _, s, _ = svd(x)
-    sv_list = s.tolist()
     if tol is None:
-        tol = max(sv_list) * max(x.shape) * 1e-7
-    rank = sum(1.0 for sv in sv_list if sv > tol)
-    return tensor_from_data([rank], x.dtype)
+        # Single-scalar readback of the largest singular value is negligible;
+        # the count of kept singular values happens on the GPU.
+        tol = float(s.max()) * max(x.shape) * 1e-7
+    # (s > tol) on GPU, cast to x.dtype, then sum -> scalar tensor (0-dim).
+    return (s > tol).to(x.dtype).sum()
 
 
 def norm(x: Tensor, ord: float | str | None = None) -> Tensor:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ._tensor import Tensor
-from .tensor_factories_ops import tensor_from_data
+
 
 
 def einsum(equation: str, *operands: Tensor) -> Tensor:
@@ -94,9 +94,8 @@ def _einsum_single_op(input_str: str, output_str: str, x: Tensor) -> Tensor:
         perm = [input_str.index(c) for c in output_str]
         return x.permute(perm)
     if len(input_str) == 2 and len(output_str) == 1 and input_str[0] == input_str[1]:
-        n = x.shape[0]
-        vals = [x.tolist()[i * n + i] for i in range(n)]
-        return tensor_from_data(vals, x.dtype)
+        # Diagonal extraction runs on the GPU (no CPU readback).
+        return x.diag()
     if len(input_str) == 2 and len(output_str) == 0:
         return x.sum()
     return x

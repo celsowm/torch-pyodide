@@ -32,6 +32,7 @@ import {
   RMSPROP_STEP_SHADER,
   MAXMIN_BACKWARD_SHADER,
   EXTENDED_STEP_SHADER,
+  PDIST_SHADER,
   createStorageBuffer,
 } from "./utils.js";
 import { DeviceManager } from "./device.js";
@@ -324,6 +325,33 @@ export class ReductionOps {
     await syncDevice();
     dimsBuffer.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, meta.shape, meta.dtype as SupportedDType, outLength);
+  }
+
+  async pdist(tensorId: number, p: number): Promise<TensorHandle> {
+    await this.deviceMgr.ensureReady();
+    const meta = this.deviceMgr.getTensorMeta(tensorId);
+    if (meta.shape.length !== 2) {
+      throw new Error(`pdist expects a 2D input, got rank ${meta.shape.length}`);
+    }
+    const n = meta.shape[0]!;
+    const d = meta.shape[1]!;
+    const m = (n * (n - 1)) / 2;
+    const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, m * 4));
+
+    const pipeline = await getOrCreatePipeline(PDIST_SHADER, "main");
+    const ab = new ArrayBuffer(16);
+    new Uint32Array(ab, 0, 1)[0] = n;
+    new Uint32Array(ab, 4, 1)[0] = d;
+    new Float32Array(ab, 8, 1)[0] = p;
+    const paramBuffer = this.deviceMgr.device!.createBuffer({
+      size: ab.byteLength,
+      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
+    });
+    this.deviceMgr.writeBuffer(paramBuffer, 0, ab);
+    dispatchCompute(pipeline, [meta.buffer, out, paramBuffer], calculateWorkgroups(m));
+    await syncDevice();
+    paramBuffer.destroy();
+    return this.deviceMgr.registerTensorAsHandle(out, [m], meta.dtype, m);
   }
 
   async logSoftmax(tensorId: number, dim: number): Promise<TensorHandle> {
