@@ -201,6 +201,59 @@ def rfft2(input: Tensor, s=None, dim=(-2, -1), norm: str | None = None) -> Tenso
     return rfftn(input, s=s, dim=dim, norm=norm)
 
 
+def irfftn(input: Tensor, s=None, dim=None, norm: str | None = None) -> Tensor:
+    dims = _resolve_dims(input, dim)
+    sizes = [None] * len(dims) if s is None else list(s)
+    out = input if is_complex(input) else _complex(input, torch.zeros_like(input))
+    for k in range(len(dims) - 1):
+        out = _fft_1d(out, sizes[k], dims[k], inverse=True, norm=norm)
+    return irfft(out, sizes[-1], dims[-1], norm=norm)
+
+
+def irfft2(input: Tensor, s=None, dim=(-2, -1), norm: str | None = None) -> Tensor:
+    return irfftn(input, s=s, dim=dim, norm=norm)
+
+
+# ── Hermitian-symmetric transforms ───────────────────────────────────
+# hfft/ihfft mirror irfft/rfft with the forward/backward normalization
+# swapped (ortho is self-inverse). Verified against torch.fft reference.
+
+def _swap_norm(norm: str | None) -> str:
+    if norm is None or norm == "backward":
+        return "forward"
+    if norm == "forward":
+        return "backward"
+    return norm
+
+
+def hfft(input: Tensor, n: int | None = None, dim: int = -1, norm: str | None = None) -> Tensor:
+    d = dim % input.ndim
+    z = input if is_complex(input) else _complex(input, torch.zeros_like(input))
+    return irfft(_conj(z), n=n, dim=d, norm=_swap_norm(norm))
+
+
+def ihfft(input: Tensor, n: int | None = None, dim: int = -1, norm: str | None = None) -> Tensor:
+    d = dim % input.ndim
+    return _conj(rfft(input, n=n, dim=d, norm=_swap_norm(norm)))
+
+
+def hfftn(input: Tensor, s=None, dim=None, norm: str | None = None) -> Tensor:
+    z = input if is_complex(input) else _complex(input, torch.zeros_like(input))
+    return irfftn(_conj(z), s=s, dim=dim, norm=_swap_norm(norm))
+
+
+def hfft2(input: Tensor, s=None, dim=(-2, -1), norm: str | None = None) -> Tensor:
+    return hfftn(input, s=s, dim=dim, norm=norm)
+
+
+def ihfftn(input: Tensor, s=None, dim=None, norm: str | None = None) -> Tensor:
+    return _conj(rfftn(input, s=s, dim=dim, norm=_swap_norm(norm)))
+
+
+def ihfft2(input: Tensor, s=None, dim=(-2, -1), norm: str | None = None) -> Tensor:
+    return ihfftn(input, s=s, dim=dim, norm=norm)
+
+
 # ── helpers / frequency utilities ────────────────────────────────────
 
 def fftfreq(n: int, d: float = 1.0, dtype: str = "float32") -> Tensor:
@@ -257,5 +310,7 @@ def ifftshift(input: Tensor, dim=None) -> Tensor:
 __all__ = [
     "fft", "ifft", "rfft", "irfft",
     "fft2", "ifft2", "fftn", "ifftn", "rfftn", "rfft2",
+    "irfftn", "irfft2",
+    "hfft", "ihfft", "hfftn", "hfft2", "ihfftn", "ihfft2",
     "fftfreq", "rfftfreq", "fftshift", "ifftshift",
 ]

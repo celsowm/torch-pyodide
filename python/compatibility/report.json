@@ -1,11 +1,11 @@
 {
-  "implemented": 407,
-  "total": 407,
+  "implemented": 416,
+  "total": 416,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
-      "implemented": 163,
-      "total": 163
+      "implemented": 172,
+      "total": 172
     },
     "cuda_func": {
       "implemented": 11,
@@ -2479,6 +2479,60 @@
     },
     {
       "id": "torch.linalg.tensorsolve",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.matmul",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fft.hfft",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fft.ihfft",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fft.hfft2",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fft.hfftn",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fft.ihfft2",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fft.ihfftn",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fft.irfft2",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.fft.irfftn",
       "kind": "module_func",
       "implemented": true,
       "note": "ok"

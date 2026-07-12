@@ -436,6 +436,11 @@ def matrix_exp(x: Tensor) -> Tensor:
     return torch.stack(out, dim=0).reshape(leading + [n, n])
 
 
+def matmul(input: Tensor, other: Tensor) -> Tensor:
+    """Matrix product of two tensors (alias of ``torch.matmul``)."""
+    return input.matmul(other)
+
+
 def multi_dot(tensors: list[Tensor]) -> Tensor:
     if len(tensors) < 2:
         raise ValueError("multi_dot expects at least 2 tensors")
@@ -656,5 +661,5 @@ __all__ = [
     "multi_dot", "vander", "LinAlgError", "cholesky_ex", "inv_ex",
     "lu_factor_ex", "solve_ex", "ldl_factor", "ldl_factor_ex",
     "ldl_solve", "householder_product", "vecdot", "tensorinv",
-    "tensorsolve",
+    "tensorsolve", "matmul",
 ]

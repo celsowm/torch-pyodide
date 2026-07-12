@@ -2106,6 +2106,42 @@
     {
       "id": "torch.linalg.tensorsolve",
       "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.matmul",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.fft.hfft",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.fft.ihfft",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.fft.hfft2",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.fft.hfftn",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.fft.ihfft2",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.fft.ihfftn",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.fft.irfft2",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.fft.irfftn",
+      "kind": "module_func"
     }
   ]
 }
