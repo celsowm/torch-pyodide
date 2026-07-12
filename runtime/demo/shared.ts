@@ -38,6 +38,12 @@ import linalgInitPy from "../../python/torch/linalg/__init__.py?raw";
 import specialInitPy from "../../python/torch/special/__init__.py?raw";
 import fftInitPy from "../../python/torch/fft/__init__.py?raw";
 import distributionsInitPy from "../../python/torch/distributions/__init__.py?raw";
+import distributionsConstraintsPy from "../../python/torch/distributions/constraints.py?raw";
+import distributionsUtilsPy from "../../python/torch/distributions/utils.py?raw";
+import distributionsTransformsPy from "../../python/torch/distributions/transforms.py?raw";
+import distributionsUnivariatePy from "../../python/torch/distributions/univariate.py?raw";
+import distributionsMultivariatePy from "../../python/torch/distributions/multivariate.py?raw";
+import distributionsDistributionsPy from "../../python/torch/distributions/distributions.py?raw";
 import { installTorchRuntime } from "../src";
 
 type PyodideApi = {
@@ -133,6 +139,12 @@ for name in list(sys.modules):
   pyodide.FS.writeFile("/home/pyodide/torch/fft/__init__.py", fftInitPy);
   pyodide.FS.mkdirTree("/home/pyodide/torch/distributions");
   pyodide.FS.writeFile("/home/pyodide/torch/distributions/__init__.py", distributionsInitPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/distributions/constraints.py", distributionsConstraintsPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/distributions/utils.py", distributionsUtilsPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/distributions/transforms.py", distributionsTransformsPy);
+  pyodide.FS.writeFile("/home/pyodide/torch/distributions/univariate.py", distributionsUnivariatePy);
+  pyodide.FS.writeFile("/home/pyodide/torch/distributions/multivariate.py", distributionsMultivariatePy);
+  pyodide.FS.writeFile("/home/pyodide/torch/distributions/distributions.py", distributionsDistributionsPy);
   pyodide.runPython(`
 import sys
 home = "/home/pyodide"
@@ -193,7 +205,13 @@ export async function bootstrapPyodideTorch(options?: BootstrapOptions) {
   installTorchRuntime(globalThis);
   const indexURL = await resolvePyodideIndexURL();
   const loadPyodide = await loadPyodideModule(indexURL);
-  const pyodide = await loadPyodide({ indexURL });
+  const pyodide = await loadPyodide({
+    indexURL,
+    // Keep Pyodide's loaded package in memory only (no IndexedDB cache) so
+    // local edits to the bundled torch sources are always picked up on reload.
+    checkAPIVersion: false,
+    disablePyodideDataDir: true,
+  });
   const hostname = globalThis.location?.hostname ?? "";
   const localHost = isLocalhostHost(hostname);
   const preferLocalFallbackInProduction = options?.preferLocalFallbackInProduction ?? false;

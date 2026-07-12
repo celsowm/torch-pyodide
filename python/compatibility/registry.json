@@ -2166,6 +2166,250 @@
     {
       "id": "torch.fft.irfftn",
       "kind": "module_func"
+    },
+    {
+      "id": "torch.distributions.Normal",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Uniform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Bernoulli",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Categorical",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.OneHotCategorical",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Binomial",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Poisson",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Geometric",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.NegativeBinomial",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Exponential",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Gamma",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Beta",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Dirichlet",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.StudentT",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Cauchy",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Laplace",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Gumbel",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Pareto",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Weibull",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Chi2",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.FisherSnedecor",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.LogNormal",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.HalfCauchy",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.HalfNormal",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.VonMises",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Kumaraswamy",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.ContinuousBernoulli",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.InverseGamma",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.GeneralizedPareto",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.MultivariateNormal",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.LowRankMultivariateNormal",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.LogisticNormal",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Wishart",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.LKJCholesky",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.Independent",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.TransformedDistribution",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.ExponentialFamily",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.RelaxedBernoulli",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.RelaxedOneHotCategorical",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.MixtureSameFamily",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.AffineTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.SigmoidTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.TanhTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.ExpTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.LogTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.SoftmaxTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.StickBreakingTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.LowerCholeskyTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.CorrCholeskyTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.PositiveDefiniteTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.PowerTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.ComposeTransform",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.constraints.Constraint",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.constraints.real",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.constraints.positive",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.constraints.unit_interval",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.constraints.simplex",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.constraints.lower_cholesky",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.constraints.positive_definite",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.constraints.boolean",
+      "kind": "dist_class"
+    },
+    {
+      "id": "torch.distributions.constraints.nonnegative",
+      "kind": "dist_class"
     }
   ]
 }

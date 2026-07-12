@@ -838,6 +838,12 @@ def log1p(x: Tensor) -> Tensor:
     return x.log1p()
 
 
+def logit(x: Tensor, eps: float | None = None) -> Tensor:
+    if eps is not None:
+        x = x.clamp(eps, 1.0 - eps)
+    return (x / (1.0 - x)).log()
+
+
 def expm1(x: Tensor) -> Tensor:
     return x.expm1()
 
@@ -939,6 +945,12 @@ def rad2deg(x: Tensor) -> Tensor:
 
 
 def pow(a: Tensor, b: Tensor) -> Tensor:
+    from ._tensor import Tensor as _Tensor
+    from .tensor_ops import _scalar_to_tensor
+    if not isinstance(a, _Tensor) and isinstance(b, _Tensor):
+        a = _scalar_to_tensor(_builtins.float(a), b._dtype)
+    elif isinstance(a, _Tensor) and not isinstance(b, _Tensor):
+        b = _scalar_to_tensor(_builtins.float(b), a._dtype)
     return pow_from_tensors(a, b)
 
 
@@ -1769,6 +1781,75 @@ byte = uint8
 # Integer-width aliases aligned with PyTorch naming.
 short = int16
 char = int8
+
+
+# ── Numeric info helpers (torch.finfo / torch.iinfo) ────────────
+
+class _Finfo:
+    def __init__(self, *, eps, max, min, tiny, bits, dtype):
+        self.eps = eps
+        self.max = max
+        self.min = min
+        self.tiny = tiny
+        self.bits = bits
+        self.dtype = dtype
+
+    def __repr__(self) -> str:
+        return f"finfo(resolution={self.eps}, min={self.min}, max={self.max}, eps={self.eps}, dtype={self.dtype})"
+
+
+class _Iinfo:
+    def __init__(self, *, min, max, bits, dtype):
+        self.min = min
+        self.max = max
+        self.bits = bits
+        self.dtype = dtype
+
+    def __repr__(self) -> str:
+        return f"iinfo(min={self.min}, max={self.max}, dtype={self.dtype})"
+
+
+_FINFO_TABLE = {
+    "float16": _Finfo(eps=0.0009765625, max=65504.0, min=-65504.0, tiny=6.103515625e-05, bits=16, dtype="float16"),
+    "float32": _Finfo(eps=1.1920928955078125e-07, max=3.4028234663852886e38, min=-3.4028234663852886e38, tiny=1.1754943508222875e-38, bits=32, dtype="float32"),
+    "float64": _Finfo(eps=2.220446049250313e-16, max=1.7976931348623157e308, min=-1.7976931348623157e308, tiny=2.2250738585072014e-308, bits=64, dtype="float64"),
+    "bfloat16": _Finfo(eps=0.0078125, max=3.3895313892515355e38, min=-3.3895313892515355e38, tiny=1.1754943508222875e-38, bits=16, dtype="bfloat16"),
+}
+
+_IINFO_TABLE = {
+    "int8": _Iinfo(min=-128, max=127, bits=8, dtype="int8"),
+    "int16": _Iinfo(min=-32768, max=32767, bits=16, dtype="int16"),
+    "int32": _Iinfo(min=-2147483648, max=2147483647, bits=32, dtype="int32"),
+    "int64": _Iinfo(min=-9223372036854775808, max=9223372036854775807, bits=64, dtype="int64"),
+    "uint8": _Iinfo(min=0, max=255, bits=8, dtype="uint8"),
+    "uint16": _Iinfo(min=0, max=65535, bits=16, dtype="uint16"),
+    "uint32": _Iinfo(min=0, max=4294967295, bits=32, dtype="uint32"),
+    "uint64": _Iinfo(min=0, max=18446744073709551615, bits=64, dtype="uint64"),
+}
+
+
+def finfo(input: object) -> _Finfo:
+    if isinstance(input, Tensor):
+        dtype = input.dtype
+    elif isinstance(input, str):
+        dtype = input
+    else:
+        dtype = getattr(input, "name", None) or str(input)
+    if dtype not in _FINFO_TABLE:
+        raise TypeError(f"torch.finfo() called with dtype {dtype} which is not a floating point dtype")
+    return _FINFO_TABLE[dtype]
+
+
+def iinfo(input: object) -> _Iinfo:
+    if isinstance(input, Tensor):
+        dtype = input.dtype
+    elif isinstance(input, str):
+        dtype = input
+    else:
+        dtype = getattr(input, "name", None) or str(input)
+    if dtype not in _IINFO_TABLE:
+        raise TypeError(f"torch.iinfo() called with dtype {dtype} which is not an integer dtype")
+    return _IINFO_TABLE[dtype]
 
 
 # Make submodules accessible

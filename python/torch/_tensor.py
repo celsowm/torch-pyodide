@@ -391,6 +391,75 @@ class Tensor:
         from ._tensor_linalg_py import diag_from_tensor
         return diag_from_tensor(self)
 
+    def diagonal(self, offset: int = 0, dim1: int = -2, dim2: int = -1) -> "Tensor":
+        from .tensor_factories_ops import tensor_from_data
+
+        shape = list(self.shape)
+        ndim = len(shape)
+        d1 = dim1 % ndim
+        d2 = dim2 % ndim
+        n = shape[d1]
+        m = shape[d2]
+        if offset >= 0:
+            diag_len = max(0, min(n, m - offset))
+            i0, j0 = 0, offset
+        else:
+            diag_len = max(0, min(n + offset, m))
+            i0, j0 = -offset, 0
+
+        nested = self.tolist()
+        # Flatten according to shape to a 1D list.
+        def _flatten(value: object, rest_shape: list[int]) -> list[float]:
+            if not rest_shape:
+                return [value]  # type: ignore[list-item]
+            out: list[float] = []
+            for sub in value:  # type: ignore[union-attr]
+                out.extend(_flatten(sub, rest_shape[1:]))
+            return out
+
+        flat = _flatten(nested, shape)
+        strides: list[int] = [1]
+        for s in reversed(shape[1:]):
+            strides.insert(0, strides[0] * s)
+        inner_dims = [d for d in range(ndim) if d != d1 and d != d2]
+        if diag_len == 0:
+            new_shape = [shape[d] for d in inner_dims] + [0]
+            return tensor_from_data([], new_shape, dtype=self._dtype)
+
+        result_nested: object = []
+
+        def _coord(idx: int) -> list[int]:
+            c = [0] * ndim
+            for d in range(ndim - 1, -1, -1):
+                c[d] = idx % shape[d]
+                idx //= shape[d]
+            return c
+
+        def _get(coord: list[int]) -> float:
+            return flat[sum(coord[d] * strides[d] for d in range(ndim))]
+
+        def _build(prefix: list[int]) -> object:
+            if len(prefix) == len(inner_dims):
+                out = []
+                for k in range(diag_len):
+                    coord = (
+                        prefix[:d1]
+                        + [i0 + k]
+                        + prefix[d1 : d2 - 1]
+                        + [j0 + k]
+                        + prefix[d2 - 1 :]
+                    )
+                    out.append(_get(coord))
+                return out
+            out = []
+            for i in range(shape[inner_dims[len(prefix)]]):
+                out.append(_build(prefix + [i]))
+            return out
+
+        result_nested = _build([])
+        new_shape = [shape[d] for d in inner_dims] + [diag_len]
+        return tensor_from_data(result_nested, new_shape, dtype=self._dtype)
+
     def pow(self, other: "Tensor | float") -> "Tensor":
         from .tensor_ops import pow_from_tensors, _scalar_to_tensor
         return pow_from_tensors(self, other) if isinstance(other, Tensor) else pow_from_tensors(self, _scalar_to_tensor(float(other), self._dtype))

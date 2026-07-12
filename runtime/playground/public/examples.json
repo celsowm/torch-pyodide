@@ -1,6 +1,8 @@
 {
   "default": "tensor_basics",
   "examples": [
+    { "id": "distdebug", "label": "Dist Debug", "file": "examples/distdebug.py" },
+    { "id": "oprobe", "label": "Op Probe", "file": "examples/oprobe.py" },
     { "id": "tensor_basics", "label": "Tensor Basics + CUDA Info", "file": "examples/tensor_basics.py" },
     { "id": "matmul_relu", "label": "Matmul + ReLU", "file": "examples/matmul_relu.py" },
     { "id": "reshape_transpose", "label": "Reshape + Transpose", "file": "examples/reshape_transpose.py" },

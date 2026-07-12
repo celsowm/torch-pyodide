@@ -158,6 +158,17 @@ def _check_target(torch_mod: Any, tensor_cls: Any, target: dict[str, str]) -> Ta
         ok = isinstance(current, type)
         return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
 
+    if kind == "dist_class":
+        # e.g. "torch.distributions.Normal" or "torch.distributions.constraints.real".
+        parts = target_id.split(".")[1:]  # drop "torch"
+        current = torch_mod
+        for part in parts:
+            if not hasattr(current, part):
+                return TargetResult(target_id, kind, False, "missing")
+            current = getattr(current, part)
+        ok = isinstance(current, type) or callable(current)
+        return TargetResult(target_id, kind, ok, "ok" if ok else "missing")
+
     return TargetResult(target_id, kind, False, f"unknown kind: {kind}")
 
 

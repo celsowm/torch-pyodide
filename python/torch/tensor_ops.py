@@ -498,6 +498,36 @@ def where_from_tensors(condition: "Tensor", x: "Tensor", y: "Tensor") -> "Tensor
     from ._tensor import Tensor
     from .autograd import _Node, is_grad_enabled, _grad_where
 
+    # The WebGPU `where` kernel requires identical shapes; real PyTorch
+    # broadcasts condition/x/y. Match that by broadcasting all three.
+    def _bcast(*shapes: list[int]) -> list[int] | None:
+        out: list[int] = []
+        for shape in shapes:
+            s = list(shape)
+            while len(out) < len(s):
+                out.insert(0, 1)
+            while len(s) < len(out):
+                s.insert(0, 1)
+            for i in range(len(out)):
+                a, b = out[i], s[i]
+                if a == 1 or b == 1 or a == b:
+                    out[i] = max(a, b)
+                else:
+                    return None
+        return out
+
+    try:
+        bshape = _bcast(condition.shape, x.shape, y.shape)
+    except Exception:
+        bshape = None
+    if bshape is not None:
+        if list(condition.shape) != bshape:
+            condition = condition.reshape(bshape)
+        if list(x.shape) != bshape:
+            x = x.reshape(bshape)
+        if list(y.shape) != bshape:
+            y = y.reshape(bshape)
+
     runtime = _get_runtime()
     meta = _run_js_awaitable(runtime.where(condition._id, x._id, y._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)

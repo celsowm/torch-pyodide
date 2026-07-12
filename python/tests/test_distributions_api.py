@@ -23,6 +23,9 @@ class _FakeTensor:
     def __truediv__(self, other: object) -> "_FakeTensor":
         return _FakeTensor(f"({self.value}/{_value(other)})")
 
+    def pow(self, other: object) -> "_FakeTensor":
+        return _FakeTensor(f"({self.value}**{_value(other)})")
+
 
 def _value(value: object) -> str:
     return value.value if isinstance(value, _FakeTensor) else str(value)
@@ -35,7 +38,7 @@ def test_distribution_properties_match_stored_tensors():
 
     assert normal.mean is normal.loc
     assert normal.stddev is normal.scale
-    assert normal.variance.value == "(scale*scale)"
+    assert normal.variance.value == "(scale**2)"
 
     categorical = Categorical.__new__(Categorical)
     categorical._probs = _FakeTensor("probs")
@@ -48,11 +51,11 @@ def test_distribution_moment_properties_are_available():
     uniform.low = _FakeTensor("low")
     uniform.high = _FakeTensor("high")
 
-    assert uniform.mean.value == "((low+high)*0.5)"
-    assert uniform.variance.value == "(((high-low)*(high-low))/12.0)"
+    assert uniform.mean.value == "((low+high)/2.0)"
+    assert uniform.variance.value == "(((high-low)**2)/12.0)"
 
     bernoulli = Bernoulli.__new__(Bernoulli)
-    bernoulli.probs = _FakeTensor("probs")
+    bernoulli._probs = _FakeTensor("probs")
 
     assert bernoulli.mean is bernoulli.probs
     assert bernoulli.variance.value == "(probs*(1.0-probs))"

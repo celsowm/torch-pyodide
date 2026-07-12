@@ -1,154 +1,169 @@
+"""``torch.distributions`` — a functional subset matching PyTorch's API.
+
+Implements the full public class surface (distributions, transforms,
+constraints) with ``sample`` / ``rsample`` and ``log_prob`` validated against
+real PyTorch. Heavy random sampling runs on the WebGPU runtime.
+"""
 from __future__ import annotations
 
 import math
-import random
 
 import torch
 from torch import Tensor
 from torch.tensor_factories_ops import tensor_from_data
 
+from .constraints import (
+    Constraint,
+    real,
+    positive,
+    nonnegative,
+    negative,
+    unit_interval,
+    open_unit_interval,
+    simplex,
+    boolean,
+    multinomial,
+    categorical,
+    lower_cholesky,
+    positive_definite,
+    integer_interval,
+    greater_than,
+    less_than,
+    interval,
+    open_interval,
+    register_constraint,
+)
+from .transforms import (
+    Transform,
+    IdentityTransform,
+    ExpTransform,
+    LogTransform,
+    PowerTransform,
+    SigmoidTransform,
+    TanhTransform,
+    SoftmaxTransform,
+    SoftplusTransform,
+    AbsTransform,
+    AffineTransform,
+    ComposeTransform,
+    CatTransform,
+    StackTransform,
+    ReshapeTransform,
+    IndependentTransform,
+    StickBreakingTransform,
+    LowerCholeskyTransform,
+    PositiveDefiniteTransform,
+    CumulativeDistributionTransform,
+    CorrCholeskyTransform,
+)
+from .utils import Distribution
+from .univariate import (
+    Normal,
+    LogNormal,
+    Exponential,
+    Laplace,
+    Cauchy,
+    Gumbel,
+    Uniform,
+    Bernoulli,
+    Categorical,
+    OneHotCategorical,
+    Gamma,
+    Beta,
+    Dirichlet,
+    StudentT,
+    Chi2,
+    FisherSnedecor,
+    HalfCauchy,
+    HalfNormal,
+    Weibull,
+    Pareto,
+    Kumaraswamy,
+    VonMises,
+    GeneralizedPareto,
+    ContinuousBernoulli,
+    Geometric,
+    Binomial,
+    NegativeBinomial,
+    Poisson,
+    InverseGamma,
+)
+from .multivariate import (
+    MultivariateNormal,
+    LowRankMultivariateNormal,
+    LogisticNormal,
+    Wishart,
+    LKJCholesky,
+    MixtureSameFamily,
+)
+from .distributions import (
+    Independent,
+    TransformedDistribution,
+    ExponentialFamily,
+    RelaxedBernoulli,
+    RelaxedOneHotCategorical,
+)
 
-def _as_shape(sample_shape: int | list[int] | tuple[int, ...]) -> list[int]:
+__all__ = [
+    "Constraint", "real", "positive", "nonnegative", "negative", "unit_interval",
+    "open_unit_interval", "simplex", "boolean", "multinomial", "categorical",
+    "lower_cholesky", "positive_definite", "integer_interval", "greater_than",
+    "less_than", "interval", "open_interval", "register_constraint",
+    "Transform", "IdentityTransform", "ExpTransform", "LogTransform",
+    "PowerTransform", "SigmoidTransform", "TanhTransform", "SoftmaxTransform",
+    "SoftplusTransform", "AbsTransform", "AffineTransform", "ComposeTransform",
+    "CatTransform", "StackTransform", "ReshapeTransform", "IndependentTransform",
+    "StickBreakingTransform", "LowerCholeskyTransform", "PositiveDefiniteTransform",
+    "CumulativeDistributionTransform", "CorrCholeskyTransform",
+    "Distribution",
+    "Normal", "LogNormal", "Exponential", "Laplace", "Cauchy", "Gumbel", "Uniform",
+    "Bernoulli", "Categorical", "OneHotCategorical", "Gamma", "Beta", "Dirichlet",
+    "StudentT", "Chi2", "FisherSnedecor", "HalfCauchy", "HalfNormal", "Weibull",
+    "Pareto", "Kumaraswamy", "VonMises", "GeneralizedPareto", "ContinuousBernoulli",
+    "Geometric", "Binomial", "NegativeBinomial", "Poisson", "InverseGamma",
+    "MultivariateNormal", "LowRankMultivariateNormal", "LogisticNormal", "Wishart",
+    "LKJCholesky", "MixtureSameFamily",
+    "Independent", "TransformedDistribution", "ExponentialFamily",
+    "RelaxedBernoulli", "RelaxedOneHotCategorical",
+]
+
+
+def kl_divergence(p: Distribution, q: Distribution) -> Tensor:
+    """KL divergence for a few pairs; otherwise falls back to the definition
+    ``E_p[log p - log q]`` via Monte-Carlo sampling when exact forms are
+    unavailable."""
+    try:
+        return _kl_exact(p, q)
+    except NotImplementedError:
+        s = p.sample((1000,))
+        return (p.log_prob(s) - q.log_prob(s)).mean(dim=0)
+
+
+def _kl_exact(p: Distribution, q: Distribution) -> Tensor:
+    if isinstance(p, Normal) and isinstance(q, Normal):
+        var_ratio = (p.scale / q.scale) ** 2
+        return ((p.loc - q.loc) ** 2) / (2.0 * q.scale ** 2) + 0.5 * (
+            var_ratio - 1.0 - var_ratio.log()
+        )
+    if isinstance(p, Bernoulli) and isinstance(q, Bernoulli):
+        return p.probs * (p.probs.log() - q.probs.log()) + (1.0 - p.probs) * (
+            (1.0 - p.probs).log() - (1.0 - q.probs).log()
+        )
+    if isinstance(p, Categorical) and isinstance(q, Categorical):
+        p_lp = p.logits - torch.logsumexp(p.logits, dim=-1, keepdim=True)
+        q_lp = q.logits - torch.logsumexp(q.logits, dim=-1, keepdim=True)
+        return (torch.softmax(p.logits, dim=-1) * (p_lp - q_lp)).sum(dim=-1)
+    raise NotImplementedError
+
+
+def _as_shape(sample_shape):
     return [sample_shape] if isinstance(sample_shape, int) else list(sample_shape)
 
 
-def _broadcast_shape(*shapes: list[int] | tuple[int, ...]) -> list[int]:
-    result: list[int] = []
-    max_rank = max((len(shape) for shape in shapes), default=0)
+def _broadcast_shape(*shapes):
+    result = []
+    max_rank = max((len(s) for s in shapes), default=0)
     for offset in range(max_rank):
-        dims = [shape[len(shape) - max_rank + offset] if offset >= max_rank - len(shape) else 1 for shape in shapes]
-        size = max(dims)
-        if any(dim not in (1, size) for dim in dims):
-            raise ValueError(f"Shapes are not broadcastable: {shapes}")
-        result.append(size)
+        dims = [s[len(s) - max_rank + offset] if offset >= max_rank - len(s) else 1 for s in shapes]
+        result.append(max(dims))
     return result
-
-
-class Distribution:
-    def sample(self) -> Tensor:
-        raise NotImplementedError
-
-    def log_prob(self, value: Tensor) -> Tensor:
-        raise NotImplementedError
-
-
-class Normal(Distribution):
-    def __init__(self, loc: Tensor | float, scale: Tensor | float) -> None:
-        self.loc = loc if isinstance(loc, Tensor) else torch.tensor(float(loc))
-        self.scale = scale if isinstance(scale, Tensor) else torch.tensor(float(scale))
-
-    @property
-    def mean(self) -> Tensor:
-        return self.loc
-
-    @property
-    def variance(self) -> Tensor:
-        return self.scale * self.scale
-
-    @property
-    def stddev(self) -> Tensor:
-        return self.scale
-
-    def sample(self, sample_shape: int | list[int] | tuple[int, ...] = ()) -> Tensor:
-        shape = _as_shape(sample_shape) + _broadcast_shape(self.loc.shape, self.scale.shape)
-        eps = torch.randn(shape)
-        return self.loc + eps * self.scale
-
-    def log_prob(self, value: Tensor) -> Tensor:
-        var = self.scale * self.scale
-        log_scale = self.scale.log()
-        return -((value - self.loc) ** 2) / (2.0 * var) - log_scale - math.log(math.sqrt(2.0 * math.pi))
-
-
-class Uniform(Distribution):
-    def __init__(self, low: Tensor | float, high: Tensor | float) -> None:
-        self.low = low if isinstance(low, Tensor) else torch.tensor(float(low))
-        self.high = high if isinstance(high, Tensor) else torch.tensor(float(high))
-
-    @property
-    def mean(self) -> Tensor:
-        return (self.low + self.high) * 0.5
-
-    @property
-    def variance(self) -> Tensor:
-        width = self.high - self.low
-        return (width * width) / 12.0
-
-    def sample(self, sample_shape: int | list[int] | tuple[int, ...] = ()) -> Tensor:
-        shape = _as_shape(sample_shape) + _broadcast_shape(self.low.shape, self.high.shape)
-        u = torch.rand(shape)
-        return self.low + u * (self.high - self.low)
-
-    def log_prob(self, value: Tensor) -> Tensor:
-        log_width = (self.high - self.low).log()
-        return torch.where((value >= self.low) & (value <= self.high), -log_width, torch.tensor(-float("inf")))
-
-
-class Bernoulli(Distribution):
-    def __init__(self, probs: Tensor | float) -> None:
-        self.probs = probs if isinstance(probs, Tensor) else torch.tensor(float(probs))
-
-    @property
-    def mean(self) -> Tensor:
-        return self.probs
-
-    @property
-    def variance(self) -> Tensor:
-        return self.probs * (1.0 - self.probs)
-
-    def sample(self, sample_shape: int | list[int] | tuple[int, ...] = ()) -> Tensor:
-        shape = _as_shape(sample_shape) + list(self.probs.shape)
-        u = torch.rand(shape)
-        return (u < self.probs).to(self.probs.dtype)
-
-    def log_prob(self, value: Tensor) -> Tensor:
-        return value * self.probs.log() + (1.0 - value) * (1.0 - self.probs).log()
-
-
-class Categorical(Distribution):
-    def __init__(self, logits: Tensor | None = None, probs: Tensor | None = None) -> None:
-        if logits is not None:
-            self.logits = logits
-        elif probs is not None:
-            self.logits = probs.log()
-        else:
-            raise ValueError("Either logits or probs must be provided")
-        # Compute probs for sampling
-        self._probs = torch.softmax(self.logits, dim=-1)
-
-    @property
-    def probs(self) -> Tensor:
-        return self._probs
-
-    def sample(self, sample_shape: int | list[int] | tuple[int, ...] = ()) -> Tensor:
-        sample = _as_shape(sample_shape)
-        batch_shape = list(self.logits.shape[:-1])
-        out_shape = sample + batch_shape
-        # Gumbel-max trick
-        gumbel = -(-torch.rand(sample + list(self.logits.shape)).log()).log()
-        samples = self.logits + gumbel
-        row_count = 1
-        for size in out_shape:
-            row_count *= size
-        samples_2d = samples.reshape([row_count, self.logits.shape[-1]])
-        # argmax runs entirely on the GPU (argmax.wgsl); no CPU readback.
-        indices = samples_2d.argmax(dim=-1)
-        if len(out_shape) == 0:
-            return indices.reshape([]).to(dtype="int64")
-        return indices.reshape(out_shape).to(dtype="int64")
-
-    def log_prob(self, value: Tensor) -> Tensor:
-        return -torch.nn.functional.nll_loss(self.logits.log_softmax(dim=-1), value, reduction="none")
-
-
-class Transforms:
-    @staticmethod
-    def sigmoid(x: Tensor) -> Tensor:
-        return x.sigmoid()
-
-    @staticmethod
-    def log_sigmoid(x: Tensor) -> Tensor:
-        return -(-x).expm1().log() - x.clamp(0.0)
-
-
-__all__ = ["Distribution", "Normal", "Uniform", "Bernoulli", "Categorical", "Transforms"]
