@@ -1,6 +1,6 @@
 {
-  "implemented": 416,
-  "total": 416,
+  "implemented": 422,
+  "total": 422,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
@@ -32,8 +32,8 @@
       "total": 19
     },
     "optim_class": {
-      "implemented": 8,
-      "total": 8
+      "implemented": 14,
+      "total": 14
     },
     "optim_class_method": {
       "implemented": 4,
@@ -2317,6 +2317,42 @@
     },
     {
       "id": "torch.optim.RAdam",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.ASGD",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.Adadelta",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.Rprop",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.Adafactor",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.Muon",
+      "kind": "optim_class",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.optim.SparseAdam",
       "kind": "optim_class",
       "implemented": true,
       "note": "ok"

@@ -336,11 +336,13 @@ def bitwise_not_from_tensor(tensor: "Tensor") -> "Tensor":
 def lerp_from_tensors(start: "Tensor", end: "Tensor", weight: "Tensor | float") -> "Tensor":
     """torch.lerp(start, end, weight): linear interpolation."""
     from ._tensor import Tensor
+    if not isinstance(weight, Tensor):
+        # A 0-d weight tensor broadcasts without adding a trailing dimension,
+        # which matters when lerp's result is later concatenated/stacked
+        # (e.g. torch.quantile). Avoid the shape-[1] scalar helper here.
+        weight = _scalar_to_tensor(float(weight), start._dtype).reshape([])
     runtime = _get_runtime()
-    if isinstance(weight, Tensor):
-        meta = _run_js_awaitable(runtime.lerpTensor(start._id, end._id, weight._id))
-    else:
-        meta = _run_js_awaitable(runtime.lerpScalar(start._id, end._id, float(weight)))
+    meta = _run_js_awaitable(runtime.lerpTensor(start._id, end._id, weight._id))
     tensor_id, out_shape, out_dtype = _js_meta_to_tuple(meta)
     return Tensor(tensor_id, out_shape, out_dtype)
 

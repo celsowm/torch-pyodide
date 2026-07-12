@@ -190,17 +190,13 @@ export class ArithmeticOps {
     await this.deviceMgr.ensureReady();
     const a = this.deviceMgr.getTensorMeta(tensorId);
     const length = product(a.shape);
+    const scalar = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
+    this.deviceMgr.writeBuffer(scalar, 0, new Float32Array([value]));
     const out = createStorageBuffer(this.deviceMgr.device!, Math.max(4, length * 4));
-    const params = new Float32Array([value, length, 0, 0]);
-    const paramBuffer = this.deviceMgr.device!.createBuffer({
-      size: params.byteLength,
-      usage: BufferUsage.UNIFORM | BufferUsage.COPY_DST,
-    });
-    this.deviceMgr.writeBuffer(paramBuffer, 0, params);
     const pipeline = await getOrCreatePipeline(ELEMENTWISE_SHADER, "mul");
-    dispatchCompute(pipeline, [a.buffer, paramBuffer, out], calculateWorkgroups(length));
+    dispatchCompute(pipeline, [a.buffer, scalar, out], calculateWorkgroups(length));
     await syncDevice();
-    paramBuffer.destroy();
+    scalar.destroy();
     return this.deviceMgr.registerTensorAsHandle(out, a.shape, a.dtype, length);
   }
 

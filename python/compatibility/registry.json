@@ -2000,6 +2000,30 @@
       "kind": "optim_class"
     },
     {
+      "id": "torch.optim.ASGD",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.Adadelta",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.Rprop",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.Adafactor",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.Muon",
+      "kind": "optim_class"
+    },
+    {
+      "id": "torch.optim.SparseAdam",
+      "kind": "optim_class"
+    },
+    {
       "id": "nn.functional.elu",
       "kind": "nn_func"
     },

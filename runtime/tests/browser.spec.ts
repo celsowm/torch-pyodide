@@ -19,6 +19,7 @@ const EXAMPLE_TIMEOUT_OVERRIDES_MS: Record<string, number> = {
   ops_batch_5d: 120000,
   linalg_ex_ops: 120000,
   fft_hermitian_ops: 120000,
+  optim_completion_ops: 120000,
 };
 
 type DeterministicParityOutput = {
@@ -1638,6 +1639,17 @@ test.describe.serial("playground examples @webgpu", () => {
     const actual = parseJsonOutput<{ ok: boolean; max_diff: number }>(output);
     expect(actual.ok).toBe(true);
     expect(actual.max_diff).toBeLessThan(1e-2);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("optim completion parity (ASGD, Adadelta, Rprop, Adafactor, SparseAdam, Muon)", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("optim_completion_ops");
+    await expect(page.locator("#example-select")).toHaveValue("optim_completion_ops");
+    const { output } = await runSelectedExample(page, "optim_completion_ops", 120000);
+    const actual = parseJsonOutput<{ ok: boolean; max_diff: number }>(output);
+    expect(actual.ok).toBe(true);
+    expect(actual.max_diff).toBeLessThan(5e-2);
     expect(consoleFailures).toEqual([]);
   });
 });

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import warnings
 
 from typing import Iterable, Callable, Optional
@@ -1167,6 +1168,436 @@ class LBFGS(Optimizer):
             if abs(f0 - new_loss) < tolerance_change:
                 break
 
+        return loss
+
+
+class ASGD(Optimizer):
+    """Averaged Stochastic Gradient Descent."""
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 0.01,
+        lambd: float = 1e-4,
+        alpha: float = 0.75,
+        t0: float = 1e6,
+        weight_decay: float = 0.0,
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if weight_decay < 0.0:
+            raise ValueError(f"Invalid weight_decay value: {weight_decay}")
+        defaults = {
+            "lr": lr,
+            "lambd": lambd,
+            "alpha": alpha,
+            "t0": t0,
+            "weight_decay": weight_decay,
+        }
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        import torch
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                lambd = float(group["lambd"])
+                alpha = float(group["alpha"])
+                t0 = float(group["t0"])
+                weight_decay = float(group["weight_decay"])
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if id(p) not in self.state:
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "eta": lr,
+                            "mu": 1.0,
+                            "ax": torch.zeros_like(p),
+                        }
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    step = state["step"]
+                    eta = float(state["eta"])
+                    mu = float(state["mu"])
+                    if weight_decay != 0:
+                        grad = grad.add(p.mul(weight_decay))
+                    new_p = p.mul(1.0 - lambd * eta).sub(grad.mul(eta))
+                    p._set(new_p)
+                    ax = state["ax"]
+                    if mu != 1.0:
+                        state["ax"] = ax.add(new_p.sub(ax).mul(mu))
+                    else:
+                        state["ax"] = new_p
+                    state["eta"] = lr / ((1.0 + lambd * lr * step) ** alpha)
+                    state["mu"] = 1.0 / max(1.0, step - t0)
+        _end_runtime_frame(runtime, frame_started, run_js)
+        return loss
+
+
+class Adadelta(Optimizer):
+    """Adadelta optimizer."""
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 1.0,
+        rho: float = 0.9,
+        eps: float = 1e-6,
+        weight_decay: float = 0.0,
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if not (0.0 <= rho <= 1.0):
+            raise ValueError(f"Invalid rho value: {rho}")
+        if eps < 0.0:
+            raise ValueError(f"Invalid epsilon value: {eps}")
+        if weight_decay < 0.0:
+            raise ValueError(f"Invalid weight_decay value: {weight_decay}")
+        defaults = {"lr": lr, "rho": rho, "eps": eps, "weight_decay": weight_decay}
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        import torch
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                rho = float(group["rho"])
+                eps = float(group["eps"])
+                weight_decay = float(group["weight_decay"])
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if id(p) not in self.state:
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "square_avg": torch.zeros_like(p),
+                            "acc_delta": torch.zeros_like(p),
+                        }
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    if weight_decay != 0:
+                        grad = grad.add(p.mul(weight_decay))
+                    square_avg = state["square_avg"].mul(rho).add(grad.square().mul(1.0 - rho))
+                    state["square_avg"] = square_avg
+                    std = square_avg.add(eps).sqrt()
+                    acc_delta = state["acc_delta"]
+                    delta = acc_delta.add(eps).sqrt().div(std).mul(grad)
+                    p._set(p.sub(delta.mul(lr)))
+                    state["acc_delta"] = acc_delta.mul(rho).add(delta.square().mul(1.0 - rho))
+        _end_runtime_frame(runtime, frame_started, run_js)
+        return loss
+
+
+class Rprop(Optimizer):
+    """Resilient backpropagation optimizer."""
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 0.01,
+        etas: tuple[float, float] = (0.5, 1.2),
+        step_sizes: tuple[float, float] = (1e-6, 50),
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if not (0.0 < etas[0] < 1.0 < etas[1]):
+            raise ValueError(f"Invalid eta values: {etas[0]}, {etas[1]}")
+        defaults = {"lr": lr, "etas": etas, "step_sizes": step_sizes}
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        import torch
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                etaminus, etaplus = group["etas"]
+                step_size_min, step_size_max = group["step_sizes"]
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if id(p) not in self.state:
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "prev": torch.zeros_like(p),
+                            "step_size": torch.full_like(p, lr),
+                        }
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    prev = state["prev"]
+                    step_size = state["step_size"]
+                    prod_sign = grad.mul(prev).sign()
+                    ones = torch.full_like(p, 1.0)
+                    eta_neg = torch.full_like(p, etaminus).where(prod_sign.lt(0), ones)
+                    eta = torch.full_like(p, etaplus).where(prod_sign.gt(0), eta_neg)
+                    step_size = step_size.mul(eta).clamp(min=step_size_min, max=step_size_max)
+                    grad_used = grad.where(prod_sign.ge(0), torch.zeros_like(p))
+                    p._set(p.sub(grad_used.sign().mul(step_size)))
+                    state["prev"] = grad_used
+                    state["step_size"] = step_size
+        _end_runtime_frame(runtime, frame_started, run_js)
+        return loss
+
+
+class Adafactor(Optimizer):
+    """Adafactor optimizer (memory-efficient, factored second moments)."""
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 0.01,
+        beta2_decay: float = -0.8,
+        eps: tuple[float | None, float] = (None, 1e-3),
+        d: float = 1.0,
+        weight_decay: float = 0.0,
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if beta2_decay > 0.0:
+            raise ValueError(f"beta2_decay should be <= 0 but is: {beta2_decay}")
+        if d < 1.0:
+            raise ValueError(f"Clipping threshold d should be >= 1 but is: {d}")
+        defaults = {
+            "lr": lr,
+            "beta2_decay": beta2_decay,
+            "eps": eps,
+            "d": d,
+            "weight_decay": weight_decay,
+        }
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        import torch
+        float32_eps = 1.1920928955078125e-07
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                beta2_decay = float(group["beta2_decay"])
+                eps1, eps2 = group["eps"]
+                d = float(group["d"])
+                weight_decay = float(group["weight_decay"])
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if id(p) not in self.state:
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "row_var": None,
+                            "col_var": None,
+                            "variance": None,
+                        }
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    step_float = float(state["step"])
+                    e1 = float32_eps if eps1 is None else float(eps1)
+                    one_minus_beta2_t = step_float ** beta2_decay
+                    rho_t = min(lr, 1.0 / (step_float ** 0.5))
+                    numel = p.numel
+                    alpha = max(eps2, p.norm().item() / (numel ** 0.5)) * rho_t
+
+                    if weight_decay != 0:
+                        p._set(p.mul(1.0 - lr * weight_decay))
+
+                    if grad.ndim > 1:
+                        shape = list(grad.shape)
+                        if state["row_var"] is None:
+                            state["row_var"] = torch.zeros(shape[:-1] + [1], dtype=p.dtype)
+                            state["col_var"] = torch.zeros(shape[:-2] + [1, shape[-1]], dtype=p.dtype)
+                        row_mean = grad.square().mean(dim=-1, keepdim=True)
+                        row_var = state["row_var"].lerp(row_mean, one_minus_beta2_t)
+                        col_mean = grad.square().mean(dim=-2, keepdim=True)
+                        col_var = state["col_var"].lerp(col_mean, one_minus_beta2_t)
+                        state["row_var"] = row_var
+                        state["col_var"] = col_var
+                        var_estimate = row_var.matmul(col_var)
+                        var_estimate = var_estimate.div(row_var.mean(dim=-2, keepdim=True).clamp(min=e1))
+                    else:
+                        if state["variance"] is None:
+                            state["variance"] = torch.zeros_like(p)
+                        variance = state["variance"].lerp(grad.square(), one_minus_beta2_t)
+                        state["variance"] = variance
+                        var_estimate = variance
+
+                    update = var_estimate.clamp(min=e1 * e1).rsqrt().mul(grad)
+                    denom = max(1.0, update.norm().item() / ((numel ** 0.5) * d))
+                    p._set(p.sub(update.mul(alpha / denom)))
+        _end_runtime_frame(runtime, frame_started, run_js)
+        return loss
+
+
+def _muon_zeropower_via_newtonschulz(
+    grad: Tensor, ns_coefficients: tuple[float, float, float], ns_steps: int, eps: float
+) -> Tensor:
+    a, b, c = ns_coefficients
+    x = grad
+    transposed = False
+    if x.shape[0] > x.shape[1]:
+        x = x.transpose(0, 1)
+        transposed = True
+    x = x.div(x.norm().clamp(min=eps))
+    for _ in range(ns_steps):
+        gram = x.matmul(x.transpose(0, 1))
+        gram_update = gram.addmm(gram, gram, beta=b, alpha=c)
+        x = x.addmm(gram_update, x, beta=a, alpha=1.0)
+    if transposed:
+        x = x.transpose(0, 1)
+    return x
+
+
+def _muon_adjust_lr(lr: float, adjust_lr_fn: str | None, param_shape) -> float:
+    A, B = param_shape[0], param_shape[1]
+    if adjust_lr_fn is None or adjust_lr_fn == "original":
+        adjusted_ratio = math.sqrt(max(1, A / B))
+    elif adjust_lr_fn == "match_rms_adamw":
+        adjusted_ratio = 0.2 * math.sqrt(max(A, B))
+    else:
+        adjusted_ratio = 1.0
+    return lr * adjusted_ratio
+
+
+class Muon(Optimizer):
+    """Muon optimizer (momentum orthogonalized via Newton-Schulz, 2D params)."""
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 0.001,
+        weight_decay: float = 0.1,
+        momentum: float = 0.95,
+        nesterov: bool = True,
+        ns_coefficients: tuple[float, float, float] = (3.4445, -4.775, 2.0315),
+        eps: float = 1e-7,
+        ns_steps: int = 5,
+        adjust_lr_fn: str | None = None,
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if weight_decay < 0.0:
+            raise ValueError(f"Invalid weight_decay value: {weight_decay}")
+        if not (0.0 <= momentum <= 1.0):
+            raise ValueError(f"Invalid momentum value: {momentum}")
+        defaults = {
+            "lr": lr,
+            "weight_decay": weight_decay,
+            "momentum": momentum,
+            "nesterov": nesterov,
+            "ns_coefficients": ns_coefficients,
+            "eps": eps,
+            "ns_steps": ns_steps,
+            "adjust_lr_fn": adjust_lr_fn,
+        }
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        import torch
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                weight_decay = float(group["weight_decay"])
+                momentum = float(group["momentum"])
+                nesterov = bool(group["nesterov"])
+                ns_coefficients = group["ns_coefficients"]
+                eps = float(group["eps"])
+                ns_steps = int(group["ns_steps"])
+                adjust_lr_fn = group["adjust_lr_fn"]
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if grad.ndim != 2:
+                        raise ValueError("Param gradient must be a 2D matrix")
+                    if id(p) not in self.state:
+                        self.state[id(p)] = {"momentum_buffer": torch.zeros_like(p)}
+                    state = self.state[id(p)]
+                    buf = state["momentum_buffer"].lerp(grad, 1.0 - momentum)
+                    state["momentum_buffer"] = buf
+                    update = grad.lerp(buf, momentum) if nesterov else buf
+                    update = _muon_zeropower_via_newtonschulz(update, ns_coefficients, ns_steps, eps)
+                    adjusted_lr = _muon_adjust_lr(lr, adjust_lr_fn, p.shape)
+                    p._set(p.mul(1.0 - lr * weight_decay).sub(update.mul(adjusted_lr)))
+        _end_runtime_frame(runtime, frame_started, run_js)
+        return loss
+
+
+class SparseAdam(Optimizer):
+    """Adam variant that updates only entries present in the gradient.
+
+    The runtime has no sparse-tensor type, so gradients are treated densely
+    and Adam state is updated only where the gradient is non-zero, matching
+    ``torch.optim.SparseAdam`` semantics on the equivalent dense tensor.
+    """
+
+    def __init__(
+        self,
+        params: Iterable[Tensor],
+        lr: float = 0.001,
+        betas: tuple[float, float] = (0.9, 0.999),
+        eps: float = 1e-8,
+    ) -> None:
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if not (0.0 <= betas[0] < 1.0):
+            raise ValueError(f"Invalid beta1 value: {betas[0]}")
+        if not (0.0 <= betas[1] < 1.0):
+            raise ValueError(f"Invalid beta2 value: {betas[1]}")
+        if eps < 0.0:
+            raise ValueError(f"Invalid epsilon value: {eps}")
+        defaults = {"lr": lr, "betas": betas, "eps": eps}
+        super().__init__(params, defaults)
+
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+        import torch
+        loss = super().step(closure)
+        runtime, frame_started, run_js = _begin_runtime_frame()
+        with no_grad():
+            for group in self.param_groups:
+                lr = float(group["lr"])
+                beta1, beta2 = group["betas"]
+                eps = float(group["eps"])
+                for p in group["params"]:
+                    if p.grad is None:
+                        continue
+                    grad = p.grad
+                    if id(p) not in self.state:
+                        self.state[id(p)] = {
+                            "step": 0,
+                            "exp_avg": torch.zeros_like(p),
+                            "exp_avg_sq": torch.zeros_like(p),
+                        }
+                    state = self.state[id(p)]
+                    state["step"] = int(state["step"]) + 1
+                    step = state["step"]
+                    mask = grad.ne(torch.zeros_like(grad))
+                    exp_avg = state["exp_avg"]
+                    exp_avg_sq = state["exp_avg_sq"]
+                    new_exp_avg = exp_avg.add(grad.sub(exp_avg).mul(1.0 - beta1))
+                    exp_avg = new_exp_avg.where(mask, exp_avg)
+                    new_exp_avg_sq = exp_avg_sq.add(grad.square().sub(exp_avg_sq).mul(1.0 - beta2))
+                    exp_avg_sq = new_exp_avg_sq.where(mask, exp_avg_sq)
+                    state["exp_avg"] = exp_avg
+                    state["exp_avg_sq"] = exp_avg_sq
+                    bias_correction1 = 1.0 - beta1 ** step
+                    bias_correction2 = 1.0 - beta2 ** step
+                    step_size = lr * (bias_correction2 ** 0.5) / bias_correction1
+                    denom = exp_avg_sq.sqrt().add(eps)
+                    update = exp_avg.div(denom).mul(step_size)
+                    update = update.where(mask, torch.zeros_like(p))
+                    p._set(p.sub(update))
+        _end_runtime_frame(runtime, frame_started, run_js)
         return loss
 
 
