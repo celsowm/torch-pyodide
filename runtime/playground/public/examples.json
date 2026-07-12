@@ -84,6 +84,7 @@
     { "id": "ops_batch_5b", "label": "Batch 5B ops: index_add/copy/fill, take, unfold, cdist, pdist, qr", "file": "examples/ops_batch_5b.py" },
     { "id": "ops_batch_5c", "label": "Batch 5C ops: searchsorted, kthvalue, median, quantile, mode, unique, histogram", "file": "examples/ops_batch_5c.py" },
     { "id": "ops_batch_5d", "label": "Batch 5D ops: svd, eigh, eig (Jacobi)", "file": "examples/ops_batch_5d.py" },
+    { "id": "linalg_ex_ops", "label": "linalg *_ex / ldl / householder / tensorinv / tensorsolve", "file": "examples/linalg_ex_ops.py" },
     { "id": "linalg_special_ops", "label": "linalg extensions + torch.special", "file": "examples/linalg_special_ops.py" },
     { "id": "fft_complex_ops", "label": "torch.fft + complex dtype", "file": "examples/fft_complex_ops.py" },
     { "id": "tensor_reduction_shape_ops", "label": "Reductions + shape/math ops (amax, var, tensordot...)", "file": "examples/tensor_reduction_shape_ops.py" },

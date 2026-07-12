@@ -22,15 +22,25 @@ class TargetResult:
     note: str
 
 
+def _resolve_attr(base: Any, dotted: str) -> Any:
+    """Walk a dotted attribute path (e.g. ``linalg.cholesky_ex``) from ``base``."""
+    cur = base
+    for seg in dotted.split("."):
+        if not hasattr(cur, seg):
+            return None
+        cur = getattr(cur, seg)
+    return cur
+
+
 def _check_target(torch_mod: Any, tensor_cls: Any, target: dict[str, str]) -> TargetResult:
     target_id = target["id"]
     kind = target["kind"]
 
     if kind == "module_func":
         name = target_id.split(".", 1)[1]
-        if not (hasattr(torch_mod, name) and callable(getattr(torch_mod, name))):
+        obj = _resolve_attr(torch_mod, name)
+        if not (obj is not None and callable(obj)):
             return TargetResult(target_id, kind, False, "missing")
-        obj = getattr(torch_mod, name)
         expected_params = target.get("params")
         if expected_params:
             got = list(inspect.signature(obj).parameters.keys())

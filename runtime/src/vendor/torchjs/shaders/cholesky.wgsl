@@ -20,13 +20,12 @@ fn cholesky_step1(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let offset = b * n * n;
     
     let akk = A[offset + k * n + k];
-    if (akk <= 0.0) {
-        // Matrix is not positive definite
-        // In PyTorch, this would throw an error or return NaN
-        // For now we just set to NaN or something
-        A[offset + k * n + k] = bitcast<f32>(0x7fc00000u);
-        return;
-    }
+        if (akk <= 0.0) {
+            // Matrix is not positive definite; PyTorch returns NaN on the diagonal.
+            let zero = 0.0;
+            A[offset + k * n + k] = zero / zero;
+            return;
+        }
     
     let sqrt_akk = sqrt(akk);
     A[offset + k * n + k] = sqrt_akk;
@@ -74,7 +73,8 @@ fn cholesky_small(@builtin(global_invocation_id) global_id: vec3<u32>) {
         }
         
         if (akk <= 0.0) {
-            A[offset + k * n + k] = bitcast<f32>(0x7fc00000u);
+            let zero = 0.0;
+            A[offset + k * n + k] = zero / zero;
             return;
         }
         

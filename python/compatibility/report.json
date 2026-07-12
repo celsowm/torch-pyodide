@@ -1,11 +1,11 @@
 {
-  "implemented": 395,
-  "total": 395,
+  "implemented": 407,
+  "total": 407,
   "percentage": 100.0,
   "by_kind": {
     "module_func": {
-      "implemented": 151,
-      "total": 151
+      "implemented": 163,
+      "total": 163
     },
     "cuda_func": {
       "implemented": 11,
@@ -2408,6 +2408,78 @@
     {
       "id": "nn.functional.interpolate",
       "kind": "nn_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.LinAlgError",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.cholesky_ex",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.inv_ex",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.lu_factor_ex",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.solve_ex",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.ldl_factor",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.ldl_factor_ex",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.ldl_solve",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.householder_product",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.vecdot",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.tensorinv",
+      "kind": "module_func",
+      "implemented": true,
+      "note": "ok"
+    },
+    {
+      "id": "torch.linalg.tensorsolve",
+      "kind": "module_func",
       "implemented": true,
       "note": "ok"
     }

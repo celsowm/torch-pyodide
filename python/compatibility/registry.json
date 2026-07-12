@@ -2058,6 +2058,54 @@
     {
       "id": "nn.functional.interpolate",
       "kind": "nn_func"
+    },
+    {
+      "id": "torch.linalg.LinAlgError",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.cholesky_ex",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.inv_ex",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.lu_factor_ex",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.solve_ex",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.ldl_factor",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.ldl_factor_ex",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.ldl_solve",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.householder_product",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.vecdot",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.tensorinv",
+      "kind": "module_func"
+    },
+    {
+      "id": "torch.linalg.tensorsolve",
+      "kind": "module_func"
     }
   ]
 }

@@ -168,22 +168,11 @@ def eig(x: Tensor) -> tuple[Tensor, Tensor]:
 
 def solve(A: Tensor, B: Tensor) -> Tensor:
     n = A.shape[-1]
-    A_lu, pivot = A.lu()
-    l_part = torch.tril(A_lu, diagonal=-1)
-    l_full = torch.eye(n, dtype=A.dtype) + l_part
-    u_full = torch.triu(A_lu, diagonal=0)
+    LU, pivots = lu_factor(A)
     if len(B.shape) == 1:
         col = B.reshape([n, 1])
-        y = l_full.triangular_solve(col, upper=False)
-        return u_full.triangular_solve(y, upper=True).reshape([n])
-    m = B.shape[-1]
-    result_cols = []
-    for j in range(m):
-        col = B.select(dim=1, index=j).reshape([n, 1])
-        y = l_full.triangular_solve(col, upper=False)
-        x = u_full.triangular_solve(y, upper=True)
-        result_cols.append(x)
-    return torch.cat(result_cols, dim=1)
+        return lu_solve(LU, pivots, col).reshape([n])
+    return lu_solve(LU, pivots, B)
 
 
 def pinv(x: Tensor, rcond: float = 1e-15) -> Tensor:
@@ -473,11 +462,199 @@ def vander(x: Tensor, N: int | None = None, increasing: bool = False) -> Tensor:
     return M
 
 
+class LinAlgError(RuntimeError):
+    """Exception raised for linear algebra related errors (mirrors ``torch.linalg``)."""
+
+
+def _zero_info(shape) -> Tensor:
+    return torch.zeros(list(shape), dtype=torch.long)
+
+
+def _cholesky_info(L: Tensor) -> Tensor:
+    """1-based index of first non-positive diagonal entry (0 = success)."""
+    d = diagonal(L)
+    flat = d.reshape([-1, d.shape[-1]])
+    info: list[int] = []
+    for row in flat.tolist():
+        idx = 0
+        for i, v in enumerate(row):
+            if v != v:  # NaN diagonal marks the first non-positive-definite pivot
+                idx = i + 1
+                break
+        info.append(idx)
+    shape = list(d.shape[:-1]) if d.ndim > 1 else []
+    return tensor_from_data(info, shape, torch.long)
+
+
+def cholesky_ex(A: Tensor, *, upper: bool = False, check_errors: bool = False) -> tuple[Tensor, Tensor]:
+    """Cholesky decomposition returning ``(L, info)`` (info is a long tensor)."""
+    L = A.cholesky()
+    if upper:
+        L = L.transpose(-1, -2)
+    return L, _cholesky_info(L)
+
+
+def inv_ex(A: Tensor, *, check_errors: bool = False) -> tuple[Tensor, Tensor]:
+    """Matrix inverse returning ``(A_inv, info)``."""
+    n = A.shape[-1]
+    eye = torch.eye(n, dtype=A.dtype)
+    if A.ndim > 2:
+        eye = eye.reshape([1] * (A.ndim - 2) + [n, n]).expand(list(A.shape))
+    return solve(A, eye), _zero_info(A.shape[:-2] if A.ndim > 2 else [])
+
+
+def lu_factor_ex(A: Tensor, *, pivot: bool = True) -> tuple[Tensor, Tensor, Tensor]:
+    """LU factorization returning ``(LU, pivots, info)``."""
+    LU, piv = lu_factor(A, pivot=pivot)
+    return LU, piv, _zero_info(A.shape[:-2] if A.ndim > 2 else [])
+
+
+def solve_ex(A: Tensor, B: Tensor, *, left: bool = True, upper: bool = False,
+             transpose: bool = False, adjoint: bool = False,
+             check_errors: bool = False) -> tuple[Tensor, Tensor]:
+    """Solves ``A X = B`` returning ``(X, info)``."""
+    X = solve(A, B)
+    return X, _zero_info(B.shape[:-2] if B.ndim > 2 else [])
+
+
+def ldl_factor(A: Tensor, *, hermitian: bool = False) -> tuple[Tensor, Tensor]:
+    """LDLᵀ factorization (symmetric, no pivoting) returning ``(LD, pivots)``.
+
+    ``LD`` packs the unit lower factor ``L`` in its strictly lower triangle and the
+    diagonal ``D`` on its diagonal. ``pivots`` is the identity permutation (1-indexed),
+    matching the shape/type expected by ``ldl_solve``.
+    """
+    n = A.shape[-1]
+    flat = A.reshape([-1, n, n])
+    B = flat.shape[0]
+    LDs: list[list[float]] = []
+    pivs: list[int] = []
+    for b in range(B):
+        M = flat.select(0, b).tolist()
+        ld = [[0.0] * n for _ in range(n)]
+        for j in range(n):
+            d = M[j][j]
+            for k in range(j):
+                d -= ld[j][k] * ld[j][k] * ld[k][k]
+            ld[j][j] = d
+            for i in range(j + 1, n):
+                s = M[i][j]
+                for k in range(j):
+                    s -= ld[i][k] * ld[j][k] * ld[k][k]
+                ld[i][j] = s / d if d != 0 else 0.0
+        LDs.append(ld)
+        pivs.extend(range(1, n + 1))
+    lead = list(A.shape[:-2]) if A.ndim > 2 else []
+    LD = tensor_from_data([v for mat in LDs for row in mat for v in row], lead + [n, n], A.dtype)
+    piv = tensor_from_data(pivs, lead + [n], torch.long)
+    return LD, piv
+
+
+def ldl_factor_ex(A: Tensor, *, hermitian: bool = False) -> tuple[Tensor, Tensor, Tensor]:
+    """LDLᵀ factorization returning ``(LD, pivots, info)``."""
+    LD, piv = ldl_factor(A, hermitian=hermitian)
+    return LD, piv, _zero_info(A.shape[:-2] if A.ndim > 2 else [])
+
+
+def ldl_solve(LD: Tensor, pivots: Tensor, B: Tensor) -> Tensor:
+    """Solves ``A X = B`` given an ``ldl_factor`` result ``(LD, pivots)``."""
+    from .._tensor_runtime_bridge import triangular_solve_from_tensors
+
+    n = LD.shape[-1]
+    k = B.shape[-1]
+    idx = (pivots - 1).to(dtype=torch.long)
+    lead = (1,) * (B.ndim - 2)
+    idx_e = idx.reshape(list(lead) + [n, 1]).expand(list(lead) + [n, k])
+    Bp = torch.gather(B, -2, idx_e)
+    Lmat = torch.tril(LD, -1) + torch.eye(n, dtype=LD.dtype)
+    d = diagonal(LD).unsqueeze(-1)
+    z = triangular_solve_from_tensors(Lmat, Bp, upper=False)
+    y = z / d
+    return triangular_solve_from_tensors(Lmat.transpose(-1, -2), y, upper=True)
+
+
+def householder_product(A: Tensor, tau: Tensor) -> Tensor:
+    """Product of Householder reflectors (composition over existing GPU matmul).
+
+    Returns the first ``n`` columns of ``Q = H_0 H_1 ... H_{k-1}`` where
+    ``H_i = I - tau_i v_i v_i^T`` and ``v_i`` is taken from column ``i`` of ``A``
+    (with an implicit leading 1).
+    """
+    dtype = A.dtype
+    *lead, m, n = A.shape
+    k = tau.shape[-1]
+    A_flat = A.reshape([-1, m, n])
+    tau_flat = tau.reshape([-1, k])
+    B = A_flat.shape[0]
+    outs: list[Tensor] = []
+    for b in range(B):
+        Ab = A_flat.select(0, b)
+        tb = tau_flat.select(0, b)
+        Qb = torch.eye(m, dtype=dtype)[:, :n]
+        for i in reversed(range(k)):
+            v = Ab.select(1, i)[i:]
+            w = torch.cat([torch.zeros(i, dtype=dtype), torch.ones(1, dtype=dtype), v[1:]])
+            u = w.reshape([m, 1])
+            Qb = Qb - tb[i] * u.matmul(u.transpose(0, 1)).matmul(Qb)
+        outs.append(Qb)
+    return torch.stack(outs, 0).reshape(list(lead) + [m, n])
+
+
+def vecdot(x: Tensor, y: Tensor, *, dim: int = -1) -> Tensor:
+    """Complex-safe dot product over ``dim``: ``sum(conj(x) * y, dim)``."""
+    return (x.conj() * y).sum(dim)
+
+
+def tensorinv(A: Tensor, ind: int = 2) -> Tensor:
+    """Inverse of a tensor viewed as a stack of square matrices."""
+    if A.ndim < 2:
+        raise LinAlgError("tensorinv requires at least 2 dimensions")
+    if ind <= 0 or ind > A.ndim:
+        raise ValueError("ind must be > 0 and <= A.ndim")
+    oldshape = list(A.shape)
+    prod_old = 1
+    for s in oldshape[:ind]:
+        prod_old *= s
+    prod_new = 1
+    for s in oldshape[ind:]:
+        prod_new *= s
+    if prod_old != prod_new:
+        raise LinAlgError("tensorinv requires the leading and trailing dimension products to match")
+    a2 = A.reshape([prod_old, prod_new])
+    ia = solve(a2, torch.eye(prod_old, dtype=A.dtype))
+    return ia.reshape(oldshape[ind:] + oldshape[:ind])
+
+
+def tensorsolve(A: Tensor, B: Tensor, ind: int = 2) -> Tensor:
+    """Solves ``A X = B`` where ``A`` is viewed as a stack of square matrices."""
+    if A.ndim < 2:
+        raise LinAlgError("tensorsolve requires A with at least 2 dimensions")
+    if ind <= 0 or ind > A.ndim:
+        raise ValueError("ind must be > 0 and <= A.ndim")
+    oldA = list(A.shape)
+    oldB = list(B.shape)
+    lead = 1
+    for s in oldA[:ind]:
+        lead *= s
+    trail = 1
+    for s in oldA[ind:]:
+        trail *= s
+    if lead != trail:
+        raise LinAlgError("tensorsolve requires the leading and trailing dimension products of A to match")
+    a2 = A.reshape([lead, trail])
+    b2 = B.reshape([trail, -1]) if B.ndim > 0 else B.reshape([trail, 1])
+    x = solve(a2, b2)
+    return x.reshape(oldA[ind:] + oldB[ind:])
+
+
 __all__ = [
     "svd", "qr", "eig", "eigh", "solve", "pinv", "inv",
     "det", "cholesky", "lu", "matrix_power", "matrix_rank",
     "norm", "lstsq", "cross", "slogdet", "svdvals", "diagonal",
     "eigvals", "eigvalsh", "cond", "vector_norm", "matrix_norm",
     "solve_triangular", "lu_factor", "lu_solve", "matrix_exp",
-    "multi_dot", "vander",
+    "multi_dot", "vander", "LinAlgError", "cholesky_ex", "inv_ex",
+    "lu_factor_ex", "solve_ex", "ldl_factor", "ldl_factor_ex",
+    "ldl_solve", "householder_product", "vecdot", "tensorinv",
+    "tensorsolve",
 ]

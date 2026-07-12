@@ -17,6 +17,7 @@ type Catalog = {
 const EXAMPLE_TIMEOUT_OVERRIDES_MS: Record<string, number> = {
   nn_lstm_char_lm_training: 120000,
   ops_batch_5d: 120000,
+  linalg_ex_ops: 120000,
 };
 
 type DeterministicParityOutput = {
@@ -1611,6 +1612,17 @@ test.describe.serial("playground examples @webgpu", () => {
     await page.locator("#example-select").selectOption("ops_batch_5d");
     await expect(page.locator("#example-select")).toHaveValue("ops_batch_5d");
     const { output } = await runSelectedExample(page, "ops_batch_5d", 90000);
+    const actual = parseJsonOutput<{ ok: boolean; max_diff: number }>(output);
+    expect(actual.ok).toBe(true);
+    expect(actual.max_diff).toBeLessThan(1e-2);
+    expect(consoleFailures).toEqual([]);
+  });
+
+  test("linalg completion parity (cholesky_ex, inv_ex, lu_factor_ex, solve_ex, ldl_*, householder_product, vecdot, tensorinv, tensorsolve)", async () => {
+    consoleFailures.length = 0;
+    await page.locator("#example-select").selectOption("linalg_ex_ops");
+    await expect(page.locator("#example-select")).toHaveValue("linalg_ex_ops");
+    const { output } = await runSelectedExample(page, "linalg_ex_ops", 120000);
     const actual = parseJsonOutput<{ ok: boolean; max_diff: number }>(output);
     expect(actual.ok).toBe(true);
     expect(actual.max_diff).toBeLessThan(1e-2);
